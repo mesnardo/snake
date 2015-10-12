@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/python
 
 # file: forces.py
 # author: Olivier Mesnard (mesnardo@gwu.edu)
@@ -139,7 +139,8 @@ class Simulation(object):
   def plot_forces(self, display_lift=True, display_drag=True,
                   limits=[0.0, float('inf'), 0.0, float('inf')],
                   title=None, save=None, show=False, output=False,
-                  display_extrema=False, order=5, display_gauge=False):
+                  display_extrema=False, order=5, display_gauge=False,
+                  other_simulations=[]):
     """Displays the forces into a figure."""
     if output:
       print('[info] plotting forces... ')
@@ -171,6 +172,18 @@ class Simulation(object):
                          color=color, linestyle=':', zorder=10)
           pyplot.axhline(force.values[maxima[-1]],
                          color=color, linestyle=':', zorder=10)
+    for simulation in other_simulations:
+      forces = []
+      if display_drag:
+        forces.append(simulation.force_x)
+      if display_lift:
+        forces.append(simulation.force_y)
+      for force in forces:
+        color = next(color_cycle)
+        pyplot.plot(force.times, force.values,
+                    label=('{} - {}'.format(simulation.name, force.name) if simulation.name
+                           else force.name),
+                    color=color, linestyle='--', zorder=10)
     pyplot.legend()
     pyplot.axis(limits)
     if title:
@@ -203,8 +216,14 @@ class OpenFOAMSimulation(Simulation):
     """
     Simulation.__init__(self, name=name, directory=directory, output=output)
 
-  def read_forces(self, force_coefficients=False):
-    """Reads forces from files."""
+  def read_forces(self, force_coefficients=False, coefficient=1.0):
+    """Reads forces from files.
+
+    Parameters
+    ----------
+    force_coefficients: boolean
+      Set to 'True' if force coefficients are required; default: False (i.e. forces).
+    """
     key = 'forceCoeffs' if force_coefficients else 'forces'
     forces_directory = '{}/postProcessing/{}'.format(self.directory, key)  
     subdirectories = sorted(os.listdir(forces_directory))
@@ -217,6 +236,73 @@ class OpenFOAMSimulation(Simulation):
       times = numpy.append(times, t)
       force_x, force_y = numpy.append(force_x, fx), numpy.append(force_y, fy)
     self.force_x = Force(times, force_x, 
-                         name=('$C_d$' if key == 'forceCoeffs' else '$F_x$'))
+                         name=('$C_d$' if force_coefficients else '$F_x$'))
     self.force_y = Force(times, force_y, 
-                         name=('$C_l$' if key == 'forceCoeffs' else '$F_y$'))
+                         name=('$C_l$' if force_coefficients else '$F_y$'))
+
+
+class CuIBMSimulation(Simulation):
+  """Contains information about a cuIBM simulation."""
+  def __init__(self, name=None, directory=os.getcwd(), output=False):
+    """Initialization (stores simulation directory).
+
+    Parameters
+    ----------
+    directory: string
+      Directory of the simulation; default: current working directory.
+    output: boolean
+      If 'True': prints simulation directory; default: False.
+    """
+    Simulation.__init__(self, name=name, directory=directory, output=output)
+
+  def read_forces(self, force_coefficients=False, coefficient=1.0):
+    """Reads forces from files.
+
+    Parameters
+    ----------
+    force_coefficients: boolean
+      Set to 'True' if force coefficients are required; default: False (i.e. forces).
+    coefficient: float
+      Force to force-coefficient scale; default: 1.0.
+    """
+    forces_path = '{}/forces'.format(self.directory)
+    with open(forces_path, 'r') as infile:
+      times, force_x, force_y = numpy.loadtxt(infile, dtype=float, 
+                                              usecols=(0, 1, 2), unpack=True)
+    self.force_x = Force(times, coefficient*force_x,
+                         name=('$C_d$' if force_coefficients else '$F_x$'))
+    self.force_y = Force(times, coefficient*force_y,
+                         name=('$C_l$' if force_coefficients else '$F_y$'))
+
+class PetIBMSimulation(Simulation):
+  """Contains information about a PetIBM simulation."""
+  def __init__(self, name=None, directory=os.getcwd(), output=False):
+    """Initialization (stores simulation directory).
+
+    Parameters
+    ----------
+    directory: string
+      Directory of the simulation; default: current working directory.
+    output: boolean
+      If 'True': prints simulation directory; default: False.
+    """
+    Simulation.__init__(self, name=name, directory=directory, output=output)
+
+  def read_forces(self, force_coefficients=False, coefficient=1.0):
+    """Reads forces from files.
+
+    Parameters
+    ----------
+    force_coefficients: boolean
+      Set to 'True' if force coefficients are required; default: False (i.e. forces).
+    coefficient: float
+      Force to force-coefficient scale; default: 1.0.
+    """
+    forces_path = '{}/forces.txt'.format(self.directory)
+    with open(forces_path, 'r') as infile:
+      times, force_x, force_y = numpy.loadtxt(infile, dtype=float, 
+                                              usecols=(0, 1, 2), unpack=True)
+    self.force_x = Force(times, coefficient*force_x,
+                         name=('$C_d$' if force_coefficients else '$F_x$'))
+    self.force_y = Force(times, coefficient*force_y,
+                         name=('$C_l$' if force_coefficients else '$F_y$'))

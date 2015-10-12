@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/python
 
 # file: plotForces.py
 # author: Olivier Mesnard (mesnardo@gwu.edu)
@@ -25,15 +25,22 @@ def parse_command_line():
   parser.add_argument('--description', dest='description',
                       type=str, default=None,
                       help='quick description of the simulation')
-  parser.add_argument('--openfoam', dest='openfoam',
-                      action='store_true',
-                      help='flag to use for OpenFOAM simulation')
+  parser.add_argument('--type', dest='simulation_type',
+                      type=str,
+                      help='type of simulation (openfoam, cuibm, petibm)')
   parser.add_argument('--display-coefficients', dest='display_coefficients',
                       action='store_true',
                       help='flag to plot the force coefficients, not the forces')
   parser.add_argument('--coefficient', dest='coefficient',
                       type=float, default=1.0,
                       help='force to force coefficient converter')
+  # comparison with other simulations
+  parser.add_argument('--others', dest='others',
+                      nargs='+', default=[],
+                      help='Other simulations used for comparison. '
+                           'For each supplemental simulation, provides the following: '
+                           'type, directory, description, coefficient')
+  # plotting parameters
   parser.add_argument('--average', dest='average_limits', 
                       type=float, nargs='+', default=[0.0, float('inf')],
                       help='temporal limits to consider to average forces')
@@ -61,29 +68,77 @@ def parse_command_line():
   parser.add_argument('--gauge', dest='display_gauge', 
                       action='store_true',
                       help='display gauges to check the convergence')
+  # default options
   parser.set_defaults(display_drag=True, display_lift=True, show=True)
+  # parse given options file
+  class LoadFromFile(argparse.Action):
+    """Container to read parameters from file."""
+    def __call__(self, parser, namespace, values, option_string=None):
+      """Fills the namespace with parameters read in file."""
+      with values as f:
+        parser.parse_args(f.read().split(), namespace)
+  parser.add_argument('--file', 
+                      type=open, action=LoadFromFile,
+                      help='path of the file with options to parse')
+  # return namespace
   return parser.parse_args()
+
+
+def get_SimulationClass(simulation_type):
+  """Gets the appropriate class.
+
+  Parameters
+  ----------
+  simulation_type: string
+    Description of the type of simulation (openfoam, cuibm, petibm)
+  """
+  if simulation_type == 'openfoam':
+    return forces.OpenFOAMSimulation
+  elif simulation_type == 'cuibm':
+    return forces.CuIBMSimulation
+  elif simulation_type == 'petibm':
+    return forces.PetIBMSimulation
+  else:
+    print('[error] type should be "openfoam", "cuibm", or "petibm"')
+    exit(0)
 
 
 def main():
   """Plots the instantaneous force coefficients."""
   parameters = parse_command_line()
-  if parameters.openfoam:
-    simulation = forces.OpenFOAMSimulation(name=parameters.description, 
-                                           directory=parameters.directory, 
-                                           output=True)
-  else:
-    print('[error] use flag for simulation type')
-    return
-  simulation.read_forces(force_coefficients=parameters.display_coefficients)
-  simulation.get_means(limits=parameters.average_limits)
-  simulation.plot_forces(display_drag=parameters.display_drag,
-                         display_lift=parameters.display_lift,
-                         limits=parameters.plot_limits,
-                         save=parameters.save, show=parameters.show, output=True,
-                         display_extrema=parameters.display_extrema, 
-                         order=parameters.order,
-                         display_gauge=parameters.display_gauge)
+  # create master simulation
+  SimulationClass = get_SimulationClass(parameters.simulation_type)
+  master = SimulationClass(name=parameters.description,
+                           directory=parameters.directory,
+                           output=True)
+  master.read_forces(force_coefficients=parameters.display_coefficients,
+                     coefficient=parameters.coefficient)
+  master.get_means(limits=parameters.average_limits)
+  
+  # get info about other simulations used for comparison
+  slaves = []
+  num_others = len(parameters.others)/4
+  for index in xrange(num_others):
+    slave_type = parameters.others[index*num_others + 0]
+    slave_directory = parameters.others[index*num_others + 1]
+    slave_description = parameters.others[index*num_others + 2]
+    slave_coefficient = float(parameters.others[index*num_others + 3])
+    SimulationClass = get_SimulationClass(slave_type)
+    slaves.append(SimulationClass(name=slave_description,
+                                  directory=slave_directory,
+                                  output=True))
+    slaves[-1].read_forces(force_coefficients=parameters.display_coefficients,
+                           coefficient=slave_coefficient)
+
+  # plot instantaneous forces (or force coefficients)
+  master.plot_forces(display_drag=parameters.display_drag,
+                     display_lift=parameters.display_lift,
+                     limits=parameters.plot_limits,
+                     save=parameters.save, show=parameters.show, output=True,
+                     display_extrema=parameters.display_extrema, 
+                     order=parameters.order,
+                     display_gauge=parameters.display_gauge,
+                     other_simulations=slaves)
 
 
 if __name__ == '__main__':
