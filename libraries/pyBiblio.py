@@ -1,8 +1,8 @@
-#!/bin/sh/env python
+#!/usr/bin/python
 
 # file: pyBiblio.py
 # author: Olivier Mesnard (mesnardo@gwu.edu)
-# brief: Library for reference management.
+# brief: Library to manage references.
 
 
 import os
@@ -11,27 +11,96 @@ import argparse
 
 
 class ReferenceManager(object):
+  """Contains info about each note written."""
   def __init__(self, directory=None):
+    """Reads the notes in a given directory in a recursive way.
+
+    Parameters
+    ----------
+    directory: string
+      Directory containing the notes; default: None.
+    """
     self.notes = self.get_notes(directory=directory)
 
   def get_notes(self, directory=None):
-    notes = []
-    for (directory, _, files) in os.walk('/home/mesnardo/git/mesnardo/phdBook/literature'):
+    """Lists the notes and parses each one.
+
+    Returns an error if the directory does not exist.
+
+    Parameters
+    ----------
+    directory: string
+      Directory containing the notes; default: None.
+
+    Returns
+    -------
+    notes: dictionary of PaperNote objects
+      Dictionary containing the notes.
+    """
+    if not os.path.exists(directory):
+      print('directory: {}'.format(directory))
+      print('[error] literature directory does not exist')
+      exit(0)
+    notes = {}
+    for (directory, _, files) in os.walk(directory):
       for f in files:
-        notes.append(PaperNote(os.path.join(directory, f)))
+        note = PaperNote(os.path.join(directory, f))
+        if note.key:
+          notes[note.key] = note
     return notes
 
   def print_info_notes(self):
-    for note in self.notes:
+    """Prints info about each note of the reference manager."""
+    for key, note in self.notes.iteritems():
       note.print_info()
 
-  def print_notes(self, key=None, author=None, keyword=None, year=None):
-    for note in self.notes:
-      note.get(key=key, keyword=keyword, author=author, year=year)
+  def search_notes(self, keys=[], keywords=[], authors=[], years=[], connection=None):
+    """Prints notes that match given criteria.
 
+    Parameters
+    ----------
+    keys: list of strings
+      List of keys to look for; default: [].
+    keywords: list of strings
+      List of keywords to look for; default: [].
+    authors: list of strings
+      List of authors to look for; default: [].
+    years: list of integers
+      List of years to look for; default: [].
+    connection: string
+      Key of the note to print connections with; default: None.
+    """
+    for key in keys:
+      self.notes[key].print_info()
+    for keyword in keywords:
+      for note in self.notes.itervalues():
+        if note.search(keyword=keyword):
+          note.print_info()
+    for author in authors:
+      for note in self.notes.itervalues():
+        if note.search(author=author):
+          note.print_info()
+    for year in years:
+      for note in self.notes.itervalues():
+        if note.search(year=year):
+          note.print_info()
+    if connection:
+      self.notes[connection].print_info()
+      for note in self.notes.itervalues():
+        if note.search(connection=connection):
+          note.print_info()
+        
 
 class PaperNote(object):
+  """Contains information about a note."""
   def __init__(self, note_path):
+    """Parses the note.
+
+    Parameters
+    ----------
+    note_path: string
+      Path of the note (markdown file).
+    """
     self.path = note_path
     self.key = None
     self.title = None
@@ -42,23 +111,25 @@ class PaperNote(object):
     self.parse_info()
 
   def print_info(self):
+    """Prints information about the paper."""
     if not self.key:
       return
-    print('#'*80)
+    print('-'*80)
     print('- path: {}'.format(self.path))
     print('- key: {}'.format(self.key))
     print('- title: {}'.format(self.title))
     print('- authors: {}'.format(', '.join(self.authors)))
     print('- year: {}'.format(self.year))
-    print('- keywords: {}'.format(' | '.join(self.keywords)))
+    print('- keywords: {}'.format(', '.join(self.keywords)))
     if self.connections:
       print('- list of connections:')
-      for connection in self.connections:
-        print('\t- key: {}'.format(connection['key']))
-        print('\t- reason: {}'.format(connection['reason']))
-    print('#'*80)
+      for key, reason in self.connections.iteritems():
+        print('\t- key: {}'.format(key))
+        print('\t- reason: {}'.format(reason))
+    print('-'*80)
 
   def parse_info(self):
+    """Parses the note to look for paper characteristics."""
     look_for = '## pyBiblio'
     with open(self.path, 'r') as infile:
       lines = infile.readlines()
@@ -80,6 +151,15 @@ class PaperNote(object):
       self.connections = self.set('connections', lines)
 
   def set(self, look_for, lines):
+    """Sets the different information about the paper read in the note.
+
+    Parameters
+    ----------
+    look_for: string
+      The keyword in the note to look for.
+    lines: list of strings
+      Relevant lines of the note.
+    """
     if look_for == 'connections':
       return self.set_connections(lines)
     for line in lines:
@@ -97,22 +177,55 @@ class PaperNote(object):
                   for keyword in re.findall(r"[^,;]+", line.split(':')[-1])]
 
   def set_connections(self, lines):
-    connections = []
+    """Sets the connections of the paper with other papers.
+
+    Parameters
+    ----------
+    lines: list of strings
+      Relevant lines of the notes.
+
+    Returns
+    -------
+    connections: disctionary of strings
+      Contains the connections and the reasons of those connections.
+    """
+    connections = {}
     for line in lines:
       if re.search('connection', line):
         data = line.strip().split(':')[-1].strip().split(',')
-        connections.append({'key': data[0].strip(), 'reason': data[1].strip()})
+        connections[data[0].strip()] = data[1].strip()
     return connections
 
-  def get(self, key=None, author=None, keyword=None, year=None):
-    if key and key == self.key:
-      self.print_info()
-    if author and author in self.authors:
-      self.print_info()
-    if keyword and keyword in self.keywords:
-      self.print_info()
-    if year and year == self.year:
-      self.print_info()
+  def search(self, key=None, keyword=None, author=None, year=None, connection=None):
+    """Checks if the paper matches given criteria.
+
+    Parameters
+    ----------
+    key: string
+      Key to match; default: None.
+    keyword: string
+      Keyword to match; default: None.
+    author: string
+      Author to match; default: None.
+    year: integer
+      Year to match; default: None.
+    connection: string
+      Key of the paper to look for possible connection; default: None.
+
+    Returns
+    -------
+    1 or 0 depending whether the paper matches or not.
+    """
+    if key:
+      return key == self.key
+    elif keyword:
+      return keyword in self.keywords
+    elif author:
+      return author in self.authors
+    elif year:
+      return year == self.year
+    elif connection:
+      return connection in self.connections.iterkeys()
 
 
 def parse_command_line():
@@ -136,20 +249,21 @@ def parse_command_line():
   parser.add_argument('--year', dest='years', 
                       nargs='+', type=int, default=[],
                       help='Looking for papers with given year(s)')
+  parser.add_argument('--connection', dest='connection',
+                      type=str,
+                      help='key of the note to print connections with')
   return parser.parse_args()
         
 
 def main():
+  """Main function. 
+  Creates the reference manager and submit the command-line request.
+  """
   parameters = parse_command_line()
   manager = ReferenceManager(directory=parameters.directory)
-  for key in parameters.keys:
-    manager.print_notes(key=key)
-  for keyword in parameters.keywords:
-    manager.print_notes(keyword=keyword)
-  for author in parameters.authors:
-    manager.print_notes(author=author)
-  for year in parameters.years:
-    manager.print_notes(year=year)
+  manager.search_notes(keys=parameters.keys, keywords=parameters.keywords,
+                       authors=parameters.authors, years=parameters.years,
+                       connection=parameters.connection)
 
 
 if __name__ == '__main__':
