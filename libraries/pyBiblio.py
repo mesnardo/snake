@@ -44,9 +44,10 @@ class ReferenceManager(object):
     notes = {}
     for (directory, _, files) in os.walk(directory):
       for f in files:
-        note = PaperNote(os.path.join(directory, f))
-        if note.key:
-          notes[note.key] = note
+        if 'template' not in f:
+          note = PaperNote(os.path.join(directory, f))
+          if note.key:
+            notes[note.key] = note
     return notes
 
   def print_info_notes(self):
