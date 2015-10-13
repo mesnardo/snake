@@ -1,2 +1,5 @@
 # ingore compiled Python files
 *.pyc
+
+# ingore IPython Notebook checkpoints folder
+*.ipynb_checkpoints
