@@ -1,6 +1,6 @@
 #!/bin/sh 
 
-SCRIPT="/home/mesnardo/simulations_OpenFOAM/scripts/generateBoxOBJFile.py"
+SCRIPT="$PYSCRIPTS/scripts/OpenFOAM/generateBoxOBJFile.py"
 
 # generates the boxes (as OBJ file) used for refinement
 # box1

@@ -9,7 +9,7 @@ import argparse
 import os
 import sys
 
-sys.path.append('/home/mesnardo/simulations_OpenFOAM/scripts/library')
+sys.path.append('{}/libraries'.format(os.environ['PYSCRIPTS']))
 import OBJFile
 
 
