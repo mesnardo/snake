@@ -1,8 +1,8 @@
 #!/bin/sh
 
-#SBATCH --job-name="snappy"
-#SBATCH --output=log%j.out
-#SBATCH --error=log%j.err
+#SBATCH --job-name="sHMSerial"
+#SBATCH --output=log.%j.out
+#SBATCH --error=log.%j.err
 #SBATCH --partition=short
 #SBATCH --time=02:00:00
 #SBATCH -n 1
