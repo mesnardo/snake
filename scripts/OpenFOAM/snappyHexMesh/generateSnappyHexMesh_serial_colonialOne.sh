@@ -5,8 +5,8 @@
 # brief: Generates a mesh with snappyHexMesh on 1 processor on Colonial One.
 
 #SBATCH --job-name="sHMSerial"
-#SBATCH --output=log.%j.out
-#SBATCH --error=log.%j.err
+#SBATCH --output=log%j.out
+#SBATCH --error=log%j.err
 #SBATCH --partition=short
 #SBATCH --time=02:00:00
 #SBATCH -n 1
