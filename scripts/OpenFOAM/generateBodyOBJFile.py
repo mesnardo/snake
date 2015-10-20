@@ -9,7 +9,7 @@ import os
 import argparse
 import sys
 
-sys.path.append('/home/mesnardo/simulations_OpenFOAM/scripts/library')
+sys.path.append('{}/libraries'.format(os.environ['PYSCRIPTS']))
 import OBJFile
 
 
@@ -39,7 +39,7 @@ def main():
   """Generates an .OBJ file from a given coordinates file."""
   parameters = parse_command_line()
   body = OBJFile.Body2d(parameters.name, parameters.file_path)
-  body.write(save_directory=parameters.save_directory)
+  body.write_obj_file(save_directory=parameters.save_directory)
 
 
 if __name__ == '__main__':

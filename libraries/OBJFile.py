@@ -4,6 +4,7 @@
 
 
 import os
+import math
 
 import numpy
 
@@ -181,7 +182,7 @@ class Body2d(OBJFile):
     """
     print('-> reading input coordinates... '),
     # read the coordinates file
-    with open(parameters.file_path, 'r') as infile:
+    with open(file_path, 'r') as infile:
       x, y = numpy.loadtxt(infile, dtype=float, delimiter='\t', skiprows=1, unpack=True)
     # append first element to the end of the array if different
     if math.sqrt((x[0]-x[-1])**2 + (y[0]-y[-1])**2) > 1.0E-06:
@@ -207,8 +208,8 @@ class Body2d(OBJFile):
     with open(outfile_path, 'w') as outfile:
       outfile.write(header)
       for i in xrange(self.x.size):
-        for j in [1, -1]:
-          outfile.write('v {} {} {}'.format(self.x[i], self.y[i], j))
+        for j in xrange(1, -1, -1):
+          outfile.write('v {} {} {}\n'.format(self.x[i], self.y[i], j))
       outfile.write('g {}\n'.format(self.name))
       for i in xrange(1, self.x.size):
         outfile.write('f {} {} {}\n'.format(2*i, 2*i-1, 2*i+1))
