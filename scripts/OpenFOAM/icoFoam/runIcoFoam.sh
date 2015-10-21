@@ -13,4 +13,4 @@ rm -rf log.run && mkdir log.run
 
 # run icofoam
 runApplication icoFoam
-mv log.icofoam log.run
+mv log.icoFoam log.run

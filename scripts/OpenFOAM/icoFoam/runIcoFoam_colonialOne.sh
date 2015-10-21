@@ -25,4 +25,4 @@ mv log.decomposePar log.run
 
 # run icofoam
 time runParallel icoFoam -parallel
-mv log.icofoam log.run
+mv log.icoFoam log.run
