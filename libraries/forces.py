@@ -45,6 +45,8 @@ class Force(object):
 
     Returns
     -------
+    time_min, time_max: floats
+      The temporal limits of the average.
     mean: float
       The mean force.
     """
@@ -60,7 +62,7 @@ class Force(object):
       # remove doublons
       _, mask_uniqueness = numpy.unique(self.times, return_index=True)
       mask = list(set(mask) & set(mask_uniqueness)) 
-    return numpy.mean(self.values[mask])
+    return self.times[mask[0]], self.times[mask[-1]], numpy.mean(self.values[mask])
 
   def get_deviations(self, limits=[0.0, float('inf')], order=5, last_period=False):
     """Computes the deviations around the mean value.
@@ -132,9 +134,23 @@ class Simulation(object):
       print('[info] simulation name: {}'.format(self.name))
       print('[info] simulation directory: {}'.format(self.directory))
 
-  def get_means(self, limits=[0.0, float('inf')], last_period=False, order=5):
-    return (self.force_x.get_mean(limits=limits, last_period=last_period, order=order), 
-            self.force_y.get_mean(limits=limits, last_period=last_period, order=order))
+  def get_means(self, limits=[0.0, float('inf')], last_period=False, order=5, output=False):
+    fx_mean = self.force_x.get_mean(limits=limits, last_period=last_period, order=order)
+    fy_mean = self.force_y.get_mean(limits=limits, last_period=last_period, order=order)
+    if output:
+      print('Averaging forces in x-direction between {} and {}:'.format(fx_mean[0], fx_mean[1]))
+      print('\t<fx> = {}'.format(fx_mean[-1]))
+      print('Averaging forces in y-direction between {} and {}:'.format(fy_mean[0], fy_mean[1]))
+      print('\t<fx> = {}'.format(fy_mean[-1]))
+    return fx_mean, fy_mean
+
+  def get_strouhal(self, order=5, output=False):
+    minima, _ = self.force_y.get_extrema(order=order)
+    strouhal = 1.0/(self.force_y.times[minima[-1]] - self.force_y.times[minima[-2]])
+    if output:
+      print('Estimating the Strouhal number:')
+      print('\tSt = {}'.format(strouhal))
+    return strouhal
 
   def plot_forces(self, display_lift=True, display_drag=True,
                   limits=[0.0, float('inf'), 0.0, float('inf')],

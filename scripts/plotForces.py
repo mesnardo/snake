@@ -44,6 +44,12 @@ def parse_command_line():
   parser.add_argument('--average', dest='average_limits', 
                       type=float, nargs='+', default=[0.0, float('inf')],
                       help='temporal limits to consider to average forces')
+  parser.add_argument('--average-last', dest='last_period', 
+                      action='store_true',
+                      help='averages forces over the last period')
+  parser.add_argument('--strouhal', dest='strouhal',
+                      action='store_true', 
+                      help='computes the Strouhal number based on lift history')
   parser.add_argument('--no-show', dest='show', 
                       action='store_false',
                       help='does not display the figure')
@@ -113,7 +119,11 @@ def main():
                            output=True)
   master.read_forces(force_coefficients=parameters.display_coefficients,
                      coefficient=parameters.coefficient)
-  master.get_means(limits=parameters.average_limits)
+  master.get_means(limits=parameters.average_limits, 
+                   last_period=parameters.last_period, order=parameters.order,
+                   output=True)
+  if parameters.strouhal:
+    master.get_strouhal(output=True)
   
   # get info about other simulations used for comparison
   slaves = []
