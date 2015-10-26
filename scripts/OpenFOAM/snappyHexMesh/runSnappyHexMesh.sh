@@ -19,6 +19,7 @@ mv log.blockMesh log.mesh
 cp system/snappyHexMeshDict_resources/snappyHexMeshDict.castellated system/snappyHexMeshDict
 runApplication snappyHexMesh -overwrite
 mv log.snappyHexMesh log.mesh/log.snappyHexMesh.castellated
+rm -f system/snappyHexMeshDict
 
 # flatten front and back planes of a 2d Cartesian mesh
 runApplication flattenMesh
@@ -37,6 +38,7 @@ cd ../..
 cp system/snappyHexMeshDict_resources/snappyHexMeshDict.snapped system/snappyHexMeshDict
 runApplication snappyHexMesh -overwrite
 mv log.snappyHexMesh log.mesh/log.snappyHexMesh.snapped
+rm -f system/snappyHexMeshDict
 
 # create patches
 runApplication createPatch -overwrite
