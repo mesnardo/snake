@@ -4,6 +4,7 @@
 # author: Olivier Mesnard (mesnardo@gwu.edu)
 # brief: Generates a mesh with snappyHexMesh on 1 processor on Colonial One.
 
+
 #SBATCH --job-name="sHM"
 #SBATCH --output=log%j.out
 #SBATCH --error=log%j.err
@@ -17,11 +18,17 @@ module load openfoam/gcc/2.3.0
 . $WM_PROJECT_DIR/bin/tools/RunFunctions
 
 rm -rf log.mesh && mkdir log.mesh
+rm -f constant/triSurface/*.eMesh
+rm -rf constant/extendedFeatureEdgeMesh
 find constant/polyMesh -type f \! -name 'blockMeshDict' -delete
 
 # create base mesh
 runApplication blockMesh
 mv log.blockMesh log.mesh
+
+# create edge mesh for boxes
+runApplication surfaceFeatureExtract
+mv log.surfaceFeatureExtract log.mesh
 
 # create castellated mesh
 cp system/snappyHexMeshDict_resources/snappyHexMeshDict.castellated system/snappyHexMeshDict
