@@ -27,7 +27,7 @@ def parse_command_line():
                       help='quick description of the simulation')
   parser.add_argument('--type', dest='simulation_type',
                       type=str,
-                      help='type of simulation (openfoam, cuibm, petibm)')
+                      help='type of simulation (openfoam, cuibm, petibm, ibamr)')
   parser.add_argument('--display-coefficients', dest='display_coefficients',
                       action='store_true',
                       help='flag to plot the force coefficients, not the forces')
@@ -104,8 +104,10 @@ def get_SimulationClass(simulation_type):
     return forces.CuIBMSimulation
   elif simulation_type == 'petibm':
     return forces.PetIBMSimulation
+  elif simulation_type == 'ibamr':
+    return forces.IBAMRSimulation
   else:
-    print('[error] type should be "openfoam", "cuibm", or "petibm"')
+    print('[error] type should be "openfoam", "cuibm", "petibm", or "ibamr"')
     exit(0)
 
 

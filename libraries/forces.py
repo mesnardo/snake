@@ -322,3 +322,37 @@ class PetIBMSimulation(Simulation):
                          name=('$C_d$' if force_coefficients else '$F_x$'))
     self.force_y = Force(times, coefficient*force_y,
                          name=('$C_l$' if force_coefficients else '$F_y$'))
+
+
+class IBAMRSimulation(Simulation):
+  """Contains information about a IBAMR simulation."""
+  def __init__(self, name=None, directory=os.getcwd(), output=False):
+    """Initialization (stores simulation directory).
+
+    Parameters
+    ----------
+    directory: string
+      Directory of the simulation; default: current working directory.
+    output: boolean
+      If 'True': prints simulation directory; default: False.
+    """
+    Simulation.__init__(self, name=name, directory=directory, output=output)
+
+  def read_forces(self, force_coefficients=False, coefficient=1.0):
+    """Reads forces from files.
+
+    Parameters
+    ----------
+    force_coefficients: boolean
+      Set to 'True' if force coefficients are required; default: False (i.e. forces).
+    coefficient: float
+      Force to force-coefficient scale; default: 1.0.
+    """
+    forces_path = '{}/dataIB/ib_Drag_force_struct_no_0'.format(self.directory)
+    with open(forces_path, 'r') as infile:
+      times, force_x, force_y = numpy.loadtxt(infile, dtype=float, 
+                                              usecols=(0, 4, 5), unpack=True)
+    self.force_x = Force(times, coefficient*force_x,
+                         name=('$C_d$' if force_coefficients else '$F_x$'))
+    self.force_y = Force(times, coefficient*force_y,
+                         name=('$C_l$' if force_coefficients else '$F_y$'))
