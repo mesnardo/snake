@@ -123,24 +123,33 @@ def main():
                      coefficient=parameters.coefficient)
   master.get_means(limits=parameters.average_limits, 
                    last_period=parameters.last_period, order=parameters.order,
+                   force_coefficients=parameters.display_coefficients,
                    output=True)
   if parameters.strouhal:
     master.get_strouhal(output=True)
   
   # get info about other simulations used for comparison
   slaves = []
-  num_others = len(parameters.others)/4
+  nb_others_parameters = 4
+  num_others = len(parameters.others)/nb_others_parameters
   for index in xrange(num_others):
-    slave_type = parameters.others[index*num_others + 0]
-    slave_directory = parameters.others[index*num_others + 1]
-    slave_description = parameters.others[index*num_others + 2]
-    slave_coefficient = float(parameters.others[index*num_others + 3])
+    slave_type = parameters.others[index*nb_others_parameters + 0]
+    slave_directory = parameters.others[index*nb_others_parameters + 1]
+    slave_description = parameters.others[index*nb_others_parameters + 2]
+    slave_coefficient = float(parameters.others[index*nb_others_parameters + 3])
     SimulationClass = get_SimulationClass(slave_type)
     slaves.append(SimulationClass(name=slave_description,
                                   directory=slave_directory,
                                   output=True))
     slaves[-1].read_forces(force_coefficients=parameters.display_coefficients,
                            coefficient=slave_coefficient)
+    slaves[-1].get_means(limits=parameters.average_limits, 
+                         last_period=parameters.last_period, 
+                         order=parameters.order,
+                         force_coefficients=parameters.display_coefficients,
+                         output=True)
+    if parameters.strouhal:
+      master.get_strouhal(output=True)
 
   # plot instantaneous forces (or force coefficients)
   master.plot_forces(display_drag=parameters.display_drag,

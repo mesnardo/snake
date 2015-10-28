@@ -60,8 +60,9 @@ class Force(object):
       mask = numpy.where(numpy.logical_and(self.times >= limits[0],
                                            self.times <= limits[1]))[0]
       # remove doublons
-      _, mask_uniqueness = numpy.unique(self.times, return_index=True)
-      mask = list(set(mask) & set(mask_uniqueness)) 
+      # _, mask_uniqueness = numpy.unique(self.times, return_index=True)
+      # mask = list(set(mask) & set(mask_uniqueness))
+      start, end = self.times[mask[0]], self.times[mask[-1]]
     return self.times[mask[0]], self.times[mask[-1]], numpy.mean(self.values[mask])
 
   def get_deviations(self, limits=[0.0, float('inf')], order=5, last_period=False):
@@ -134,14 +135,17 @@ class Simulation(object):
       print('[info] simulation name: {}'.format(self.name))
       print('[info] simulation directory: {}'.format(self.directory))
 
-  def get_means(self, limits=[0.0, float('inf')], last_period=False, order=5, output=False):
+  def get_means(self, limits=[0.0, float('inf')], last_period=False, order=5, 
+                force_coefficients=False, output=False):
     fx_mean = self.force_x.get_mean(limits=limits, last_period=last_period, order=order)
     fy_mean = self.force_y.get_mean(limits=limits, last_period=last_period, order=order)
     if output:
+      fx_name = ('<cd>' if force_coefficients else '<fx>')
+      fy_name = ('<cl>' if force_coefficients else '<fy>')
       print('Averaging forces in x-direction between {} and {}:'.format(fx_mean[0], fx_mean[1]))
-      print('\t<fx> = {}'.format(fx_mean[-1]))
+      print('\t{} = {}'.format(fx_name, fx_mean[-1]))
       print('Averaging forces in y-direction between {} and {}:'.format(fy_mean[0], fy_mean[1]))
-      print('\t<fx> = {}'.format(fy_mean[-1]))
+      print('\t{} = {}'.format(fy_name, fy_mean[-1]))
     return fx_mean, fy_mean
 
   def get_strouhal(self, order=5, output=False):
