@@ -1,10 +1,11 @@
 #!/bin/sh
 
-# file: runIcoFoam_colonialOne.sh
+# file: runIcoFoamColonialOne.sh
 # author: Olivier Mesnard (mesnardo@gwu.edu)
 # brief: Runs IcoFOAM on multi-nodes on Colonial One.
 
-#SBATCH --job-name="OFfs25n32"
+
+#SBATCH --job-name="of2k25"
 #SBATCH --output=log%j.out
 #SBATCH --error=log%j.err
 #SBATCH --partition=short
@@ -20,6 +21,7 @@ rm -rf log.run && mkdir log.run
 . $WM_PROJECT_DIR/bin/tools/RunFunctions
 
 # decompose domain for parrallel run
+cp system/decomposeParDict_resources/decomposeParDict.simple system/decomposeParDict
 runApplication decomposePar
 mv log.decomposePar log.run
 
