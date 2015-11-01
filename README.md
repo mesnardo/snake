@@ -3,12 +3,12 @@
 
 A collection of Python and bash scripts used to process the numerical solution
 of simulations run with one of the following code:
-* [PetIBM]()
-* [cuIBM]()
-* [IBAMR]()
-* [OpenFOAM]()
+* [PetIBM](https://github.com/barbagroup/PetIBM)
+* [cuIBM](https://github.com/barbaGroup/cuIBM)
+* [IBAMR](https://github.com/IBAMR/IBAMR)
+* [OpenFOAM](www.openfoam.com)
 
-Some of the Python scripts calls the environment variable `$SCRIPTS`.
+Some of the Python scripts call the environment variable `$SCRIPTS`.
 The variable can set by adding the following line to your `.bashrc` 
 or `.bash_profile` file:
 
