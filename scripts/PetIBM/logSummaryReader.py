@@ -13,7 +13,7 @@ import numpy
 from matplotlib import pyplot
 
 # load matplotlib style sheet
-pyplot.style.use('{}/scripts/python/style/style_PetIBM.mplstyle'.format(os.environ['PETIBM_DIR']))
+pyplot.style.use('{}/styles/mesnardo.mplstyle'.format(os.environ['SCRIPTS']))
 
 
 class Series(object):
