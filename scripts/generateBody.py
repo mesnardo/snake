@@ -9,7 +9,7 @@ import os
 import sys
 import argparse
 
-sys.path.append('{}/scripts'.format(os.environ['PYSCRIPTS']))
+sys.path.append('{}/scripts/library'.format(os.environ['SCRIPTS']))
 import geometry
 
 
