@@ -60,6 +60,16 @@ def read_inputs():
   parser.add_argument('--dpi', dest='dpi', type=int, default=100,
                       help='dots per inch (resoltion of the figure)')
   parser.set_defaults(velocity=True, pressure=True, vorticity=True)
+  # parse given options file
+  class LoadFromFile(argparse.Action):
+    """Container to read parameters from file."""
+    def __call__(self, parser, namespace, values, option_string=None):
+      """Fills the namespace with parameters read in file."""
+      with values as f:
+        parser.parse_args(f.read().split(), namespace)
+  parser.add_argument('--file', 
+                      type=open, action=LoadFromFile,
+                      help='path of the file with options to parse')
   # parse command-line
   return parser.parse_args()
 

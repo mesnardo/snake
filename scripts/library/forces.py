@@ -164,7 +164,7 @@ class Simulation(object):
     """Displays the forces into a figure."""
     if output:
       print('[info] plotting forces... ')
-    pyplot.style.use('{}/styles/mesnardo.mplstyle'.format(os.environ['PYSCRIPTS']))
+    pyplot.style.use('{}/styles/mesnardo.mplstyle'.format(os.environ['SCRIPTS']))
     fig, ax = pyplot.subplots(figsize=(8, 6))
     color_cycle = ax._get_lines.color_cycle
     pyplot.grid(True, zorder=0)

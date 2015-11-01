@@ -1,8 +1,8 @@
 #!/opt/OpenFOAM/ThirdParty-2.2.2/platforms/linux64Gcc/paraview-3.12.0/bin/pvbatch
 
-# file: plotVariable.py
-# author: Olivier Mesnard (mesnardo@gwu.edu)
-# description: Macro to run ParaView and plot variable in batch mode.
+# \file plotVariable.py
+# \author Olivier Mesnard (mesnardo@gwu.edu)
+# \brief Macro to run ParaView and plot variable in batch mode.
 
 
 import argparse
@@ -45,6 +45,16 @@ def parse_command_line():
   parser.add_argument('--coeff', dest='coeff', 
                       type=float, default=1.0,
                       help='WIP: coefficient to adjust the view')
+  # parse given options file
+  class LoadFromFile(argparse.Action):
+    """Container to read parameters from file."""
+    def __call__(self, parser, namespace, values, option_string=None):
+      """Fills the namespace with parameters read in file."""
+      with values as f:
+        parser.parse_args(f.read().split(), namespace)
+  parser.add_argument('--file', 
+                      type=open, action=LoadFromFile,
+                      help='path of the file with options to parse')
   return parser.parse_args()
 
 
