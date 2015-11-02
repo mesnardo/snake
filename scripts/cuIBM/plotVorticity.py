@@ -43,6 +43,16 @@ def read_inputs():
 	parser.add_argument('--gnuplot', dest='using_gnuplot', action='store_true',
 						help='plots contours using Gnuplot instead of Pyplot')
 	parser.set_defaults(save=True)
+	# parse given options file
+	class LoadFromFile(argparse.Action):
+		"""Container to read parameters from file."""
+		def __call__(self, parser, namespace, values, option_string=None):
+			"""Fills the namespace with parameters read in file."""
+			with values as f:
+				parser.parse_args(f.read().split(), namespace)
+	parser.add_argument('--file', 
+											type=open, action=LoadFromFile,
+											help='path of the file with options to parse')
 	return parser.parse_args()
 
 
@@ -55,8 +65,8 @@ def main():
 	if any(args.time_steps):
 		# if provided by command-line arguments
 		time_steps = range(args.time_steps[0],
-						   args.time_steps[1]+1,
-						   args.time_steps[2])
+							 args.time_steps[1]+1,
+							 args.time_steps[2])
 	else:
 		# if not, list solution folders
 		time_steps = sorted(int(folder) for folder 
@@ -101,17 +111,17 @@ def main():
 			# save the vorticity data in the time-step folder
 			print 'Saving vorticity data at time-step %d...' % time_step
 			vorticity_file = '{}/{:0>7}/vorticity'.format(args.folder_path, 
-			                                              time_step)
+																										time_step)
 			with open(vorticity_file, 'w') as outfile:
 				for j in xrange(y.size):
 					for i in xrange(x.size):
 						outfile.write('%f\t%f\t%f\n' 
-									  % (x[i], y[j], vorticity[j, i]))
+										% (x[i], y[j], vorticity[j, i]))
 					outfile.write('\n')
 		if not args.using_gnuplot:
 			# plot the contour of vorticity using pyplot
 			print ('Generating PNG file with Pyplot at time-step %d...' 
-				   % time_step)
+					 % time_step)
 			pyplot.figure()
 			pyplot.xlabel(r'$x$', fontsize=18)
 			pyplot.ylabel(r'$y$', fontsize=18)
@@ -123,7 +133,7 @@ def main():
 			cont = pyplot.contour(X, Y, vorticity, levels)
 			cont_bar = pyplot.colorbar(cont)
 			cont_bar.set_label('vorticity')
-			pyplot.savefig('{}/o{:0>7}.png'.format(images_path, time_step))
+			pyplot.savefig('{}/vorticity{:0>7}.png'.format(images_path, time_step))
 			pyplot.clf()
 			pyplot.close()
 
@@ -134,7 +144,7 @@ def main():
 		with open(gnuplot_file, 'w') as outfile:
 			outfile.write('reset;\n')
 			outfile.write('set terminal pngcairo enhanced '
-						  'font "Times, 15" size 900,600;\n')
+							'font "Times, 15" size 900,600;\n')
 			for time_step in time_steps:
 				outfile.write('\nset output "%s/o%07d.png"\n' % (images_path,
 																	time_step))
@@ -143,13 +153,13 @@ def main():
 				outfile.write('set view map; set size ratio -1; unset key;\n')
 				outfile.write('set pm3d map;\n')
 				outfile.write('set palette defined '
-							  '(-2 "dark-blue", -1 "light-blue", 0 "white", '
-							  '1 "light-red", 2 "dark-red");\n')
+								'(-2 "dark-blue", -1 "light-blue", 0 "white", '
+								'1 "light-red", 2 "dark-red");\n')
 				outfile.write('set cbrange [%f:%f];\n' 
-							  % (-args.vorticity_limit, args.vorticity_limit))
+								% (-args.vorticity_limit, args.vorticity_limit))
 				outfile.write('splot [%f:%f] [%f:%f] "%s/%07d/vorticity";\n'
-							  % (args.bottom_left[0], args.top_right[0],
-							     args.bottom_left[1], args.top_right[1],
+								% (args.bottom_left[0], args.top_right[0],
+									 args.bottom_left[1], args.top_right[1],
 								 args.folder_path, time_step))
 				outfile.write('unset multiplot;\n')
 		print 'Generating PNG files with Gnuplot...'
