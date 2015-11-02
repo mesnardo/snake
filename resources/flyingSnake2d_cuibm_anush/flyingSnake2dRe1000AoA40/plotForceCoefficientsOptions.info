@@ -1,0 +1,6 @@
+--type cuibm
+--description Re=1000-aoa=40deg
+--display-coefficients --coefficient 2.0
+--average 32.0 64.0
+--limits 0.0 80.0 0.0 3.0
+--extrema --order 100
