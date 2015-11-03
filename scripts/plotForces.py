@@ -149,7 +149,7 @@ def main():
                          force_coefficients=parameters.display_coefficients,
                          output=True)
     if parameters.strouhal:
-      master.get_strouhal(output=True)
+      slaves[-1].get_strouhal(output=True)
 
   # plot instantaneous forces (or force coefficients)
   master.plot_forces(display_drag=parameters.display_drag,

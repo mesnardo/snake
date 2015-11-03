@@ -151,9 +151,11 @@ class Simulation(object):
   def get_strouhal(self, order=5, output=False):
     minima, _ = self.force_y.get_extrema(order=order)
     strouhal = 1.0/(self.force_y.times[minima[-1]] - self.force_y.times[minima[-2]])
+    strouhal2 = 1.0/(self.force_y.times[minima[-2]] - self.force_y.times[minima[-3]])
+    strouhal3 = 1.0/(self.force_y.times[minima[-3]] - self.force_y.times[minima[-4]])
     if output:
       print('Estimating the Strouhal number:')
-      print('\tSt = {}'.format(strouhal))
+      print('\tSt = {} (previous: {}, {})'.format(strouhal, strouhal2, strouhal3))
     return strouhal
 
   def plot_forces(self, display_lift=True, display_drag=True,
@@ -178,7 +180,7 @@ class Simulation(object):
     for force in forces:
       color = next(color_cycle)
       pyplot.plot(force.times, force.values,
-                  label=('{} - {}'.format(self.name, force.name) if self.name
+                  label=('{} - {}'.format(self.name.replace('_', ' '), force.name) if self.name
                          else force.name),
                   color=color, linestyle='-', zorder=10)
       if display_extrema:
@@ -201,7 +203,7 @@ class Simulation(object):
       for force in forces:
         color = next(color_cycle)
         pyplot.plot(force.times, force.values,
-                    label=('{} - {}'.format(simulation.name, force.name) if simulation.name
+                    label=('{} - {}'.format(simulation.name.replace('_', ' '), force.name) if simulation.name
                            else force.name),
                     color=color, linestyle='--', zorder=10)
     pyplot.legend()
