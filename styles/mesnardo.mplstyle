@@ -45,7 +45,7 @@ figure.dpi : 100
 
 legend.fancybox : True
 legend.frameon : True
-legend.fontsize : 14
+legend.fontsize : 12
 legend.loc : best
 
 savefig.dpi : 100
