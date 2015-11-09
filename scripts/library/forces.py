@@ -59,11 +59,10 @@ class Force(object):
     else:
       mask = numpy.where(numpy.logical_and(self.times >= limits[0],
                                            self.times <= limits[1]))[0]
-      # remove doublons
-      # _, mask_uniqueness = numpy.unique(self.times, return_index=True)
-      # mask = list(set(mask) & set(mask_uniqueness))
       start, end = self.times[mask[0]], self.times[mask[-1]]
-    return self.times[mask[0]], self.times[mask[-1]], numpy.mean(self.values[mask])
+    return {'value': numpy.mean(self.values[mask]), 
+            'start': self.times[mask[0]],
+            'end': self.times[mask[-1]]}
 
   def get_deviations(self, limits=[0.0, float('inf')], order=5, last_period=False):
     """Computes the deviations around the mean value.
@@ -87,11 +86,11 @@ class Force(object):
     mean = self.get_mean(limits=limits, last_period=last_period, order=order)
     minima, maxima = self.get_extrema(order=order)
     if last_period:
-      return (math.absolute(self.values[minima[-1]] - mean), 
-              math.absolute(self.values[maxima[-1]] - mean))
+      return {'min': math.absolute(self.values[minima[-1]] - mean),
+              'max': math.absolute(self.values[maxima[-1]] - mean)}
     else:
-      return (numpy.absolute(self.values[minima] - mean), 
-              numpy.absolute(self.values[maxima] - mean))
+      return {'min': numpy.absolute(self.values[minima] - mean),
+              'max': numpy.absolute(self.values[maxima] - mean)}
 
   def get_extrema(self, order=5):
     """Computes masks (i.e. arrays of indices) of the extrema of the force.
@@ -142,10 +141,10 @@ class Simulation(object):
     if output:
       fx_name = ('<cd>' if force_coefficients else '<fx>')
       fy_name = ('<cl>' if force_coefficients else '<fy>')
-      print('Averaging forces in x-direction between {} and {}:'.format(fx_mean[0], fx_mean[1]))
-      print('\t{} = {}'.format(fx_name, fx_mean[-1]))
-      print('Averaging forces in y-direction between {} and {}:'.format(fy_mean[0], fy_mean[1]))
-      print('\t{} = {}'.format(fy_name, fy_mean[-1]))
+      print('Averaging forces in x-direction between {} and {}:'.format(fx_mean['start'], fx_mean['end']))
+      print('\t{} = {}'.format(fx_name, fx_mean['value']))
+      print('Averaging forces in y-direction between {} and {}:'.format(fy_mean['start'], fy_mean['end']))
+      print('\t{} = {}'.format(fy_name, fy_mean['value']))
     return fx_mean, fy_mean
 
   def get_strouhal(self, order=5, output=False):
