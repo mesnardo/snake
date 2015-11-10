@@ -1,8 +1,8 @@
 #!/opt/OpenFOAM/ThirdParty-2.2.2/platforms/linux64Gcc/paraview-3.12.0/bin/pvbatch
 
-# \file plotVariable.py
-# \author Olivier Mesnard (mesnardo@gwu.edu)
-# \brief Macro to run ParaView and plot variable in batch mode.
+# file: plotFields.py
+# author: Olivier Mesnard (mesnardo@gwu.edu)
+# brief: Macro to run ParaView and plot variable in batch mode.
 
 
 import argparse
