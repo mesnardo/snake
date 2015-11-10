@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# file: plotVorticity.py
+# file: plotFields2d.py
 # author: Olivier Mesnard (mesnardo@gwu.edu)
 # description: Plots the contour of vorticity at saved time-steps.
 
@@ -15,12 +15,15 @@ import ioCuIBM
 
 def parse_command_line():
   """Parses the command-line."""
-  print('[info] parsing the command-line ... '),
+  print('[info] parsing the command-line ...'),
   # create parser
   parser = argparse.ArgumentParser(description='Plots the 2D vorticity, '
                                                'pressure and velocity fields',
                         formatter_class= argparse.ArgumentDefaultsHelpFormatter)
   # fill parser with arguments
+  parser.add_argument('--type', dest='simulation_type',
+                      type=str, 
+                      help='type of simulation (cuibm or petibm)')
   parser.add_argument('--directory', dest='case_directory', 
                       type=str, default=os.getcwd(), 
                       help='directory of the simulation')
@@ -82,59 +85,50 @@ def parse_command_line():
   return parser.parse_args()
 
 
-
-
-
-
-
-
 def main():
   """Plots the the velocity, pressure and vorticity fields at saved time-steps
   for a two-dimensional simulation.
   """
   args = parse_command_line()
-  print('[info] case directory: {}'.format(args.case_directory))
-
-  time_steps = ioCuIBM.get_time_steps(args.case_directory, args.time_steps)
- 
-  # create directory where images will be saved
-  images_directory = '{}/images'.format(args.case_directory)
-  print('[info] images directory: {}'.format(images_directory))
-  if not os.path.isdir(images_directory):
-    os.makedirs(images_directory)
-
-  coords = ioCuIBM.read_grid(args.case_directory, binary=args.binary)
+  # import appropriate library
+  if args.simulation_type == 'cuibm':
+    sys.path.append('{}/scripts/cuIBM'.format(os.environ['SCRIPTS']))
+    import ioCuIBM as io
+  elif args.simulation_type == 'petibm':
+    sys.path.append('{}/scripts/PetIBM'.format(os.environ['SCRIPTS']))
+    import ioPetIBM as io
+  else:
+    print('[error] incorrect simulation-type (choose "cuibm" or "petibm")')
+    exit(1)
+  time_steps = io.get_time_steps(args.case_directory, args.time_steps)
+  coords = io.read_grid(args.case_directory, binary=args.binary)
 
   for time_step in time_steps:
     if args.velocity or args.vorticity:
-      u, v = ioCuIBM.read_velocity(args.case_directory, time_step, coords, 
-                                   binary=args.binary)
+      u, v = io.read_velocity(args.case_directory, time_step, coords, 
+                              binary=args.binary)
       if args.velocity:
-        # plot u-velocity field
-        image_path = '{}/uVelocity{:0>7}.png'.format(images_directory, time_step)
-        ioCuIBM.plot_contour(u, args.u_range, image_path, 
-                             view=args.bottom_left+args.top_right,
-                             size=args.size, dpi=args.dpi)
-        # plot v-velocity field
-        image_path = '{}/vVelocity{:0>7}.png'.format(images_directory, time_step)
-        ioCuIBM.plot_contour(v, args.v_range, image_path, 
-                             view=args.bottom_left+args.top_right,
-                             size=args.size, dpi=args.dpi)
+        io.plot_contour(u, args.u_range, 
+                        directory=args.case_directory, 
+                        view=args.bottom_left+args.top_right,
+                        size=args.size, dpi=args.dpi)
+        io.plot_contour(v, args.v_range, 
+                        directory=args.case_directory, 
+                        view=args.bottom_left+args.top_right,
+                        size=args.size, dpi=args.dpi)
       if args.vorticity:
-        w = ioCuIBM.compute_vorticity(u, v)
-        # plot vorticity field
-        image_path = '{}/vorticity{:0>7}.png'.format(images_directory, time_step)
-        ioCuIBM.plot_contour(w, args.vorticity_range, image_path, 
-                             view=args.bottom_left+args.top_right,
-                             size=args.size, dpi=args.dpi)
+        w = io.compute_vorticity(u, v)
+        io.plot_contour(w, args.vorticity_range, 
+                        directory=args.case_directory, 
+                        view=args.bottom_left+args.top_right,
+                        size=args.size, dpi=args.dpi)
     if args.pressure:
-      p = ioCuIBM.read_pressure(args.case_directory, time_step, coords, 
-                                binary=args.binary)
-      # plot pressure field
-      image_path = '{}/pressure{:0>7}.png'.format(images_directory, time_step)
-      ioCuIBM.plot_contour(p, args.pressure_range, image_path, 
-                           view=args.bottom_left+args.top_right,
-                           size=args.size, dpi=args.dpi)
+      p = io.read_pressure(args.case_directory, time_step, coords, 
+                           binary=args.binary)
+      io.plot_contour(p, args.pressure_range, 
+                      directory=args.case_directory, 
+                      view=args.bottom_left+args.top_right,
+                      size=args.size, dpi=args.dpi)
 
 
 if __name__ == '__main__':

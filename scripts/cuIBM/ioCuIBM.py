@@ -17,7 +17,7 @@ pyplot.style.use('{}/styles/mesnardo.mplstyle'.format(os.environ['SCRIPTS']))
 
 class Field(object):
   """Contains information about a field (pressure for example)."""
-  def __init__(self, x=None, y=None, values=None, label=None):
+  def __init__(self, x=None, y=None, values=None, time_step=None, label=None):
     """Initializes the field by its grid and its values.
 
     Parameters
@@ -26,10 +26,13 @@ class Field(object):
       Coordinates of the grid-nodes in each direction; default: None, None.
     values: Numpy 1d array of float
       Nodal values of the field; default: None.
+    time_step: integer
+      Time-step; default: None.
     label: string
       Description of the field; default: None.
     """
     self.label = label
+    self.time_step = time_step
     self.x, self.y = x, y
     self.values = values
 
@@ -68,7 +71,7 @@ def read_grid(directory, binary=False):
   x, y: Numpy 1d arrays of float
     Coordinates along a grid-line in each direction.
   """
-  print('[info] reading grid file ... '),
+  print('[info] reading grid file ...'),
   grid_file = '{}/grid'.format(directory)
   if binary:
     with open(grid_file, 'rb') as infile:
@@ -110,7 +113,7 @@ def read_velocity(directory, time_step, coords, binary=False):
   u, v: Field objects
     Information about the u- and v-velocities (nodes and values).
   """
-  print('[time-step {}] reading velocity field from file ... '.format(time_step)),
+  print('[time-step {}] reading velocity field from file ...'.format(time_step)),
   # get info about the grid
   nx, ny = coords[0].size-1, coords[1].size-1
   x, y = coords
@@ -137,8 +140,12 @@ def read_velocity(directory, time_step, coords, binary=False):
     for i in xrange(nx):
       v[j*nx+i] = q[offset+j*nx+i] / dx[i]
   print('done')
-  return (Field(x[1:-1], 0.5*(y[:-1]+y[1:]), u.reshape(ny, nx-1), label='u-velocity'), 
-          Field(0.5*(x[:-1]+x[1:]), y[1:-1], v.reshape(ny-1, nx), label='v-velocity'))
+  return (Field(x=x[1:-1], y=0.5*(y[:-1]+y[1:]), 
+                values=u.reshape(ny, nx-1), 
+                time_step=time_step, label='u-velocity'), 
+          Field(x=0.5*(x[:-1]+x[1:]), y=y[1:-1], 
+                values=v.reshape(ny-1, nx), 
+                time_step=time_step, label='v-velocity'))
 
 
 def read_pressure(directory, time_step, coords, binary=False):
@@ -160,7 +167,7 @@ def read_pressure(directory, time_step, coords, binary=False):
   p: Field object
     Information about the pressure field (nodes and values).
   """
-  print('[time-step {}] reading pressure field from file ... '.format(time_step)),
+  print('[time-step {}] reading pressure field from file ...'.format(time_step)),
   # get info about mesh-grid
   nx, ny = coords[0].size-1, coords[1].size-1
   x, y = coords
@@ -175,7 +182,9 @@ def read_pressure(directory, time_step, coords, binary=False):
       nlambda = int(infile.readline())
       p = numpy.loadtxt(infile, dtype=float)[:nx*ny]
   print('done')
-  return Field(0.5*(x[:-1]+x[1:]), 0.5*(y[:-1]+y[1:]), p.reshape(nx, ny), label='pressure')
+  return Field(x=0.5*(x[:-1]+x[1:]), y=0.5*(y[:-1]+y[1:]), 
+               values=p.reshape(nx, ny), 
+               time_step=time_step ,label='pressure')
 
 
 def read_mask(directory, nx, ny):
@@ -201,7 +210,8 @@ def read_mask(directory, nx, ny):
   return mask[:offset], mask[offset:]
 
 
-def plot_contour(field, field_range, image_path, 
+def plot_contour(field, field_range, 
+                 directory=os.getcwd(),
                  view=[float('-inf'), float('-inf'), float('inf'), float('inf')],
                  size=[8.0, 8.0], dpi=100): 
   """Plots and saves the field.
@@ -212,8 +222,8 @@ def plot_contour(field, field_range, image_path,
     Nodes and values of the field.
   field_range: list(float)
     Min, max and number of countours to plot.
-  image_path: str
-    Path of the image to save.
+  directory: str
+    Parent directory where to save the images: default: $PWD.
   view: list(float)
     Bottom-left and top-right coordinates of the rectangular view to plot;
     default: the whole domain.
@@ -222,7 +232,17 @@ def plot_contour(field, field_range, image_path,
   dpi: int
     Dots per inch (resolution); default: 100
   """
-  print('[info] plotting the {} contour ... '.format(field.label)),
+  x_left = ('left' if view[0] == float('-inf') else '{:.2f}'.format(view[0]))
+  y_bottom = ('bottom' if view[1] == float('-inf') else '{:.2f}'.format(view[1]))
+  x_right = ('right' if view[2] == float('inf') else '{:.2f}'.format(view[2]))
+  y_top = ('top' if view[3] == float('inf') else '{:.2f}'.format(view[3]))
+  images_directory = '{}/images/{}_{}_{}_{}_{}'.format(directory, field.label, 
+                                                       x_left, y_bottom, x_right, y_top)
+  if not os.path.isdir(images_directory):
+    print('[info] creating images directory: {} ...'.format(images_directory)),
+    os.makedirs(images_directory)
+    print('done')
+  print('[info] plotting the {} contour ...'.format(field.label)),
   fig, ax = pyplot.subplots(figsize=(size[0], size[1]), dpi=dpi)
   pyplot.xlabel('$x$')
   pyplot.ylabel('$y$')
@@ -245,6 +265,7 @@ def plot_contour(field, field_range, image_path,
   y_start, y_end = max(view[1], field.y.min()), min(view[3], field.y.max())
   ax.axis([x_start, x_end, y_start, y_end])
   ax.set_aspect('equal')
+  image_path = '{}/{}{:0>7}.png'.format(images_directory, field.label, field.time_step)
   pyplot.savefig(image_path, dpi=dpi)
   pyplot.close()
   print('done')
@@ -263,7 +284,7 @@ def compute_vorticity(u, v):
   vorticity: ioCuIBM.Field object
     The vorticity field.
   """
-  print('[info] computing the vorticity field ... '),
+  print('[info] computing the vorticity field ...'),
   mask_x = numpy.where(numpy.logical_and(u.x > v.x[0], u.x < v.x[-1]))[0]
   mask_y = numpy.where(numpy.logical_and(v.y > u.y[0], v.y < u.y[-1]))[0]
   # vorticity nodes at cell vertices intersection
@@ -274,7 +295,9 @@ def compute_vorticity(u, v):
       - (u.values[1:, mask_x] - u.values[:-1, mask_x])
         / numpy.outer(u.y[1:]-u.y[:-1], numpy.ones(xw.size)) )
   print('done')
-  return Field(x=xw, y=yw, values=w, label='vorticity')
+  return Field(x=xw, y=yw, 
+               values=w, 
+               time_step=u.time_step, label='vorticity')
 
 
 if __name__ == '__main__':
