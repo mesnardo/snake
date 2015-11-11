@@ -59,6 +59,10 @@ def parse_command_line():
   parser.add_argument('--pressure-range', '-pr', dest='pressure_range', 
                       type=float, nargs='+', default=[-1.0, 1.0, 11],
                       help='pressure range (min, max, number of levels)')
+  # arguments about the immmersed-boundary
+  parser.add_argument('--bodies', dest='body_paths', 
+                      nargs='+', type=str, default=[],
+                      help='path of each body file to add to plots')
   # arguments about time-steps
   parser.add_argument('--time-steps', '-t', dest='time_steps', 
                       type=int, nargs='+', default=[],
@@ -100,8 +104,11 @@ def main():
   else:
     print('[error] incorrect simulation-type (choose "cuibm" or "petibm")')
     exit(1)
+
+
   time_steps = io.get_time_steps(args.case_directory, args.time_steps)
   coords = io.read_grid(args.case_directory, binary=args.binary)
+  bodies = [io.Body(path) for path in args.body_paths]
 
   for time_step in time_steps:
     if args.velocity or args.vorticity:
@@ -111,16 +118,19 @@ def main():
         io.plot_contour(u, args.u_range, 
                         directory=args.case_directory, 
                         view=args.bottom_left+args.top_right,
+                        bodies=bodies,
                         size=args.size, dpi=args.dpi)
         io.plot_contour(v, args.v_range, 
                         directory=args.case_directory, 
                         view=args.bottom_left+args.top_right,
+                        bodies=bodies,
                         size=args.size, dpi=args.dpi)
       if args.vorticity:
         w = io.compute_vorticity(u, v)
         io.plot_contour(w, args.vorticity_range, 
                         directory=args.case_directory, 
                         view=args.bottom_left+args.top_right,
+                        bodies=bodies,
                         size=args.size, dpi=args.dpi)
     if args.pressure:
       p = io.read_pressure(args.case_directory, time_step, coords, 
@@ -128,6 +138,7 @@ def main():
       io.plot_contour(p, args.pressure_range, 
                       directory=args.case_directory, 
                       view=args.bottom_left+args.top_right,
+                      bodies=bodies,
                       size=args.size, dpi=args.dpi)
 
 

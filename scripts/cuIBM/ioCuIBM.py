@@ -37,6 +37,25 @@ class Field(object):
     self.values = values
 
 
+class Body(object):
+  """Contains information about an immersed body."""
+  def __init__(self, path):
+    """Reads the body coordinates from given file.
+
+    Parameters
+    ----------
+    path: string
+      Path of the file containing the body coordinates.
+    """
+    self.path = path
+    self.x, self.y = self.read_coordinates()
+
+  def read_coordinates(self):
+    """Reads the coordinates from file."""
+    with open(self.path, 'r') as infile:
+      return numpy.loadtxt(infile, dtype=float, skiprows=1, unpack=True)
+
+
 def get_time_steps(case_directory, time_steps_range=[]):
   """Returns a list of the time-steps to post-process.
 
@@ -213,6 +232,7 @@ def read_mask(directory, nx, ny):
 def plot_contour(field, field_range, 
                  directory=os.getcwd(),
                  view=[float('-inf'), float('-inf'), float('inf'), float('inf')],
+                 bodies=[],
                  size=[8.0, 8.0], dpi=100): 
   """Plots and saves the field.
 
@@ -227,6 +247,8 @@ def plot_contour(field, field_range,
   view: list(float)
     Bottom-left and top-right coordinates of the rectangular view to plot;
     default: the whole domain.
+  bodies: list of Body objects
+    The immersed bodies to add to the figure; default: [] (no immersed body).
   size: list(float)
     Size (width and height) of the figure to save (in inches); default: [8, 8].
   dpi: int
@@ -261,6 +283,9 @@ def plot_contour(field, field_range,
   cont_bar = fig.colorbar(cont, label=field.label, 
                           orientation='horizontal', format='%.02f', 
                           ticks=colorbar_ticks)
+  for body in bodies:
+    ax.plot(body.x, body.y, 
+            color='black', linewidth=1, linestyle='-')
   x_start, x_end = max(view[0], field.x.min()), min(view[2], field.x.max())
   y_start, y_end = max(view[1], field.y.min()), min(view[3], field.y.max())
   ax.axis([x_start, x_end, y_start, y_end])
