@@ -1,0 +1,12 @@
+# Time-averaged lift and drag coefficients using cuIBM.
+# Anush Krishnan obtained those results.
+# Averages computed between 32.0 and 64.0 non-dimensional time-units.
+# Re | aoa | <cd> | <cl>
+1000 25 0.943 1.534
+1000 30 1.052 1.707
+1000 35 1.209 1.876
+1000 40 1.488 1.841
+2000 25 0.889 1.415
+2000 30 0.967 1.532
+2000 35 1.316 2.147
+2000 40 1.707 1.862
