@@ -242,7 +242,55 @@ class Geometry(object):
       center = getattr(self.mass_center, component)
       s = center + ratio*(self.gather_coordinate(component)-center)
       self.broadcast_coordinate(s, component)
-  
+
+  def keep_inside(self, ds):
+    """Discretizes and keeps the inside of the geometry.
+
+    Parameters
+    ----------
+    ds: float
+      Grid-spacing of the mesh inside the geometry.
+    """
+    x_body = self.gather_coordinate('x')
+    y_body = self.gather_coordinate('y')
+    x_min, x_max, y_min, y_max = x_body.min(), x_body.max(), y_body.min(), y_body.max()
+    x_grid = numpy.arange(x_min, x_max, ds)
+    y_grid = numpy.arange(y_min, y_max, ds)
+    points = []
+    for x in x_grid:
+      for y in y_grid:
+        if self.point_inside(x, y):
+          points.append(Point(x, y))
+    self.points = points
+
+  def point_inside(self, x, y):
+    """Defines if a given is inside a polygon.
+
+    Parameters
+    ----------
+    x, y: floats
+      Coordinates of the point.
+
+    Returns
+    -------
+    inside: bool
+      'True' if point inside polygon.
+    """
+    inside = False
+    start = self.points[0]
+    tol = 1.0E-06
+    n = len(self.points)
+    for i in range(n+1):
+      point = self.points[i%n]
+      if y > min(start.y, point.y) and y <= max(start.y, point.y):
+        if x <= max(start.x, point.x):
+          if abs(point.y-start.y) > tol:
+            x_inters = (y-start.y)*(point.x-start.x)/(point.y-start.y)+start.x
+          if abs(point.x-start.x) <= tol or x <= x_inters:
+            inside = not inside
+      start = point
+    return inside
+
   def write(self, file_path='{}/new_body'.format(os.getcwd())):
     """Writes the coordinates into a file.
     
@@ -392,7 +440,7 @@ class Geometry2d(Geometry):
     """Plots the two-dimensional geometry using Matplotlib."""
     print('\nPlot the two-dimensional geometry ...')
     from matplotlib import pyplot
-    pyplot.style.use('{}/styles/mesnardo.mplstyle'.format(os.environ['PYSCRIPTS']))
+    pyplot.style.use('{}/styles/mesnardo.mplstyle'.format(os.environ['SCRIPTS']))
     pyplot.grid(True)
     pyplot.xlabel('x')
     pyplot.ylabel('y')
@@ -406,8 +454,9 @@ class Geometry2d(Geometry):
     else:
       same = False
     if not same:
-      pyplot.plot(x_init, y_init, label='initial', 
+      pyplot.plot(x_init[1:], y_init[1:], label='initial', 
                   lw=0, marker='o')
+      pyplot.scatter(x_init[0], y_init[0], s=80, c='red')
     pyplot.plot(x, y, label='current', lw=0, marker='o')
     pyplot.legend()
     pyplot.axis('equal')

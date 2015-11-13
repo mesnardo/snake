@@ -15,6 +15,7 @@ import geometry
 
 def read_inputs():
   """Parses the command-line."""
+  print('[info] parsing command-line ...'),
   # create parser
   parser = argparse.ArgumentParser(description='Geometry discretization',
                         formatter_class= argparse.ArgumentDefaultsHelpFormatter)
@@ -64,6 +65,9 @@ def read_inputs():
                       help='limits of the cylinder in the third direction')
   parser.add_argument('--force', dest='force', action='store_true',
                       help='forces the limits of extrusion')
+  parser.add_argument('--inside', dest='keep_inside',
+                      action='store_true',
+                      help='keep points inside boundary')
   # output arguments
   parser.add_argument('--save-name', dest='save_name', type=str, 
                       default='new_body', 
@@ -78,6 +82,17 @@ def read_inputs():
   parser.add_argument('--show', dest='show', action='store_true',
                       help='displays the geometry')
   parser.set_defaults(save=True)
+  # parse given options file
+  class LoadFromFile(argparse.Action):
+    """Container to read parameters from file."""
+    def __call__(self, parser, namespace, values, option_string=None):
+      """Fills the namespace with parameters read in file."""
+      with values as f:
+        parser.parse_args(f.read().split(), namespace)
+  parser.add_argument('--options', 
+                      type=open, action=LoadFromFile,
+                      help='path of the file with options to parse')
+  print('done')
   return parser.parse_args()
 
 
@@ -113,7 +128,9 @@ def main():
   body.rotation(center=args.rotation, 
                 roll=args.roll, yaw=args.yaw, pitch=args.pitch, mode=args.mode)
   body.translation(displacement=args.translation)
-  if body.dimensions == 2 and args.body_type == 'file':
+  if body.dimensions == 2 and args.keep_inside:
+    body.keep_inside(ds=args.ds)
+  elif body.dimensions == 2 and args.body_type == 'file':
     body.discretization(n=args.n, ds=args.ds)
   if body.dimensions == 2 and args.extrusion:
     body = body.extrusion(limits=args.extrusion, n=args.n, ds=args.ds, 
