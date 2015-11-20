@@ -9,9 +9,6 @@ import os
 import sys
 import argparse
 
-sys.path.append('{}/scripts/cuIBM'.format(os.environ['SCRIPTS']))
-import ioCuIBM
-
 
 def parse_command_line():
   """Parses the command-line."""
