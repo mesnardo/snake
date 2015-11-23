@@ -141,20 +141,44 @@ class Simulation(object):
     if output:
       fx_name = ('<cd>' if force_coefficients else '<fx>')
       fy_name = ('<cl>' if force_coefficients else '<fy>')
-      print('Averaging forces in x-direction between {} and {}:'.format(fx_mean['start'], fx_mean['end']))
+      print('Averaging forces in x-direction between {} and {}:'.format(fx_mean['start'], 
+                                                                        fx_mean['end']))
       print('\t{} = {}'.format(fx_name, fx_mean['value']))
-      print('Averaging forces in y-direction between {} and {}:'.format(fy_mean['start'], fy_mean['end']))
+      print('Averaging forces in y-direction between {} and {}:'.format(fy_mean['start'], 
+                                                                        fy_mean['end']))
       print('\t{} = {}'.format(fy_name, fy_mean['value']))
     return fx_mean, fy_mean
 
-  def get_strouhal(self, order=5, output=False):
+  def get_strouhal(self, L=1.0, U=1.0, order=5, output=False):
+    """Computes the Strouhal number based on the frequency of the lift force.
+
+    The frequency is beased on the lift history and is computed using the minima
+    of the lift curve.
+
+    Parameters
+    ----------
+    L: float
+      Characteristics length of the body; default: 1.0.
+    U: float
+      Characteristics velocity of the body; default: 1.0.
+    order: integer
+      Number of neighbors used on each side to define an extremum; default: 5.
+    output: bool
+      Set 'True' if you want to print the Strouhal number; default: False.
+
+    Returns
+    -------
+    strouhal: float
+      The Strouhal number.
+    """
     minima, _ = self.force_y.get_extrema(order=order)
-    strouhal = 1.0/(self.force_y.times[minima[-1]] - self.force_y.times[minima[-2]])
-    strouhal2 = 1.0/(self.force_y.times[minima[-2]] - self.force_y.times[minima[-3]])
-    strouhal3 = 1.0/(self.force_y.times[minima[-3]] - self.force_y.times[minima[-4]])
+    frequencies = 1.0/(self.force_y.times[minima[1:]] - self.force_y.times[minima[:-1]])
+    strouhal = frequencies[-1]*L/U
     if output:
       print('Estimating the Strouhal number:')
-      print('\tSt = {} (previous: {}, {})'.format(strouhal, strouhal2, strouhal3))
+      print('\tSt = {} (previous: {}, {})'.format(strouhal, 
+                                                  frequencies[-2]*U/L, 
+                                                  frequencies[-3]*U/L))
     return strouhal
 
   def plot_forces(self, display_lift=True, display_drag=True,
