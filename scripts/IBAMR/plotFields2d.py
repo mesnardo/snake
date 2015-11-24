@@ -23,12 +23,14 @@ def parse_command_line():
   parser.add_argument('--body-name', dest='body_name',
                       type=str,
                       help='name of the body file (without the .vertex extension)')
-  parser.add_argument('--vorticity', dest='plot_vorticity',
-                      action='store_true',
-                      help='plots the vorticity field')
+  parser.add_argument('--field', dest='field',
+                      type=str,
+                      help='name of the field to plot'
+                           '(vorticity, pressure, velocity-magnitude, '
+                           'u-velocity, or v-velocity)')
   parser.add_argument('--limits', dest='limits',
                       nargs='+', type=float, default=(-1.0, 1.0),
-                      help='Range to plot (min, max)')
+                      help='Range of the field to plot (min, max)')
   parser.add_argument('--steps', dest='steps',
                       nargs='+', type=int, default=(None, None, None),
                       help='steps to plot (min, max, increment)')
@@ -59,15 +61,45 @@ def main():
   """Plots the two-dimensional field with VisIt."""
   args = parse_command_line()
 
-  field_name = ('vorticity' if args.plot_vorticity else sys.exit())
+  # define field to plot
+  if args.field == 'vorticity':
+    visit_field_name = 'Omega'
+    field_name = 'vorticity'
+    color_table_name = 'RdBu'
+    invert_color_table = 1
+  elif args.field == 'pressure':
+    visit_field_name = 'P'
+    field_name = 'pressure'
+    color_table_name = 'hot'
+    invert_color_table = 0
+  elif args.field == 'velocity-magnitude':
+    visit_field_name = 'U_magnitude'
+    field_name = 'velocityMagnitude'
+    color_table_name = 'RdBu'
+    invert_color_table = 1
+  elif args.field == 'u-velocity':
+    visit_field_name = 'U_x'
+    field_name = 'uVelocity'
+    color_table_name = 'RdBu'
+    invert_color_table = 1
+  elif args.field == 'v-velocity':
+    visit_field_name = 'U_y'
+    field_name = 'vVelocity'
+    color_table_name = 'RdBu'
+    invert_color_table = 1
+  else:
+    sys.exit()
+
+  # define dimensions of domain to plot
   view = args.bottom_left + args.top_right
+  width = args.width
+  height = int(math.ceil(width*(view[3]-view[1])/(view[2]-view[0])))
+
+  # create images directory
   view_string = '{:.2f}_{:.2f}_{:.2f}_{:.2f}'.format(*view)
   images_directory = '{}/images/{}_{}'.format(args.directory, field_name, view_string)
   if not os.path.isdir(images_directory):
     os.makedirs(images_directory)
-
-  width = args.width
-  height = int(math.ceil(width*(view[3]-view[1])/(view[2]-view[0])))
 
   # Visit 2.8.2 log file
   ScriptVersion = "2.8.2"
@@ -103,7 +135,7 @@ def main():
   # display vorticity field
   OpenDatabase("localhost:{}/numericalResults/dumps.visit".format(args.directory), 0)
   HideActivePlots()
-  AddPlot("Pseudocolor", "Omega", 1, 1)
+  AddPlot("Pseudocolor", visit_field_name, 1, 1)
   DrawPlots()
   PseudocolorAtts = PseudocolorAttributes()
   PseudocolorAtts.scaling = PseudocolorAtts.Linear  # Linear, Log, Skew
@@ -114,8 +146,8 @@ def main():
   PseudocolorAtts.maxFlag = 1
   PseudocolorAtts.max = args.limits[1]
   PseudocolorAtts.centering = PseudocolorAtts.Natural  # Natural, Nodal, Zonal
-  PseudocolorAtts.colorTableName = "RdBu"
-  PseudocolorAtts.invertColorTable = 1
+  PseudocolorAtts.colorTableName = color_table_name
+  PseudocolorAtts.invertColorTable = invert_color_table
   PseudocolorAtts.opacityType = PseudocolorAtts.FullyOpaque  # ColorTable, FullyOpaque, Constant, Ramp, VariableRange
   PseudocolorAtts.opacityVariable = ""
   PseudocolorAtts.opacity = 1
