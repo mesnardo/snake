@@ -441,7 +441,7 @@ class Geometry2d(Geometry):
     print('\nPlot the two-dimensional geometry ...')
     from matplotlib import pyplot
     pyplot.style.use('{}/styles/mesnardo.mplstyle'.format(os.environ['SCRIPTS']))
-    pyplot.grid(True)
+    pyplot.grid(True, zorder=0)
     pyplot.xlabel('x')
     pyplot.ylabel('y')
     x = self.gather_coordinate('x')
@@ -454,10 +454,13 @@ class Geometry2d(Geometry):
     else:
       same = False
     if not same:
+      # pyplot.plot(x_init[1:], y_init[1:], label='initial', 
+      #             lw=0, marker='o')
       pyplot.plot(x_init[1:], y_init[1:], label='initial', 
-                  lw=0, marker='o')
-      pyplot.scatter(x_init[0], y_init[0], s=80, c='red')
-    pyplot.plot(x, y, label='current', lw=0, marker='o')
+                  linewidth=1, color='black', zorder=10)
+      # pyplot.scatter(x_init[0], y_init[0], s=80, c='red')
+    pyplot.plot(x, y, label='current', 
+                color='#CD2305', linewidth=0, marker='o', zorder=10)
     pyplot.legend()
     pyplot.axis('equal')
     pyplot.show()
