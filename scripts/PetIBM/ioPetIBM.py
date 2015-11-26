@@ -12,6 +12,8 @@ import numpy
 from matplotlib import pyplot, cm
 # load default style of matplotlib figures
 pyplot.style.use('{}/styles/mesnardo.mplstyle'.format(os.environ['SCRIPTS']))
+from mpl_toolkits.axes_grid1.inset_locator import inset_axes
+
 sys.path.append(os.path.join(os.environ['PETSC_DIR'], 'bin', 'pythonscripts'))
 import PetscBinaryIO
 
@@ -91,11 +93,12 @@ def read_grid(case_directory, binary=False):
   binary: bool
     Useless here. (Set `True` if grid is a binary file; default: False.)
   """
-  print('Read the mesh grid ...')
+  print('[info] reading the grid ...'),
   grid_path = '{}/grid.txt'.format(case_directory)
   with open(grid_path, 'r') as infile:
     nCells = numpy.array([int(n) for n in infile.readline().strip().split()])
     coords = numpy.loadtxt(infile, dtype=float)
+  print('done')
   return numpy.array(numpy.split(coords, numpy.cumsum(nCells[:-1]+1)))
 
 
@@ -120,7 +123,7 @@ def read_velocity(case_directory, time_step, coords, periodic=[], binary=False):
   field_vector: list(Field)
     List containing the velocity field in each direction.
   """
-  print('Read the velocity field at time-step {} ...'.format(time_step))
+  print('[time-step {}] reading velocity field ...'.format(time_step)),
   dim3 = (True if len(coords) == 3 else False)
   x, y, z = coords[0], coords[1], (None if not dim3 else coords[2])
   # compute cell-widths
@@ -164,9 +167,10 @@ def read_velocity(case_directory, time_step, coords, periodic=[], binary=False):
     assert (zu.size, yu.size, xu.size) == u.shape
     assert (zv.size, yv.size, xv.size) == v.shape
     assert (zw.size, yw.size, xw.size) == w.shape
-    return [Field(x=xu, y=yu, z=zu, time_step=time_step, values=u),
-            Field(x=xv, y=yv, z=zv, time_step=time_step, values=v),
-            Field(x=xw, y=yw, z=zw, time_step=time_step, values=w)]
+    print('done')
+    return [Field(x=xu, y=yu, z=zu, time_step=time_step, values=u, label='u-velocity'),
+            Field(x=xv, y=yv, z=zv, time_step=time_step, values=v, label='v-velocity'),
+            Field(x=xw, y=yw, z=zw, time_step=time_step, values=w, label='w-velocity')]
   else:
     # compute x-velocity field
     qx = qx.reshape((ny, (nx if 'x' in periodic else nx-1)))
@@ -177,11 +181,12 @@ def read_velocity(case_directory, time_step, coords, periodic=[], binary=False):
     # tests
     assert (yu.size, xu.size) == u.shape
     assert (yv.size, xv.size) == v.shape
-    return [Field(x=xu, y=yu, time_step=time_step, values=u), 
-            Field(x=xv, y=yv, time_step=time_step, values=v)]
+    print('done')
+    return [Field(x=xu, y=yu, time_step=time_step, values=u, label='u-velocity'), 
+            Field(x=xv, y=yv, time_step=time_step, values=v, label='v-velocity')]
 
 
-def read_pressure(case_directory, time_step, coords):
+def read_pressure(case_directory, time_step, coords, binary=False):
   """Reads the pressure fields from file given the time-step.
 
   Parameters
@@ -192,13 +197,15 @@ def read_pressure(case_directory, time_step, coords):
     Time-step at which the field will be read.
   coords: Numpy array
     Grid coordinates in each direction.
+  binary: bool
+    Useless here. (Set `True` if grid is a binary file; default: False.)
 
   Returns
   -------
   pressure: Field
     The pressure field.
   """
-  print('Read the pressure field at time-step {} ...'.format(time_step))
+  print('[time-step {}] reading the pressure field ...'.format(time_step)),
   dim3 = (True if len(coords) == 3 else False)
   x, y, z = coords[0], coords[1], (None if not dim3 else coords[2])
   # folder with numerical solution
@@ -217,13 +224,15 @@ def read_pressure(case_directory, time_step, coords):
     p = p.reshape((nz, ny, nx))
     # tests
     assert (zp.size, yp.size, xp.size) == p.shape
-    return Field(x=xp, y=yp, z=zp, values=p)
+    print('done')
+    return Field(x=xp, y=yp, z=zp, values=p, label='pressure')
   else:
     # compute pressure field
     p = p.reshape((ny, nx))
     # tests
     assert (yp.size, xp.size) == p.shape
-    return Field(x=xp, y=yp, time_step=time_step, values=p)
+    print('done')
+    return Field(x=xp, y=yp, time_step=time_step, values=p, label='pressure')
 
 
 def write_vtk(field, case_directory, time_step, name, 
@@ -334,7 +343,7 @@ def plot_contour(field, field_range,
                  directory=os.getcwd(),
                  view=[float('-inf'), float('-inf'), float('inf'), float('inf')],
                  bodies=[],
-                 size=[8.0, 8.0], dpi=100): 
+                 width=8.0, dpi=100): 
   """Plots and saves the field.
 
   Parameters
@@ -350,11 +359,12 @@ def plot_contour(field, field_range,
     default: the whole domain.
   bodies: list of Body objects
     The immersed bodies to add to the figure; default: [] (no immersed body).
-  size: list(float)
-    Size (width and height) of the figure to save (in inches); default: [8, 8].
+  width: float
+    Width of the figure (in inches); default: 8.
   dpi: int
     Dots per inch (resolution); default: 100
   """
+  # create images directory
   x_left = ('left' if view[0] == float('-inf') else '{:.2f}'.format(view[0]))
   y_bottom = ('bottom' if view[1] == float('-inf') else '{:.2f}'.format(view[1]))
   x_right = ('right' if view[2] == float('inf') else '{:.2f}'.format(view[2]))
@@ -365,52 +375,71 @@ def plot_contour(field, field_range,
     print('[info] creating images directory: {} ...'.format(images_directory)),
     os.makedirs(images_directory)
     print('done')
+
   print('[info] plotting the {} contour ...'.format(field.label)),
-  fig, ax = pyplot.subplots(figsize=(size[0], size[1]), dpi=dpi)
-  pyplot.xlabel('$x$')
-  pyplot.ylabel('$y$')
+  x_start, x_end = max(view[0], field.x.min()), min(view[2], field.x.max())
+  y_start, y_end = max(view[1], field.y.min()), min(view[3], field.y.max())
+  height = width*(y_end-y_start)/(x_end-x_start)
+  fig, ax = pyplot.subplots(figsize=(width, height), dpi=dpi)
+  ax.tick_params(axis='x', labelbottom='off')
+  ax.tick_params(axis='y', labelleft='off')
+  # create filled contour
   if field_range:
-    levels = numpy.linspace(field_range[0], field_range[1], field_range[2])
-    colorbar_ticks = numpy.linspace(field_range[0], field_range[1], 5)
+    levels = numpy.linspace(*field_range)
   else:
     levels = numpy.linspace(field.values.min(), field.values.max(), 101)
-    colorbar_ticks = numpy.linspace(field.values.min(), field.values.max(), 5)
-  X, Y = numpy.meshgrid(field.x, field.y)
   color_map = {'pressure': cm.jet, 'vorticity': cm.RdBu_r,
                'u-velocity': cm.RdBu_r, 'v-velocity': cm.RdBu_r}
+  X, Y = numpy.meshgrid(field.x, field.y)
   cont = ax.contourf(X, Y, field.values, 
-                     levels=levels, extend='both', 
-                     cmap=color_map[field.label])
-  cont_bar = fig.colorbar(cont, label=field.label, 
-                          orientation='horizontal', format='%.02f', 
-                          ticks=colorbar_ticks)
+                     levels=levels, extend='both', cmap=color_map[field.label])
+  # create colorbar
+  if field_range:
+    colorbar_ticks = numpy.linspace(field_range[0], field_range[1], 5)
+  else:
+    colorbar_ticks = numpy.linspace(field.values.min(), field.values.max(), 5)
+  ains = inset_axes(pyplot.gca(), width='30%', height='2%', loc=3)
+  cont_bar = fig.colorbar(cont, 
+                          cax=ains, orientation='horizontal',
+                          ticks=colorbar_ticks, format='%.01f')
+  cont_bar.ax.tick_params(labelsize=10) 
+  ax.text(0.05, 0.12, field.label, transform=ax.transAxes, fontsize=10)
+  cont_bar.ax.xaxis.set_ticks_position('top')
+  # draw body
   for body in bodies:
     ax.plot(body.x, body.y, 
             color='black', linewidth=1, linestyle='-')
-  x_start, x_end = max(view[0], field.x.min()), min(view[2], field.x.max())
-  y_start, y_end = max(view[1], field.y.min()), min(view[3], field.y.max())
+  # set limits
   ax.axis([x_start, x_end, y_start, y_end])
   ax.set_aspect('equal')
+  # save image
   image_path = '{}/{}{:0>7}.png'.format(images_directory, field.label, field.time_step)
-  pyplot.savefig(image_path, dpi=dpi)
+  pyplot.savefig(image_path, dpi=dpi, bbox_inches='tight', pad_inches=0)
   pyplot.close()
   print('done')
 
 
-def compute_vorticity(u, v):
+def compute_vorticity(directory, time_step, coords, binary=False):
   """Computes the vorticity field for a two-dimensional simulation.
 
   Parameters
   ----------
-  u, v: ioCuIBM.Field objects
-    u-velocity and v-velocity fields.
+  directory: string
+    Directory of the simulation.
+  time_step: integer
+    Time-step at which to read the pressure field.
+  coords: Numpy 1d arrays of float
+    Mesh-grid coordinates.
+  binary: bool
+    Set `True` iif written in binary format; default: False.
 
   Returns
   -------
-  vorticity: ioCuIBM.Field object
+  vorticity: ioPetIBM.Field object
     The vorticity field.
   """
-  print('[info] computing the vorticity field ...'),
+  u, v = read_velocity(directory, time_step, coords, binary=binary)
+  print('[time-step {}] computing the vorticity field ...'.format(time_step)),
   mask_x = numpy.where(numpy.logical_and(u.x > v.x[0], u.x < v.x[-1]))[0]
   mask_y = numpy.where(numpy.logical_and(v.y > u.y[0], v.y < u.y[-1]))[0]
   # vorticity nodes at cell vertices intersection
@@ -421,10 +450,7 @@ def compute_vorticity(u, v):
       - (u.values[1:, mask_x] - u.values[:-1, mask_x])
         / numpy.outer(u.y[1:]-u.y[:-1], numpy.ones(xw.size)) )
   print('done')
-  return Field(x=xw, y=yw, 
-               values=w, 
-               time_step=u.time_step, label='vorticity')
-
+  return Field(x=xw, y=yw, values=w, time_step=time_step, label='vorticity')
 
 
 if __name__ == '__main__':
