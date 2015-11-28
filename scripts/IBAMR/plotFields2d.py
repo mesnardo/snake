@@ -50,7 +50,7 @@ def parse_command_line():
       """Fills the namespace with parameters read in file."""
       with values as f:
         parser.parse_args(f.read().split(), namespace)
-  parser.add_argument('--file', 
+  parser.add_argument('--options', 
                       type=open, action=LoadFromFile,
                       help='path of the file with options to parse')
   print('done')

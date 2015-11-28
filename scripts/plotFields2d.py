@@ -35,27 +35,13 @@ def parse_command_line():
                       type=float, nargs='+', default=[float('inf'), float('inf')],
                       help='coordinates of the top-right corner of the view')
   # arguments about data to plot
-  parser.add_argument('--velocity', dest='velocity', 
-                      action='store_true',
-                      help='plots the velocity fields')
-  parser.add_argument('--pressure', dest='pressure', 
-                      action='store_true',
-                      help='plots the pressure field')
-  parser.add_argument('--vorticity', dest='vorticity', 
-                      action='store_true',
-                      help='plots the vorticity field')
-  parser.add_argument('--vorticity-range', '-wr', dest='vorticity_range', 
-                      type=float, nargs='+', default=[-1.0, 1.0, 11],
-                      help='vorticity range (min, max, number of levels)')
-  parser.add_argument('--u-range', '-ur', dest='u_range', 
-                      type=float, nargs='+', default=[-1.0, 1.0, 11],
-                      help='u-velocity range (min, max, number of levels)')
-  parser.add_argument('--v-range', '-vr', dest='v_range', 
-                      type=float, nargs='+', default=[-1.0, 1.0, 11],
-                      help='v-velocity range (min, max, number of levels)')
-  parser.add_argument('--pressure-range', '-pr', dest='pressure_range', 
-                      type=float, nargs='+', default=[-1.0, 1.0, 11],
-                      help='pressure range (min, max, number of levels)')
+  parser.add_argument('--field', dest='field',
+                      type=str,
+                      help='field name to plot '
+                           '(vorticity, u-velocity, v-velocity, pressure)')
+  parser.add_argument('--range', dest='range',
+                      type=float, nargs='+', default=(None, None, None),
+                      help='field range to plot (min, max, number of levels)')
   # arguments about the immmersed-boundary
   parser.add_argument('--bodies', dest='body_paths', 
                       nargs='+', type=str, default=[],
@@ -65,9 +51,9 @@ def parse_command_line():
                       type=int, nargs='+', default=[],
                       help='time-steps to plot (initial, final, increment)')
   # arguments about figure
-  parser.add_argument('--size', dest='size', 
-                      type=float, nargs='+', default=[8.0, 8.0],
-                      help='size (width and height) of the figure to save (in inches)')
+  parser.add_argument('--width', dest='width', 
+                      type=float, default=8.0,
+                      help='width of the figure (in inches)')
   parser.add_argument('--dpi', dest='dpi', 
                       type=int, default=100,
                       help='dots per inch (resoltion of the figure)')
@@ -78,7 +64,7 @@ def parse_command_line():
       """Fills the namespace with parameters read in file."""
       with values as f:
         parser.parse_args(f.read().split(), namespace)
-  parser.add_argument('--file', 
+  parser.add_argument('--options', 
                       type=open, action=LoadFromFile,
                       help='path of the file with options to parse')
   print('done')
@@ -108,35 +94,24 @@ def main():
   bodies = [io.Body(path) for path in args.body_paths]
 
   for time_step in time_steps:
-    if args.velocity or args.vorticity:
-      u, v = io.read_velocity(args.case_directory, time_step, coords, 
-                              binary=args.binary)
-      if args.velocity:
-        io.plot_contour(u, args.u_range, 
-                        directory=args.case_directory, 
-                        view=args.bottom_left+args.top_right,
-                        bodies=bodies,
-                        size=args.size, dpi=args.dpi)
-        io.plot_contour(v, args.v_range, 
-                        directory=args.case_directory, 
-                        view=args.bottom_left+args.top_right,
-                        bodies=bodies,
-                        size=args.size, dpi=args.dpi)
-      if args.vorticity:
-        w = io.compute_vorticity(u, v)
-        io.plot_contour(w, args.vorticity_range, 
-                        directory=args.case_directory, 
-                        view=args.bottom_left+args.top_right,
-                        bodies=bodies,
-                        size=args.size, dpi=args.dpi)
-    if args.pressure:
-      p = io.read_pressure(args.case_directory, time_step, coords, 
-                           binary=args.binary)
-      io.plot_contour(p, args.pressure_range, 
-                      directory=args.case_directory, 
-                      view=args.bottom_left+args.top_right,
-                      bodies=bodies,
-                      size=args.size, dpi=args.dpi)
+    if args.field == 'vorticity':
+      field = io.compute_vorticity(args.case_directory, time_step, coords, 
+                                   binary=args.binary)
+    elif args.field in ['u-velocity', 'x-velocity']:
+      field, _ = io.read_velocity(args.case_directory, time_step, coords, 
+                                  binary=args.binary)
+    elif args.field in ['v-velocity', 'y-velocity']:
+      _, field = io.read_velocity(args.case_directory, time_step, coords, 
+                                  binary=args.binary)
+    elif args.field == 'pressure':
+      field = io.read_pressure(args.case_directory, time_step, coords, 
+                               binary=args.binary)
+
+    io.plot_contour(field, args.range,
+                    directory=args.case_directory,
+                    view=args.bottom_left+args.top_right,
+                    bodies=bodies,
+                    width=args.width, dpi=args.dpi)
 
 
 if __name__ == '__main__':
