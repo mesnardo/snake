@@ -270,19 +270,25 @@ class OpenFOAMSimulation(Simulation):
       Set to 'True' if force coefficients are required; default: False (i.e. forces).
     """
     key = 'forceCoeffs' if force_coefficients else 'forces'
-    forces_directory = '{}/postProcessing/{}'.format(self.directory, key)  
+    forces_directory = '{}/postProcessing/{}'.format(self.directory, key)
+    usecols=(0, 2, 3)
+    # backward compatibility from 2.2.2 to 2.0.1
+    if not os.path.isdir(forces_directory):
+      forces_directory = '{}/forces'.format(self.directory)
+      usecols=(0, 1, 2)
     subdirectories = sorted(os.listdir(forces_directory))
     times = numpy.empty(0)
     force_x, force_y = numpy.empty(0), numpy.empty(0)
     for subdirectory in subdirectories:
       forces_path = '{}/{}/{}.dat'.format(forces_directory, subdirectory, key)
       with open(forces_path, 'r') as infile:
-        t, fx, fy = numpy.loadtxt(infile, dtype=float, usecols=(0, 2, 3), unpack=True)
+        t, fx, fy = numpy.loadtxt(infile, dtype=float, comments='#', 
+                                  usecols=usecols, unpack=True)
       times = numpy.append(times, t)
       force_x, force_y = numpy.append(force_x, fx), numpy.append(force_y, fy)
-    self.force_x = Force(times, force_x, 
+    self.force_x = Force(times, coefficient*force_x, 
                          name=('$C_d$' if force_coefficients else '$F_x$'))
-    self.force_y = Force(times, force_y, 
+    self.force_y = Force(times, coefficient*force_y, 
                          name=('$C_l$' if force_coefficients else '$F_y$'))
 
 
