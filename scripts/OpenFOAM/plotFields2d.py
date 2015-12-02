@@ -27,6 +27,12 @@ def parse_command_line():
   parser.add_argument('--pressure', dest='plot_pressure',
                       action='store_true',
                       help='plots the pressure field')
+  parser.add_argument('--u-velocity', dest='plot_uvelocity',
+                      action='store_true',
+                      help='plots the u-velocity field')
+  parser.add_argument('--v-velocity', dest='plot_vvelocity',
+                      action='store_true',
+                      help='plots the v-velocity field')
   parser.add_argument('--limits', dest='limits',
                       nargs='+', type=float, default=[-1.0, 1.0],
                       help='Range to plot (min, max)')
@@ -73,8 +79,17 @@ def main():
     print('[info] plotting pressure field...')
     variable_name = 'pressure'
     variable_nickname = 'p'
+  elif parameters.plot_uvelocity:
+    print('[info] plotting u-velocity field...')
+    variable_name = 'u-velocity'
+    variable_nickname = 'U'
+  elif parameters.plot_vvelocity:
+    print('[info] plotting v-velocity field...')
+    variable_name = 'v-velocity'
+    variable_nickname = 'U'
   else:
-    print('[warning] nothing to plot; use flag --vorticity or --pressure')
+    print('[warning] nothing to plot; use flag --vorticity, --u-velocity, '
+          '--v-velocity, or --pressure')
     return
   reader.VolumeFields = [variable_nickname]
   reader.MeshParts = ['front - patch']
@@ -115,6 +130,32 @@ def main():
                                                       vorticity_max, 1.0, 0.0, 0.0], 
                                            VectorMode='Component', 
                                            VectorComponent=2, 
+                                           NanColor=[0.0, 0.0, 0.0],
+                                           ColorSpace='Diverging', 
+                                           ScalarRangeInitialized=1.0, 
+                                           LockScalarRange=1)
+  elif parameters.plot_uvelocity:
+    # edit color-map
+    velocity_min = float("{0:.2f}".format(parameters.limits[0]))
+    velocity_max = float("{0:.2f}".format(parameters.limits[1]))
+    PVLookupTable = GetLookupTableForArray('U', 1, 
+                                           RGBPoints=[velocity_min, 0.0, 0.0, 1.0, 
+                                                      velocity_max, 1.0, 0.0, 0.0], 
+                                           VectorMode='Component', 
+                                           VectorComponent=0, 
+                                           NanColor=[0.0, 0.0, 0.0],
+                                           ColorSpace='Diverging', 
+                                           ScalarRangeInitialized=1.0, 
+                                           LockScalarRange=1)
+  elif parameters.plot_vvelocity:
+    # edit color-map
+    velocity_min = float("{0:.2f}".format(parameters.limits[0]))
+    velocity_max = float("{0:.2f}".format(parameters.limits[1]))
+    PVLookupTable = GetLookupTableForArray('U', 2, 
+                                           RGBPoints=[velocity_min, 0.0, 0.0, 1.0, 
+                                                      velocity_max, 1.0, 0.0, 0.0], 
+                                           VectorMode='Component', 
+                                           VectorComponent=1,
                                            NanColor=[0.0, 0.0, 0.0],
                                            ColorSpace='Diverging', 
                                            ScalarRangeInitialized=1.0, 
