@@ -149,7 +149,7 @@ class Simulation(object):
       print('\t{} = {}'.format(fy_name, fy_mean['value']))
     return fx_mean, fy_mean
 
-  def get_strouhal(self, L=1.0, U=1.0, order=5, output=False):
+  def get_strouhal(self, L=1.0, U=1.0, n_periods=1, order=5, output=False):
     """Computes the Strouhal number based on the frequency of the lift force.
 
     The frequency is beased on the lift history and is computed using the minima
@@ -163,6 +163,8 @@ class Simulation(object):
       Characteristics velocity of the body; default: 1.0.
     order: integer
       Number of neighbors used on each side to define an extremum; default: 5.
+    n_periods: integer
+      Number of periods (starting from end) to average the Strouhal number; default: 1.
     output: bool
       Set 'True' if you want to print the Strouhal number; default: False.
 
@@ -172,13 +174,13 @@ class Simulation(object):
       The Strouhal number.
     """
     minima, _ = self.force_y.get_extrema(order=order)
-    frequencies = 1.0/(self.force_y.times[minima[1:]] - self.force_y.times[minima[:-1]])
-    strouhal = frequencies[-1]*L/U
+    strouhals = L/U/( self.force_y.times[minima[-n_periods:]] 
+                    - self.force_y.times[minima[-n_periods-1:-1]] )
+    strouhal = strouhals.mean()
     if output:
-      print('Estimating the Strouhal number:')
-      print('\tSt = {} (previous: {}, {})'.format(strouhal, 
-                                                  frequencies[-2]*U/L, 
-                                                  frequencies[-3]*U/L))
+      print('Estimating the Strouhal number over the last {} period(s):'.format(n_periods))
+      print('\tSt = {}'.format(strouhal))
+      print('\tSt values used to average: {}'.format(strouhals))
     return strouhal
 
   def plot_forces(self, display_lift=True, display_drag=True,
@@ -270,19 +272,25 @@ class OpenFOAMSimulation(Simulation):
       Set to 'True' if force coefficients are required; default: False (i.e. forces).
     """
     key = 'forceCoeffs' if force_coefficients else 'forces'
-    forces_directory = '{}/postProcessing/{}'.format(self.directory, key)  
+    forces_directory = '{}/postProcessing/{}'.format(self.directory, key)
+    usecols=(0, 2, 3)
+    # backward compatibility from 2.2.2 to 2.0.1
+    if not os.path.isdir(forces_directory):
+      forces_directory = '{}/forces'.format(self.directory)
+      usecols=(0, 1, 2)
     subdirectories = sorted(os.listdir(forces_directory))
     times = numpy.empty(0)
     force_x, force_y = numpy.empty(0), numpy.empty(0)
     for subdirectory in subdirectories:
       forces_path = '{}/{}/{}.dat'.format(forces_directory, subdirectory, key)
       with open(forces_path, 'r') as infile:
-        t, fx, fy = numpy.loadtxt(infile, dtype=float, usecols=(0, 2, 3), unpack=True)
+        t, fx, fy = numpy.loadtxt(infile, dtype=float, comments='#', 
+                                  usecols=usecols, unpack=True)
       times = numpy.append(times, t)
       force_x, force_y = numpy.append(force_x, fx), numpy.append(force_y, fy)
-    self.force_x = Force(times, force_x, 
+    self.force_x = Force(times, coefficient*force_x, 
                          name=('$C_d$' if force_coefficients else '$F_x$'))
-    self.force_y = Force(times, force_y, 
+    self.force_y = Force(times, coefficient*force_y, 
                          name=('$C_l$' if force_coefficients else '$F_y$'))
 
 
