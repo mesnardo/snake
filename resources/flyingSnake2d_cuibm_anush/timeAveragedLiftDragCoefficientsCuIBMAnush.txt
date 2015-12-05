@@ -1,11 +1,12 @@
 # Time-averaged lift and drag coefficients using cuIBM.
 # Anush Krishnan obtained those results.
 # Averages computed between 32.0 and 64.0 non-dimensional time-units.
-# Re | aoa | <cd> | <cl>
-1000 25 0.943 1.534
-1000 30 1.052 1.707
-1000 35 1.209 1.876
-1000 40 1.488 1.841
+# Strouhal numbers are averaged over the last 5 periods.
+# Re | aoa | <cd> | <cl> | <St>
+1000 25 0.9428 1.5376 0.3925
+1000 30 1.0519 1.7068 0.3728
+1000 35 1.2086 1.8759 0.3541
+1000 40 1.4882 1.8410 0
 2000 25 0.889 1.415
 2000 30 0.967 1.532
 2000 35 1.316 2.147
