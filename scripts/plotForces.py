@@ -47,9 +47,10 @@ def parse_command_line():
   parser.add_argument('--average-last', dest='last_period', 
                       action='store_true',
                       help='averages forces over the last period')
-  parser.add_argument('--strouhal', dest='strouhal',
-                      action='store_true', 
-                      help='computes the Strouhal number based on lift history')
+  parser.add_argument('--strouhal', dest='n_periods_strouhal',
+                      type=int, default=0, 
+                      help='computes the Strouhal number based on lift history '
+                           'and over a given number of last periods')
   parser.add_argument('--no-show', dest='show', 
                       action='store_false',
                       help='does not display the figure')
@@ -125,8 +126,10 @@ def main():
                    last_period=parameters.last_period, order=parameters.order,
                    force_coefficients=parameters.display_coefficients,
                    output=True)
-  if parameters.strouhal:
-    master.get_strouhal(order=parameters.order, output=True)
+  if parameters.n_periods_strouhal > 0:
+    master.get_strouhal(n_periods=parameters.n_periods_strouhal, 
+                        order=parameters.order, 
+                        output=True)
   
   # get info about other simulations used for comparison
   slaves = []
@@ -148,8 +151,10 @@ def main():
                          order=parameters.order,
                          force_coefficients=parameters.display_coefficients,
                          output=True)
-    if parameters.strouhal:
-      slaves[-1].get_strouhal(order=parameters.order, output=True)
+    if parameters.n_periods_strouhal > 0:
+      slaves[-1].get_strouhal(n_periods=parameters.n_periods_strouhal, 
+                              order=parameters.order, 
+                              output=True)
 
   # plot instantaneous forces (or force coefficients)
   master.plot_forces(display_drag=parameters.display_drag,

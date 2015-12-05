@@ -149,7 +149,7 @@ class Simulation(object):
       print('\t{} = {}'.format(fy_name, fy_mean['value']))
     return fx_mean, fy_mean
 
-  def get_strouhal(self, L=1.0, U=1.0, order=5, output=False):
+  def get_strouhal(self, L=1.0, U=1.0, n_periods=1, order=5, output=False):
     """Computes the Strouhal number based on the frequency of the lift force.
 
     The frequency is beased on the lift history and is computed using the minima
@@ -163,6 +163,8 @@ class Simulation(object):
       Characteristics velocity of the body; default: 1.0.
     order: integer
       Number of neighbors used on each side to define an extremum; default: 5.
+    n_periods: integer
+      Number of periods (starting from end) to average the Strouhal number; default: 1.
     output: bool
       Set 'True' if you want to print the Strouhal number; default: False.
 
@@ -172,13 +174,13 @@ class Simulation(object):
       The Strouhal number.
     """
     minima, _ = self.force_y.get_extrema(order=order)
-    frequencies = 1.0/(self.force_y.times[minima[1:]] - self.force_y.times[minima[:-1]])
-    strouhal = frequencies[-1]*L/U
+    strouhals = L/U/( self.force_y.times[minima[-n_periods:]] 
+                    - self.force_y.times[minima[-n_periods-1:-1]] )
+    strouhal = strouhals.mean()
     if output:
-      print('Estimating the Strouhal number:')
-      print('\tSt = {} (previous: {}, {})'.format(strouhal, 
-                                                  frequencies[-2]*U/L, 
-                                                  frequencies[-3]*U/L))
+      print('Estimating the Strouhal number over the last {} period(s):'.format(n_periods))
+      print('\tSt = {}'.format(strouhal))
+      print('\tSt values used to average: {}'.format(strouhals))
     return strouhal
 
   def plot_forces(self, display_lift=True, display_drag=True,
