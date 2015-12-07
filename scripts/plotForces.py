@@ -25,9 +25,10 @@ def parse_command_line():
   parser.add_argument('--description', dest='description',
                       type=str, default=None,
                       help='quick description of the simulation')
-  parser.add_argument('--type', dest='simulation_type',
+  parser.add_argument('--software', dest='software',
                       type=str,
-                      help='type of simulation (openfoam, cuibm, petibm, ibamr)')
+                      help='software used for simulation '
+                           '(openfoam, cuibm, petibm, ibamr)')
   parser.add_argument('--display-coefficients', dest='display_coefficients',
                       action='store_true',
                       help='flag to plot the force coefficients, not the forces')
@@ -54,7 +55,7 @@ def parse_command_line():
   parser.add_argument('--no-show', dest='show', 
                       action='store_false',
                       help='does not display the figure')
-  parser.add_argument('--save-name', dest='save', 
+  parser.add_argument('--save-name', dest='save_name', 
                       type=str, default=None,
                       help='name of the figure of save')
   parser.add_argument('--limits', dest='plot_limits', 
@@ -82,89 +83,58 @@ def parse_command_line():
     """Container to read parameters from file."""
     def __call__(self, parser, namespace, values, option_string=None):
       """Fills the namespace with parameters read in file."""
-      with values as f:
-        parser.parse_args(f.read().split(), namespace)
+      with values as infile:
+        lines = [element for line in infile.readlines()
+                 for element in line.strip().split()
+                 if not line.startswith('#')]
+        parser.parse_args(lines, namespace)
   parser.add_argument('--options', 
                       type=open, action=LoadFromFile,
                       help='path of the file with options to parse')
+
   # return namespace
   return parser.parse_args()
 
 
-def get_SimulationClass(simulation_type):
-  """Gets the appropriate class.
-
-  Parameters
-  ----------
-  simulation_type: string
-    Description of the type of simulation (openfoam, cuibm, petibm)
-  """
-  if simulation_type == 'openfoam':
-    return forces.OpenFOAMSimulation
-  elif simulation_type == 'cuibm':
-    return forces.CuIBMSimulation
-  elif simulation_type == 'petibm':
-    return forces.PetIBMSimulation
-  elif simulation_type == 'ibamr':
-    return forces.IBAMRSimulation
-  else:
-    print('[error] type should be "openfoam", "cuibm", "petibm", or "ibamr"')
-    exit(0)
-
-
 def main():
   """Plots the instantaneous force coefficients."""
-  parameters = parse_command_line()
-  # create master simulation
-  SimulationClass = get_SimulationClass(parameters.simulation_type)
-  master = SimulationClass(name=parameters.description,
-                           directory=parameters.directory,
-                           output=True)
-  master.read_forces(force_coefficients=parameters.display_coefficients,
-                     coefficient=parameters.coefficient)
-  master.get_means(limits=parameters.average_limits, 
-                   last_period=parameters.last_period, order=parameters.order,
-                   force_coefficients=parameters.display_coefficients,
-                   output=True)
-  if parameters.n_periods_strouhal > 0:
-    master.get_strouhal(n_periods=parameters.n_periods_strouhal, 
-                        order=parameters.order, 
-                        output=True)
-  
-  # get info about other simulations used for comparison
-  slaves = []
-  nb_others_parameters = 4
-  num_others = len(parameters.others)/nb_others_parameters
-  for index in xrange(num_others):
-    slave_type = parameters.others[index*nb_others_parameters + 0]
-    slave_directory = parameters.others[index*nb_others_parameters + 1]
-    slave_description = parameters.others[index*nb_others_parameters + 2]
-    slave_coefficient = float(parameters.others[index*nb_others_parameters + 3])
-    SimulationClass = get_SimulationClass(slave_type)
-    slaves.append(SimulationClass(name=slave_description,
-                                  directory=slave_directory,
-                                  output=True))
-    slaves[-1].read_forces(force_coefficients=parameters.display_coefficients,
-                           coefficient=slave_coefficient)
-    slaves[-1].get_means(limits=parameters.average_limits, 
-                         last_period=parameters.last_period, 
-                         order=parameters.order,
-                         force_coefficients=parameters.display_coefficients,
-                         output=True)
-    if parameters.n_periods_strouhal > 0:
-      slaves[-1].get_strouhal(n_periods=parameters.n_periods_strouhal, 
-                              order=parameters.order, 
-                              output=True)
+  args = parse_command_line()
+  simulations = []
+  # register main simulation
+  simulations.append(forces.Simulation(description=args.description, 
+                                       directory=args.directory,
+                                       software=args.software,
+                                       coefficient=args.coefficient))
+  # register other simulations used for comparison
+  keys = ['software', 'directory', 'description', 'coefficient']
+  for values in zip(*[iter(args.others)]*len(keys)):
+    other = dict(zip(keys, values))
+    simulations.append(forces.Simulation(description=other['description'], 
+                                         directory=other['directory'],
+                                         software=other['software'],
+                                         coefficient=float(other['coefficient'])))
+
+  # read and compute some statistics
+  for index, simulation in enumerate(simulations):
+    simulations[index].read_forces(display_coefficients=args.display_coefficients)
+    simulation.get_means(limits=args.average_limits, 
+                         last_period=args.last_period, 
+                         order=args.order,
+                         display_coefficients=args.display_coefficients)
+    if args.n_periods_strouhal > 0:
+      simulation.get_strouhal(n_periods=args.n_periods_strouhal, 
+                              order=args.order)
 
   # plot instantaneous forces (or force coefficients)
-  master.plot_forces(display_drag=parameters.display_drag,
-                     display_lift=parameters.display_lift,
-                     limits=parameters.plot_limits,
-                     save=parameters.save, show=parameters.show, output=True,
-                     display_extrema=parameters.display_extrema, 
-                     order=parameters.order,
-                     display_gauge=parameters.display_gauge,
-                     other_simulations=slaves)
+  simulations[0].plot_forces(display_drag=args.display_drag,
+                             display_lift=args.display_lift,
+                             display_extrema=args.display_extrema, 
+                             order=args.order,
+                             display_gauge=args.display_gauge,
+                             other_simulations=simulations[1:],
+                             limits=args.plot_limits,
+                             save_name=args.save_name, 
+                             show=args.show)
 
 
 if __name__ == '__main__':
