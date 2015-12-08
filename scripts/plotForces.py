@@ -25,7 +25,7 @@ def parse_command_line():
   parser.add_argument('--description', dest='description',
                       type=str, default=None,
                       help='quick description of the simulation')
-  parser.add_argument('--software', dest='software',
+  parser.add_argument('--software', '--type', dest='software',
                       type=str,
                       help='software used for simulation '
                            '(openfoam, cuibm, petibm, ibamr)')
