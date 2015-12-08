@@ -7,6 +7,7 @@
 
 
 import os
+import sys
 
 import numpy
 from scipy import signal
@@ -15,7 +16,7 @@ from matplotlib import pyplot
 
 class Force(object):
   """Contains info about a force."""
-  def __init__(self, times, values, name=None):
+  def __init__(self, times, values, description=None):
     """Initializes the force with given values.
 
     Parameters
@@ -24,10 +25,10 @@ class Force(object):
       Discrete time.
     values: Numpy array of float
       Instantaneous values of the force.
-    name: string
+    description: string
       Description of the force; default: None.
     """
-    self.name = name
+    self.description = description
     self.times = times
     self.values = values
 
@@ -117,39 +118,78 @@ class Force(object):
 
 class Simulation(object):
   """Simulation manager."""
-  def __init__(self, name=None, directory=os.getcwd(), output=False):
-    """Initialization (stores simulation directory).
+  def __init__(self, description=None, directory=os.getcwd(), software=None, 
+               coefficient=1.0):
+    """Registers the simulations.
 
     Parameters
     ----------
+    description: string
+      Description of the simulation; default: None.
     directory: string
       Directory of the simulation; default: current working directory.
-    output: boolean
-      If 'True': prints simulation directory; default: False.
+    software: string
+      Name of the software used for the simulation; default: None.
     """
-    self.name = name
+    self.description = description
     self.directory = directory
-    self.force_x, self.force_y = None, None
-    if output:
-      print('[info] simulation name: {}'.format(self.name))
-      print('[info] simulation directory: {}'.format(self.directory))
+    self.software = software
+    self.coefficient = coefficient
+    self.print_registration()
+    self.derive_class()
+
+  def print_registration(self):
+    """Prints global details of the simulation"""
+    print('[info] registering simulation ...')
+    print('\tdirectory: {}'.format(self.directory))
+    print('\tdescription: {}'.format(self.description))
+    print('\tsoftware: {}'.format(self.software))
+
+  def derive_class(self):
+    """Finds the appropriate child class based on the software used."""
+    classDerivations = {'cuibm': CuIBMSimulation, 
+                        'petibm': PetIBMSimulation, 
+                        'openfoam': OpenFOAMSimulation,
+                        'ibamr': IBAMRSimulation}
+    try:
+      self.__class__ = classDerivations[self.software]
+    except KeyError:
+      print('[error] software indicated: {}'.format(self.software))
+      print('[error] simulation type should be one of the followings: '
+            '{}'.format(derivations.keys()))
+      sys.exit(0)
 
   def get_means(self, limits=[0.0, float('inf')], last_period=False, order=5, 
-                force_coefficients=False, output=False):
+                display_coefficients=False):
+    """Computes the time-averaged forces (or force-coefficients).
+
+    Parameters
+    ----------
+    limits: list of floats
+      Time-limits used to compute the mean; default: [0.0, +inf].
+    last_period: bool
+      Set 'True' if only the last period define the time-limits; default: False.
+    order: int
+      Number of neighboring points used to define an extremum; default: 5.
+
+    Returns
+    -------
+    fx_mean, fy_mean: dict
+      Time-limits and mean value for forces in each direction.
+    """
     fx_mean = self.force_x.get_mean(limits=limits, last_period=last_period, order=order)
     fy_mean = self.force_y.get_mean(limits=limits, last_period=last_period, order=order)
-    if output:
-      fx_name = ('<cd>' if force_coefficients else '<fx>')
-      fy_name = ('<cl>' if force_coefficients else '<fy>')
-      print('Averaging forces in x-direction between {} and {}:'.format(fx_mean['start'], 
-                                                                        fx_mean['end']))
-      print('\t{} = {}'.format(fx_name, fx_mean['value']))
-      print('Averaging forces in y-direction between {} and {}:'.format(fy_mean['start'], 
-                                                                        fy_mean['end']))
-      print('\t{} = {}'.format(fy_name, fy_mean['value']))
+    fx_name = ('<cd>' if display_coefficients else '<fx>')
+    fy_name = ('<cl>' if display_coefficients else '<fy>')
+    print('[info] averaging forces in x-direction between {} and {}:'.format(fx_mean['start'], 
+                                                                             fx_mean['end']))
+    print('\t{} = {}'.format(fx_name, fx_mean['value']))
+    print('[info] averaging forces in y-direction between {} and {}:'.format(fy_mean['start'], 
+                                                                             fy_mean['end']))
+    print('\t{} = {}'.format(fy_name, fy_mean['value']))
     return fx_mean, fy_mean
 
-  def get_strouhal(self, L=1.0, U=1.0, n_periods=1, order=5, output=False):
+  def get_strouhal(self, L=1.0, U=1.0, n_periods=1, order=5):
     """Computes the Strouhal number based on the frequency of the lift force.
 
     The frequency is beased on the lift history and is computed using the minima
@@ -161,12 +201,10 @@ class Simulation(object):
       Characteristics length of the body; default: 1.0.
     U: float
       Characteristics velocity of the body; default: 1.0.
-    order: integer
-      Number of neighbors used on each side to define an extremum; default: 5.
     n_periods: integer
       Number of periods (starting from end) to average the Strouhal number; default: 1.
-    output: bool
-      Set 'True' if you want to print the Strouhal number; default: False.
+    order: integer
+      Number of neighbors used on each side to define an extremum; default: 5.
 
     Returns
     -------
@@ -177,26 +215,49 @@ class Simulation(object):
     strouhals = L/U/( self.force_y.times[minima[-n_periods:]] 
                     - self.force_y.times[minima[-n_periods-1:-1]] )
     strouhal = strouhals.mean()
-    if output:
-      print('Estimating the Strouhal number over the last {} period(s):'.format(n_periods))
-      print('\tSt = {}'.format(strouhal))
-      print('\tSt values used to average: {}'.format(strouhals))
+    print('[info] estimating the Strouhal number over the last {} period(s):'.format(n_periods))
+    print('\tSt = {}'.format(strouhal))
+    print('\tSt values used to average: {}'.format(strouhals))
     return strouhal
 
   def plot_forces(self, display_lift=True, display_drag=True,
                   limits=[0.0, float('inf'), 0.0, float('inf')],
-                  title=None, save=None, show=False, output=False,
+                  title=None, save_name=None, show=False,
                   display_extrema=False, order=5, display_gauge=False,
                   other_simulations=[]):
-    """Displays the forces into a figure."""
-    if output:
-      print('[info] plotting forces... ')
+    """Displays the forces into a figure.
+
+    Parameters
+    ----------
+    display_lift: bool
+      Set 'True' if the lift curve should be added to the figure; default: True.
+    display_drag: bool
+      Set 'True' if the drag curve should be added to the figure; default: True.
+    limits: list of floats
+      Limits of the axes [xmin, xmax, ymin, ymax]; default: [0.0, +inf, 0.0, +inf].
+    title: string
+      Title of the figure; default: None.
+    save_name: string
+      Name of the .PNG file to save; default: None (does not save).
+    show: bool
+      Set 'True' to display the figure; default: False.
+    display_extrema: bool
+      Set 'True' to emphasize the extrema of the curves; default: False.
+    order: int
+      Number of neighbors used on each side to define an extremum; default: 5.
+    display_gauge: bool
+      Set 'True' to display gauges to judge steady regime; default: False.
+    other_simulations: list of Simulation objects
+      List of other simulations to add to plot; default: [].
+    """
+    print('[info] plotting forces ...')
     pyplot.style.use('{}/styles/mesnardo.mplstyle'.format(os.environ['SCRIPTS']))
     fig, ax = pyplot.subplots(figsize=(8, 6))
     color_cycle = ax._get_lines.color_cycle
     pyplot.grid(True, zorder=0)
     pyplot.xlabel('time')
-    pyplot.ylabel('forces' if self.force_x.name == '$F_x$' else 'force coefficients')
+    pyplot.ylabel('forces' if self.force_x.description == '$F_x$' 
+                           else 'force coefficients')
     forces = []
     if display_drag:
       forces.append(self.force_x)
@@ -205,8 +266,10 @@ class Simulation(object):
     for force in forces:
       color = next(color_cycle)
       pyplot.plot(force.times, force.values,
-                  label=('{} - {}'.format(self.name.replace('_', ' '), force.name) if self.name
-                         else force.name),
+                  label=('{} - {}'.format(self.description.replace('_', ' '), 
+                                          force.description) 
+                         if self.description
+                         else force.description),
                   color=color, linestyle='-', zorder=10)
       if display_extrema:
         minima, maxima = force.get_extrema(order=order)
@@ -228,168 +291,144 @@ class Simulation(object):
       for force in forces:
         color = next(color_cycle)
         pyplot.plot(force.times, force.values,
-                    label=('{} - {}'.format(simulation.name.replace('_', ' '), force.name) if simulation.name
-                           else force.name),
+                    label=('{} - {}'.format(simulation.description.replace('_', ' '), 
+                                            force.description) 
+                           if simulation.description
+                           else force.description),
                     color=color, linestyle='--', zorder=10)
     pyplot.legend()
     pyplot.axis(limits)
     if title:
       pyplot.title(title)
-    if save:
+    if save_name:
       images_directory = '{}/images'.format(self.directory)
-      if output:
-        print('[info] saving figure in directory {}...'.format(images_directory))
+      print('[info] saving figure in directory {} ...'.format(images_directory))
       if not os.path.isdir(images_directory):
         os.makedirs(images_directory)
-      pyplot.savefig('{}/{}.png'.format(images_directory, save))
+      pyplot.savefig('{}/{}.png'.format(images_directory, save_name))
     if show:
-      if output:
-        print('[info] displaying figure...')
+      print('[info] displaying figure ...')
       pyplot.show()
     pyplot.close()
 
 
 class OpenFOAMSimulation(Simulation):
   """Contains information about an OpenFOAM simulation."""
-  def __init__(self, name=None, directory=os.getcwd(), output=False):
-    """Initialization (stores simulation directory).
+  def __init__(self):
+    pass
 
-    Parameters
-    ----------
-    directory: string
-      Directory of the simulation; default: current working directory.
-    output: boolean
-      If 'True': prints simulation directory; default: False.
-    """
-    Simulation.__init__(self, name=name, directory=directory, output=output)
-
-  def read_forces(self, force_coefficients=False, coefficient=1.0):
+  def read_forces(self, display_coefficients=False):
     """Reads forces from files.
 
     Parameters
     ----------
-    force_coefficients: boolean
+    display_coefficients: boolean
       Set to 'True' if force coefficients are required; default: False (i.e. forces).
     """
-    key = 'forceCoeffs' if force_coefficients else 'forces'
-    forces_directory = '{}/postProcessing/{}'.format(self.directory, key)
-    usecols=(0, 2, 3)
+    if display_coefficients:
+      info = {'directory': '{}/postProcessing/forceCoeffs'.format(self.directory),
+              'description': 'force-coefficients',
+              'x-direction': '$C_d$',
+              'y-direction': '$C_l$',
+              'usecols': (0, 2, 3)}
+    else:
+      info = {'directory': '{}/postProcessing/forces'.format(self.directory),
+              'description': 'forces',
+              'x-direction': '$F_x$',
+              'y-direction': '$F_y$',
+              'usecols': (0, 2, 3)}
     # backward compatibility from 2.2.2 to 2.0.1
-    if not os.path.isdir(forces_directory):
-      forces_directory = '{}/forces'.format(self.directory)
-      usecols=(0, 1, 2)
-    subdirectories = sorted(os.listdir(forces_directory))
+    if not os.path.isdir(info['directory']):
+      info['directory'] = '{}/forces'.format(self.directory)
+      info['usecols'] = (0, 1, 2)
+    print('[info] reading {} in {} ...'.format(info['description'], info['directory'])),
+    subdirectories = sorted(os.listdir(info['directory']))
     times = numpy.empty(0)
     force_x, force_y = numpy.empty(0), numpy.empty(0)
     for subdirectory in subdirectories:
-      forces_path = '{}/{}/{}.dat'.format(forces_directory, subdirectory, key)
+      forces_path = '{}/{}/{}.dat'.format(info['directory'], subdirectory, os.path.basename(info['directory']))
       with open(forces_path, 'r') as infile:
         t, fx, fy = numpy.loadtxt(infile, dtype=float, comments='#', 
-                                  usecols=usecols, unpack=True)
+                                  usecols=info['usecols'], unpack=True)
       times = numpy.append(times, t)
       force_x, force_y = numpy.append(force_x, fx), numpy.append(force_y, fy)
-    self.force_x = Force(times, coefficient*force_x, 
-                         name=('$C_d$' if force_coefficients else '$F_x$'))
-    self.force_y = Force(times, coefficient*force_y, 
-                         name=('$C_l$' if force_coefficients else '$F_y$'))
+    self.force_x = Force(times, self.coefficient*force_x, 
+                         description=info['x-direction'])
+    self.force_y = Force(times, self.coefficient*force_y, 
+                         description=info['y-direction'])
+    print('done')
 
 
 class CuIBMSimulation(Simulation):
   """Contains information about a cuIBM simulation."""
-  def __init__(self, name=None, directory=os.getcwd(), output=False):
-    """Initialization (stores simulation directory).
+  def __init__(self):
+    pass
 
-    Parameters
-    ----------
-    directory: string
-      Directory of the simulation; default: current working directory.
-    output: boolean
-      If 'True': prints simulation directory; default: False.
-    """
-    Simulation.__init__(self, name=name, directory=directory, output=output)
-
-  def read_forces(self, force_coefficients=False, coefficient=1.0):
+  def read_forces(self, display_coefficients=False):
     """Reads forces from files.
 
     Parameters
     ----------
-    force_coefficients: boolean
+    display_coefficients: boolean
       Set to 'True' if force coefficients are required; default: False (i.e. forces).
-    coefficient: float
-      Force to force-coefficient scale; default: 1.0.
     """
     forces_path = '{}/forces'.format(self.directory)
+    print('[info] reading values from {} ...'.format(forces_path)),
     with open(forces_path, 'r') as infile:
       times, force_x, force_y = numpy.loadtxt(infile, dtype=float, 
                                               usecols=(0, 1, 2), unpack=True)
-    self.force_x = Force(times, coefficient*force_x,
-                         name=('$C_d$' if force_coefficients else '$F_x$'))
-    self.force_y = Force(times, coefficient*force_y,
-                         name=('$C_l$' if force_coefficients else '$F_y$'))
+    self.force_x = Force(times, self.coefficient*force_x,
+                         description=('$C_d$' if display_coefficients else '$F_x$'))
+    self.force_y = Force(times, self.coefficient*force_y,
+                         description=('$C_l$' if display_coefficients else '$F_y$'))
+    print('done')
+
 
 class PetIBMSimulation(Simulation):
   """Contains information about a PetIBM simulation."""
-  def __init__(self, name=None, directory=os.getcwd(), output=False):
-    """Initialization (stores simulation directory).
+  def __init__(self):
+    pass
 
-    Parameters
-    ----------
-    directory: string
-      Directory of the simulation; default: current working directory.
-    output: boolean
-      If 'True': prints simulation directory; default: False.
-    """
-    Simulation.__init__(self, name=name, directory=directory, output=output)
-
-  def read_forces(self, force_coefficients=False, coefficient=1.0):
+  def read_forces(self, display_coefficients=False):
     """Reads forces from files.
 
     Parameters
     ----------
-    force_coefficients: boolean
+    display_coefficients: boolean
       Set to 'True' if force coefficients are required; default: False (i.e. forces).
-    coefficient: float
-      Force to force-coefficient scale; default: 1.0.
     """
     forces_path = '{}/forces.txt'.format(self.directory)
+    print('[info] reading values from {} ...'.format(forces_path)),
     with open(forces_path, 'r') as infile:
       times, force_x, force_y = numpy.loadtxt(infile, dtype=float, 
                                               usecols=(0, 1, 2), unpack=True)
-    self.force_x = Force(times, coefficient*force_x,
-                         name=('$C_d$' if force_coefficients else '$F_x$'))
-    self.force_y = Force(times, coefficient*force_y,
-                         name=('$C_l$' if force_coefficients else '$F_y$'))
+    self.force_x = Force(times, self.coefficient*force_x,
+                         description=('$C_d$' if display_coefficients else '$F_x$'))
+    self.force_y = Force(times, self.coefficient*force_y,
+                         description=('$C_l$' if display_coefficients else '$F_y$'))
+    print('done')
 
 
 class IBAMRSimulation(Simulation):
   """Contains information about a IBAMR simulation."""
-  def __init__(self, name=None, directory=os.getcwd(), output=False):
-    """Initialization (stores simulation directory).
+  def __init__(self):
+    pass
 
-    Parameters
-    ----------
-    directory: string
-      Directory of the simulation; default: current working directory.
-    output: boolean
-      If 'True': prints simulation directory; default: False.
-    """
-    Simulation.__init__(self, name=name, directory=directory, output=output)
-
-  def read_forces(self, force_coefficients=False, coefficient=1.0):
+  def read_forces(self, display_coefficients=False):
     """Reads forces from files.
 
     Parameters
     ----------
-    force_coefficients: boolean
+    display_coefficients: boolean
       Set to 'True' if force coefficients are required; default: False (i.e. forces).
-    coefficient: float
-      Force to force-coefficient scale; default: 1.0.
     """
     forces_path = '{}/dataIB/ib_Drag_force_struct_no_0'.format(self.directory)
+    print('[info] reading values from {} ...'.format(forces_path)),
     with open(forces_path, 'r') as infile:
       times, force_x, force_y = numpy.loadtxt(infile, dtype=float, 
                                               usecols=(0, 4, 5), unpack=True)
-    self.force_x = Force(times, coefficient*force_x,
-                         name=('$C_d$' if force_coefficients else '$F_x$'))
-    self.force_y = Force(times, coefficient*force_y,
-                         name=('$C_l$' if force_coefficients else '$F_y$'))
+    self.force_x = Force(times, self.coefficient*force_x,
+                         description=('$C_d$' if display_coefficients else '$F_x$'))
+    self.force_y = Force(times, self.coefficient*force_y,
+                         description=('$C_l$' if display_coefficients else '$F_y$'))
+    print('done')
