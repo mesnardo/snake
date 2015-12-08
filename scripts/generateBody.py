@@ -11,6 +11,7 @@ import argparse
 
 sys.path.append('{}/scripts/library'.format(os.environ['SCRIPTS']))
 import geometry
+import miscellaneous
 
 
 def read_inputs():
@@ -83,14 +84,8 @@ def read_inputs():
                       help='displays the geometry')
   parser.set_defaults(save=True)
   # parse given options file
-  class LoadFromFile(argparse.Action):
-    """Container to read parameters from file."""
-    def __call__(self, parser, namespace, values, option_string=None):
-      """Fills the namespace with parameters read in file."""
-      with values as f:
-        parser.parse_args(f.read().split(), namespace)
   parser.add_argument('--options', 
-                      type=open, action=LoadFromFile,
+                      type=open, action=miscellaneous.ReadOptionsFromFile,
                       help='path of the file with options to parse')
   print('done')
   return parser.parse_args()

@@ -11,10 +11,12 @@ import argparse
 
 sys.path.append('{}/scripts/library'.format(os.environ['SCRIPTS']))
 import forces
+import miscellaneous
 
 
 def parse_command_line():
   """Parses the command-line."""
+  print('[info] parsing command-line ...'),
   # create parser
   parser = argparse.ArgumentParser(description='Plots the instantaneous forces',
                         formatter_class= argparse.ArgumentDefaultsHelpFormatter)
@@ -79,20 +81,11 @@ def parse_command_line():
   # default options
   parser.set_defaults(display_drag=True, display_lift=True, show=True)
   # parse given options file
-  class LoadFromFile(argparse.Action):
-    """Container to read parameters from file."""
-    def __call__(self, parser, namespace, values, option_string=None):
-      """Fills the namespace with parameters read in file."""
-      with values as infile:
-        lines = [element for line in infile.readlines()
-                 for element in line.strip().split()
-                 if not line.startswith('#')]
-        parser.parse_args(lines, namespace)
   parser.add_argument('--options', 
-                      type=open, action=LoadFromFile,
+                      type=open, action=miscellaneous.ReadOptionsFromFile,
                       help='path of the file with options to parse')
-
   # return namespace
+  print('done')
   return parser.parse_args()
 
 

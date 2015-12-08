@@ -11,9 +11,13 @@ import os
 import numpy
 from paraview.simple import *
 
+sys.path.append('{}/scripts/library'.format(os.environ['SCRIPTS']))
+import miscellaneous
+
 
 def parse_command_line():
   """Parses the command-line."""
+  print('[info] parsing command-line ...'),
   # create the parser
   parser = argparse.ArgumentParser(description='Plots the vorticity field with ParaFOAM',
                                    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -52,15 +56,10 @@ def parse_command_line():
                       type=float, default=1.0,
                       help='WIP: coefficient to adjust the view')
   # parse given options file
-  class LoadFromFile(argparse.Action):
-    """Container to read parameters from file."""
-    def __call__(self, parser, namespace, values, option_string=None):
-      """Fills the namespace with parameters read in file."""
-      with values as f:
-        parser.parse_args(f.read().split(), namespace)
   parser.add_argument('--options', 
-                      type=open, action=LoadFromFile,
+                      type=open, action=miscellaneous.ReadOptionsFromFile,
                       help='path of the file with options to parse')
+  print('done')
   return parser.parse_args()
 
 
