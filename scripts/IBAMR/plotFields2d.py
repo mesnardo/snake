@@ -20,6 +20,9 @@ def parse_command_line():
   parser.add_argument('--directory', dest='directory', 
                       type=str, default=os.getcwd(),
                       help='directory of the IBAMR simulation')
+  parser.add_argument('--solution-folder', dest='solution_folder',
+                      type=str, default='numericalSolution',
+                      help='name of folder containing the solution in time')
   parser.add_argument('--body-name', dest='body_name',
                       type=str,
                       help='name of the body file (without the .vertex extension)')
@@ -108,7 +111,7 @@ def main():
   ShowAllWindows()
 
   # display body
-  OpenDatabase("localhost:{}/numericalResults/lag_data.visit".format(args.directory), 0)
+  OpenDatabase("localhost:{}/{}/lag_data.visit".format(args.directory, args.solution_folder), 0)
   AddPlot("Mesh", "{}_vertices".format(args.body_name), 1, 1)
   DrawPlots()
   MeshAtts = MeshAttributes()
@@ -133,7 +136,7 @@ def main():
   SetPlotOptions(MeshAtts)
 
   # display vorticity field
-  OpenDatabase("localhost:{}/numericalResults/dumps.visit".format(args.directory), 0)
+  OpenDatabase("localhost:{}/{}/dumps.visit".format(args.directory, args.solution_folder), 0)
   HideActivePlots()
   AddPlot("Pseudocolor", visit_field_name, 1, 1)
   DrawPlots()
