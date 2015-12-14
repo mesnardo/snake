@@ -7,6 +7,7 @@
 
 import argparse
 import os
+import sys
 
 import numpy
 from paraview.simple import *
