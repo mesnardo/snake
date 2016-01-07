@@ -9,7 +9,7 @@ import argparse
 import os
 import sys
 
-sys.path.append('{}/libraries'.format(os.environ['PYSCRIPTS']))
+sys.path.append('{}/libraries'.format(os.environ['SCRIPTS']))
 import OBJFile
 
 
