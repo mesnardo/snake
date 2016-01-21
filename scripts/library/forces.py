@@ -1,5 +1,3 @@
-#!/usr/bin/python
-
 # file: forces.py
 # author: Olivier Mesnard (mesnardo@gwu.edu)
 # description: Collection of classes and functions to post-process forces 

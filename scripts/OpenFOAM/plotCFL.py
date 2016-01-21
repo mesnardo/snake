@@ -1,5 +1,3 @@
-#!/usr/bin/python
-
 # file: plotCFL.py
 # author: Olivier Mesnard (mesnardo@gwu.edu)
 # brief: Plots the instantaneous maximum CFL number.

@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 # file: plotCenterlineVelocitiesLidDrivenCavity2d.py
 # author: Olivier Mesnard (mesnardo@gwu.edu)
 # description: Plots the centerline velocities for lid-driven cavity flow case

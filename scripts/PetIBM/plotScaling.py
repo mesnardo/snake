@@ -1,5 +1,3 @@
-#!/bin/sh python
-
 # file: plotScaling.py
 # author: Olivier Mesnard (mesnardo@gwu.edu)
 # brief: Plots the wall-time versus the process count.

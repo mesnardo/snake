@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 # file: generateGEOFile.py
 # author: Olivier Mesnard (mesnardo@gwu.edu)
 # description: Generate .geo file to be read by GMSH

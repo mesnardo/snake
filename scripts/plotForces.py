@@ -1,5 +1,3 @@
-#!/usr/bin/python
-
 # file: plotForces.py
 # author: Olivier Mesnard (mesnardo@gwu.edu)
 # description: Plots the instantaneous forces or force coefficients.

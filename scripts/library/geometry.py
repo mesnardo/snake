@@ -1,5 +1,3 @@
-#!/usr/bin/env/ python
-
 # file: geometry.py
 # author: Olivier Mesnard (mesnardo@gwu.edu)
 # description: Implementation of classes to generate various bodies.

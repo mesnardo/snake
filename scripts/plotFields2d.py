@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 # file: plotFields2d.py
 # author: Olivier Mesnard (mesnardo@gwu.edu)
 # description: Plots the contour of vorticity at saved time-steps.

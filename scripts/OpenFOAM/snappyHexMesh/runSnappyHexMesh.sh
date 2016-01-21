@@ -2,7 +2,7 @@
 
 # file: runSnappyHexMesh.sh
 # author: Olivier Mesnard (mesnardo@gwu.edu)
-# brief: Generates a mesh with snappyHexMesh on 1 processor.
+# brief: Generates a mesh with snappyHexMesh.
 
 
 # source tool run functions

@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 # file: ioCuIBM.py
 # author: Olivier Mesnard (mesnardo@gwu.edu)
 # description: Collection of IO functions for cuIBM.

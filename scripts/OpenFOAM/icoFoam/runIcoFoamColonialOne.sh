@@ -5,7 +5,7 @@
 # brief: Runs IcoFOAM on multi-nodes on Colonial One.
 
 
-#SBATCH --job-name="of2k25"
+#SBATCH --job-name="name"
 #SBATCH --output=log%j.out
 #SBATCH --error=log%j.err
 #SBATCH --partition=short
@@ -14,13 +14,12 @@
 
 module load openfoam/gcc/2.3.0
 
-# remove previous run
-rm -rf log.run && mkdir log.run
+mkdir log.run
 
 # source tool run functions
 . $WM_PROJECT_DIR/bin/tools/RunFunctions
 
-# decompose domain for parrallel run
+# decompose domain for parallel run
 cp system/decomposeParDict_resources/decomposeParDict.simple system/decomposeParDict
 runApplication decomposePar
 mv log.decomposePar log.run

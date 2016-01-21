@@ -1,5 +1,3 @@
-#!/bin/python
-
 # file: logSummaryReader.py
 # author: Olivier Mesnard (mesnardo@gwu.edu)
 # brief: Collection of classes and functions to parse a given PETSc log summary.

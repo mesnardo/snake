@@ -1,6 +1,4 @@
-#!/opt/OpenFOAM/ThirdParty-2.2.2/platforms/linux64Gcc/paraview-3.12.0/bin/pvbatch
-
-# file: plotFields.py
+# file: plotFields2d.py
 # author: Olivier Mesnard (mesnardo@gwu.edu)
 # brief: Macro to run ParaView and plot variable in batch mode.
 
@@ -18,7 +16,7 @@ import miscellaneous
 
 def parse_command_line():
   """Parses the command-line."""
-  print('[info] parsing command-line ...'),
+  print('[info] parsing command-line...'),
   # create the parser
   parser = argparse.ArgumentParser(description='Plots the vorticity field with ParaFOAM',
                                    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -88,7 +86,7 @@ def main():
     variable_name = 'v-velocity'
     variable_nickname = 'U'
   else:
-    print('[warning] nothing to plot; use flag --vorticity, --u-velocity, '
+    print('[error] nothing to plot; use flag --vorticity, --u-velocity, '
           '--v-velocity, or --pressure')
     return
   reader.VolumeFields = [variable_nickname]
@@ -117,9 +115,10 @@ def main():
 
   # create images folder if does not exist
   rectangle = '{:.2f}_{:.2f}_{:.2f}_{:.2f}'.format(x_bl, y_bl, x_tr, y_tr)
-  images_path = '{}/images/{}_{}'.format(parameters.directory, variable_name, rectangle)
-  if not os.path.isdir(images_path):
-    os.makedirs(images_path)
+  images_directory = '{}/images/{}_{}'.format(parameters.directory, variable_name, rectangle)
+  if not os.path.isdir(images_directory):
+    os.makedirs(images_directory)
+  print('[info] save-directory: {}'.format(images_directory))
 
   if parameters.plot_vorticity:
     # edit color-map
@@ -208,10 +207,10 @@ def main():
   
   # time-loop to plot and save the vorticity field
   for time in times:
-    print('Time: {}'.format(time))
+    print('[info] creating view at time: {}...'.format(time))
     view.ViewTime = time
     text.Text = 'time = {}'.format(time)
-    WriteImage('{}/{}{:06.2f}.png'.format(images_path, variable_name, time))
+    WriteImage('{}/{}{:06.2f}.png'.format(images_directory, variable_name, time))
 
 
 if __name__ == '__main__':

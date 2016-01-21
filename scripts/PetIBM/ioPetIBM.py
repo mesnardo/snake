@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 # file: ioPetIBM.py
 # author: Olivier Mesnard (mesnardo@gwu.edu)
 # description: Collection of IO functions for PetIBM.

@@ -1,8 +1,6 @@
-#!/usr/bin/env/ python
-
-# \file cleanSimulation.py
-# \author: Olivier Mesnard (mesnardo@gwu.edu)
-# \description Cleans a PetIBM simulation.
+# file cleanSimulation.py
+# author: Olivier Mesnard (mesnardo@gwu.edu)
+# brief: Cleans a PetIBM simulation.
 
 
 import os

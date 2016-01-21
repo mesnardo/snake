@@ -1,8 +1,6 @@
-#!/Users/mesnardo/src/anaconda/bin/python
-
 # file: copy_missing_files.py
 # author: Olivier Mesnard (mesnardo@gwu.edu)
-# brief: Copy missing file.
+# brief: Copies missing file.
 
 import sys
 import os

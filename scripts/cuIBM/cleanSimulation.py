@@ -1,5 +1,3 @@
-#!/usr/bin/env/ python
-
 # file: cleanSimulation.py
 # author: Olivier Mesnard (mesnardo@gwu.edu)
 # description: Clean a cuIBM simulation.

@@ -47,7 +47,7 @@ class OBJFile(object):
 
     Parameters
     ----------
-    name: str
+    name: string
       Name of the OBJ file.
     """
     self.name = name
@@ -56,11 +56,11 @@ class OBJFile(object):
 class Box2d(OBJFile):
   """Contains information about a 2d box OBJ file."""
   def __init__(self, name, bottom_left=[-1.0, -1.0], top_right=[1.0, 1.0], n=[10, 10], z=0.0):
-    """Creates the box.
+    """Creates the 2d box.
 
     Parameters
     ----------
-    name: str
+    name: string
       Name of the box.
     bottom_left: list(float)
       Bottom-left corner of the box; default: [-1.0, -1.0].
@@ -138,10 +138,10 @@ class Box2d(OBJFile):
 
     Parameters
     ----------
-    save_directory: str
-      Directory where to save the OBJ file; default: pwd.
+    save_directory: string
+      Directory where to save the OBJ file; default: 'current directory'.
     """
-    print('[info] writing OBJ file... '),
+    print('[info] writing OBJ file ...'),
     nx, ny = self.x.size, self.y.size
     header = ('# Wavefront OBJ file\n'
               '# points: {}\n'
@@ -159,11 +159,21 @@ class Box2d(OBJFile):
                                             face.vertex2.index+1,
                                             face.vertex3.index+1))
     print('done')
+    print('path: {}'.format(obj_path))
 
 
 class Body2d(OBJFile):
   """Contains information about the body OBJ file"""
   def __init__(self, name, file_path):
+    """Reads the coordinates of the 2d geometry.
+
+    Parameters
+    ----------
+    name: string
+      Name of the body.
+    file_path: string
+      Path of the coordinates file.
+    """
     OBJFile.__init__(self, name)
     self.x, self.y = self.read_coordinates(file_path)
 
@@ -172,15 +182,15 @@ class Body2d(OBJFile):
 
     Parameters
     ----------
-    file_path: str
+    file_path: string
       Path of the coordinates file.
 
     Returns
     -------
-    x, y: numypy.array
-      x- and y- coordinates in closed loop form.
+    x, y: numpy.array
+      x- and y-coordinates in closed loop form.
     """
-    print('-> reading input coordinates... '),
+    print('[info] reading input coordinates from {} ...'.format(file_path)),
     # read the coordinates file
     with open(file_path, 'r') as infile:
       x, y = numpy.loadtxt(infile, dtype=float, delimiter='\t', skiprows=1, unpack=True)
@@ -190,15 +200,15 @@ class Body2d(OBJFile):
     print('done')
     return x, y
 
-  def write_obj_file(self, save_directory=os.getcwd()):
+  def write(self, save_directory=os.getcwd()):
     """Writes the coordinates in a .obj format.
 
     Parameters
     ----------
-    save_directory: str
-      Directory where to save the .obj file; default: pwd.
+    save_directory: string
+      Directory where to save the .obj file; default: 'current directory'.
     """
-    print('-> writing .obj file... '),
+    print('[info] writing OBJ file ...'),
     outfile_path = '{}/{}.obj'.format(save_directory, self.name)
     header = ('# Wavefront OBJ file\n'
               '# points: {}\n'
@@ -217,3 +227,4 @@ class Body2d(OBJFile):
       outfile.write('f {} {} {}\n'.format(2*self.x.size, 2*self.x.size-1, 1))
       outfile.write('f {} {} {}\n'.format(1, 2, 2*self.x.size))
     print('done')
+    print('path: {}'.format(outfile_path))

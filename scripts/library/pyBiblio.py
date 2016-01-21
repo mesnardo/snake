@@ -1,5 +1,3 @@
-#!/usr/bin/python
-
 # file: pyBiblio.py
 # author: Olivier Mesnard (mesnardo@gwu.edu)
 # brief: Library manager.

@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 # file: plotDragCoefficientsCylinder2d.py
 # author: Olivier Mesnard (mesnardo@gwu.edu)
 # description: Plots the instantaneous drag coefficient and compares to 

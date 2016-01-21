@@ -1,21 +1,18 @@
-#!/usr/bin/env python
-
 # file: generateBoxOBJFile.py
 # author: Olivier Mesnard (mesnardo@gwu.edu)
-# brief: Generate a triangulated 2D box and export as .OBJ file.
+# brief: Generates a triangulated 2D box and exports data as .OBJ file.
 
 
 import argparse
 import os
 import sys
 
-sys.path.append('{}/libraries'.format(os.environ['SCRIPTS']))
 import OBJFile
 
 
 def parse_command_line():
   """Parses the command-line."""
-  print('[info] parsing command-line... '),
+  print('[info] parsing command-line ...'),
   # create the parser
   parser = argparse.ArgumentParser(description='Generates a 2D triangulated '
                                                'box and writes into a Wavefront OBJ file',
@@ -32,11 +29,11 @@ def parse_command_line():
                       help='z-coordinate of the 2d box')
   parser.add_argument('-n', dest='n', 
                       type=int, nargs='+', default=[100, 100],
-                      help='number of points in the x- and y- directions')
+                      help='number of points in the x- and y-directions')
   parser.add_argument('--name', dest='name', 
                       type=str, default='box',
                       help='name of the OBJ file (without the extension)')
-  parser.add_argument('--save-dir', dest='save_directory', 
+  parser.add_argument('--save-directory', dest='save_directory', 
                       type=str, default=os.getcwd(),
                       help='directory where to save the .obj file')
   print('done')
@@ -45,11 +42,11 @@ def parse_command_line():
 
 def main():
   """Generates a 2D triangulated box and writes in Wavefront OBJ file."""
-  parameters = parse_command_line()
-  box = OBJFile.Box2d(parameters.name, 
-                      bottom_left=parameters.bottom_left, top_right=parameters.top_right,
-                      n=parameters.n, z=parameters.z)
-  box.write(parameters.save_directory)
+  args = parse_command_line()
+  box = OBJFile.Box2d(args.name, 
+                      bottom_left=args.bottom_left, top_right=args.top_right,
+                      n=args.n, z=args.z)
+  box.write(args.save_directory)
   
 
 if __name__ == '__main__':

@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 # file: generateGrid.py
 # author: Anush Krishnan (anush@bu.edu), Olivier Mesnard (mesnardo@gwu.edu)
 # description: Generates the cartesianMesh.yaml file for stretched grids.
