@@ -27,6 +27,8 @@ class ReadOptionsFromFile(argparse.Action):
       lines = [element for line in infile.readlines()
                    for element in line.strip().split()
                     if not line.startswith('#')]
+      lines = [os.path.expandvars(line) if '$' in line else line 
+               for line in lines[:]]
     parser.parse_args(lines, namespace)
 
 
