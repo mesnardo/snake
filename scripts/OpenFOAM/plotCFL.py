@@ -198,7 +198,7 @@ def plot_cfl(time, cfl,
 def main():
   """Plots the instantaneous maximum CFL number."""
   args = parse_command_line()
-  time, cfl = read_maximum_cfl(args.file_path)
+  time, cfl = read_maximum_cfl('{}/{}'.format(args.directory, args.file_path))
   get_mean(time, cfl,  limits=args.average_limits, output=True)
   plot_cfl(time, cfl, 
            display_extrema=args.display_extrema, order=args.order,
