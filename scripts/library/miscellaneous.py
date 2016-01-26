@@ -13,10 +13,12 @@ import numpy
 from scipy import misc
 from matplotlib import pyplot, gridspec
 
-
-from notebook.services.config import ConfigManager
 from IPython.display import HTML, Image, display
-import ipywidgets
+try:
+  import ipywidgets
+except ImportError:
+  print('[warning] could not import ipywidgets')
+
 
 
 class ReadOptionsFromFile(argparse.Action):
