@@ -19,7 +19,7 @@ def parse_command_line():
                                                'pressure and velocity fields',
                         formatter_class= argparse.ArgumentDefaultsHelpFormatter)
   # fill parser with arguments
-  parser.add_argument('--type', dest='simulation_type',
+  parser.add_argument('--type', '--software', dest='simulation_type',
                       type=str, 
                       help='type of simulation (cuibm or petibm)')
   parser.add_argument('--directory', dest='case_directory', 
