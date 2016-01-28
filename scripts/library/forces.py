@@ -331,12 +331,15 @@ class Simulation(object):
                                  index=['<no description>' if not self.description else self.description],
                                  columns=[('<Cd>' if display_coefficients else '<Fx>'),
                                           ('<Cl>' if display_coefficients else '<Fy>')])
-    if not silent:
-      print('[info] the Strouhal number is averaged '
-            'over the last {} oscillations of the lift curve '
-            'ending at {} time-units.'.format(self.n_periods_strouhal,
-                                              self.end_time_strouhal))
-    dataframe['<St>'] = '{0:.4f}'.format(self.strouhal)
+    try:
+      if not silent:
+        print('[info] the Strouhal number is averaged '
+              'over the last {} oscillations of the lift curve '
+              'ending at {} time-units.'.format(self.n_periods_strouhal,
+                                                self.end_time_strouhal))
+      dataframe['<St>'] = '{0:.4f}'.format(self.strouhal)
+    except:
+      pass
     for simulation in other_simulations:
       dataframe = dataframe.append(simulation.create_dataframe(display_coefficients=display_coefficients,
                                                                silent=True))
