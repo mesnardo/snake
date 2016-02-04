@@ -9,12 +9,16 @@ import re
 import argparse
 import collections
 
-import numpy
-from scipy import misc
-from matplotlib import pyplot, gridspec
-
-from IPython.display import HTML, Image, display
 try:
+  import numpy
+  from scipy import misc
+  from matplotlib import pyplot, gridspec
+except:
+  pass
+
+
+try:
+  from IPython.display import HTML, Image, display
   import ipywidgets
 except ImportError:
   print('[warning] could not import ipywidgets')

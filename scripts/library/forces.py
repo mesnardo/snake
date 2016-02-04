@@ -10,11 +10,12 @@ import sys
 import numpy
 from scipy import signal
 from matplotlib import pyplot
+import pandas
 
 
 class Force(object):
   """Contains info about a force."""
-  def __init__(self, times, values, description=None):
+  def __init__(self, times, values):
     """Initializes the force with given values.
 
     Parameters
@@ -23,10 +24,7 @@ class Force(object):
       Discrete time.
     values: Numpy array of float
       Instantaneous values of the force.
-    description: string
-      Description of the force; default: None.
     """
-    self.description = description
     self.times = times
     self.values = values
 
@@ -129,7 +127,10 @@ class Simulation(object):
     software: string
       Name of the software used for the simulation; default: None.
     """
-    self.description = description
+    try:
+      self.description = description.replace('_', ' ')
+    except:
+      self.description = description
     self.directory = directory
     self.software = software
     self.coefficient = coefficient
@@ -157,8 +158,7 @@ class Simulation(object):
             '{}'.format(derivations.keys()))
       sys.exit(0)
 
-  def get_means(self, limits=[0.0, float('inf')], last_period=False, order=5, 
-                display_coefficients=False):
+  def get_means(self, limits=[0.0, float('inf')], last_period=False, order=5):
     """Computes the time-averaged forces (or force-coefficients).
 
     Parameters
@@ -175,19 +175,11 @@ class Simulation(object):
     fx_mean, fy_mean: dict
       Time-limits and mean value for forces in each direction.
     """
-    fx_mean = self.force_x.get_mean(limits=limits, last_period=last_period, order=order)
-    fy_mean = self.force_y.get_mean(limits=limits, last_period=last_period, order=order)
-    fx_name = ('<cd>' if display_coefficients else '<fx>')
-    fy_name = ('<cl>' if display_coefficients else '<fy>')
-    print('[info] averaging forces in x-direction between {} and {}:'.format(fx_mean['start'], 
-                                                                             fx_mean['end']))
-    print('\t{} = {}'.format(fx_name, fx_mean['value']))
-    print('[info] averaging forces in y-direction between {} and {}:'.format(fy_mean['start'], 
-                                                                             fy_mean['end']))
-    print('\t{} = {}'.format(fy_name, fy_mean['value']))
-    return fx_mean, fy_mean
+    self.fx_mean = self.force_x.get_mean(limits=limits, last_period=last_period, order=order)
+    self.fy_mean = self.force_y.get_mean(limits=limits, last_period=last_period, order=order)
+    return self.fx_mean, self.fy_mean
 
-  def get_strouhal(self, L=1.0, U=1.0, n_periods=1, order=5):
+  def get_strouhal(self, L=1.0, U=1.0, n_periods=1, end_time=float('inf'), order=5):
     """Computes the Strouhal number based on the frequency of the lift force.
 
     The frequency is beased on the lift history and is computed using the minima
@@ -201,24 +193,28 @@ class Simulation(object):
       Characteristics velocity of the body; default: 1.0.
     n_periods: integer
       Number of periods (starting from end) to average the Strouhal number; default: 1.
+    end_time: float
+      Time-limit reference used to average the Strouhal number; default: inf.
     order: integer
       Number of neighbors used on each side to define an extremum; default: 5.
 
     Returns
     -------
     strouhal: float
-      The Strouhal number.
+      The averaged Strouhal number.
+    strouhals: list of floats
+      Strouhal numbers used to average.
     """
     minima, _ = self.force_y.get_extrema(order=order)
-    strouhals = L/U/( self.force_y.times[minima[-n_periods:]] 
-                    - self.force_y.times[minima[-n_periods-1:-1]] )
-    strouhal = strouhals.mean()
-    print('[info] estimating the Strouhal number over the last {} period(s):'.format(n_periods))
-    print('\tSt = {}'.format(strouhal))
-    print('\tSt values used to average: {}'.format(strouhals))
-    return strouhal
+    mask = numpy.where(self.force_y.times[minima] <= end_time)[0]
+    strouhals = L/U/( self.force_y.times[minima[mask[-n_periods:]]] 
+                    - self.force_y.times[minima[mask[-n_periods-1:-1]]] )
+    self.strouhal = strouhals.mean()
+    self.n_periods_strouhal = n_periods
+    self.end_time_strouhal = end_time
+    return self.strouhal, strouhals
 
-  def plot_forces(self, display_lift=True, display_drag=True,
+  def plot_forces(self, display_lift=True, display_drag=True, display_coefficients=False,
                   limits=[0.0, float('inf'), 0.0, float('inf')],
                   title=None, save_name=None, show=False,
                   display_extrema=False, order=5, display_gauge=False,
@@ -231,6 +227,8 @@ class Simulation(object):
       Set 'True' if the lift curve should be added to the figure; default: True.
     display_drag: bool
       Set 'True' if the drag curve should be added to the figure; default: True.
+    display_coefficients: bool
+      Set 'True' if plotting force coefficients instead of forces; default: False.
     limits: list of floats
       Limits of the axes [xmin, xmax, ymin, ymax]; default: [0.0, +inf, 0.0, +inf].
     title: string
@@ -248,59 +246,56 @@ class Simulation(object):
     other_simulations: list of Simulation objects
       List of other simulations to add to plot; default: [].
     """
+    if not (save_name or show):
+      return
     print('[info] plotting forces ...')
     pyplot.style.use('{}/styles/mesnardo.mplstyle'.format(os.environ['SCRIPTS']))
     fig, ax = pyplot.subplots(figsize=(8, 6))
     color_cycle = ax._get_lines.color_cycle
-    pyplot.grid(True, zorder=0)
-    pyplot.xlabel('time')
-    pyplot.ylabel('forces' if self.force_x.description == '$F_x$' 
-                           else 'force coefficients')
-    forces = []
+    ax.grid(True, zorder=0)
+    ax.set_xlabel('time')
+    ax.set_ylabel('force coefficients' if display_coefficients else 'forces')
+    forces_to_plot, info = [], []
     if display_drag:
-      forces.append(self.force_x)
+      forces_to_plot.append(self.force_x)
+      info.append('$C_d$' if display_coefficients else '$F_x$')
     if display_lift:
-      forces.append(self.force_y)
-    for force in forces:
+      forces_to_plot.append(self.force_y)
+      info.append('$C_l$' if display_coefficients else '$F_x$')
+    for index, force in enumerate(forces_to_plot):
       color = next(color_cycle)
-      pyplot.plot(force.times, force.values,
-                  label=('{} - {}'.format(self.description.replace('_', ' '), 
-                                          force.description) 
-                         if self.description
-                         else force.description),
-                  color=color, linestyle='-', zorder=10)
+      ax.plot(force.times, self.coefficient*force.values,
+              label=' - '.join(filter(None, [self.description, info[index]])),
+              color=color, linestyle='-', zorder=10)
       if display_extrema:
         minima, maxima = force.get_extrema(order=order)
-        pyplot.scatter(force.times[minima], force.values[minima],
-                       c=color, marker='o', zorder=10)
-        pyplot.scatter(force.times[maxima], force.values[maxima],
-                       c=color, marker='o', zorder=10)
+        ax.scatter(force.times[minima], self.coefficient*force.values[minima],
+                   c=color, marker='o', zorder=10)
+        ax.scatter(force.times[maxima], self.coefficient*force.values[maxima],
+                   c=color, marker='o', zorder=10)
         if display_gauge:
-          pyplot.axhline(force.values[minima[-1]],
-                         color=color, linestyle=':', zorder=10)
-          pyplot.axhline(force.values[maxima[-1]],
-                         color=color, linestyle=':', zorder=10)
+          ax.axhline(self.coefficient*force.values[minima[-1]],
+                     color=color, linestyle=':', zorder=10)
+          ax.axhline(self.coefficient*force.values[maxima[-1]],
+                     color=color, linestyle=':', zorder=10)
     for simulation in other_simulations:
-      forces = []
+      forces_to_plot = []
       if display_drag:
-        forces.append(simulation.force_x)
+        forces_to_plot.append(simulation.force_x)
       if display_lift:
-        forces.append(simulation.force_y)
-      for force in forces:
+        forces_to_plot.append(simulation.force_y)
+      for index, force in enumerate(forces_to_plot):
         color = next(color_cycle)
-        pyplot.plot(force.times, force.values,
-                    label=('{} - {}'.format(simulation.description.replace('_', ' '), 
-                                            force.description) 
-                           if simulation.description
-                           else force.description),
-                    color=color, linestyle='--', zorder=10)
-    pyplot.legend()
-    pyplot.axis(limits)
+        ax.plot(force.times, simulation.coefficient*force.values,
+                label=' - '.join(filter(None, [simulation.description, info[index]])),
+                color=color, linestyle='--', zorder=10)
+    ax.legend()
+    ax.axis(limits)
     if title:
-      pyplot.title(title)
+      ax.title(title)
     if save_name:
       images_directory = '{}/images'.format(self.directory)
-      print('[info] saving figure in directory {} ...'.format(images_directory))
+      print('[info] saving figure {} in directory {} ...'.format(save_name, images_directory))
       if not os.path.isdir(images_directory):
         os.makedirs(images_directory)
       pyplot.savefig('{}/{}.png'.format(images_directory, save_name))
@@ -308,6 +303,47 @@ class Simulation(object):
       print('[info] displaying figure ...')
       pyplot.show()
     pyplot.close()
+
+  def create_dataframe(self, other_simulations=[], display_coefficients=False, silent=False):
+    """Creates a data frame with Pandas to display 
+    time-averaged forces (or force coefficients).
+
+    Parameters
+    ----------
+    other_simulations: list of Simulation instances
+      List of other simulations used for comparison; default: [].
+    display_coefficients: bool
+      Set 'True' if force coefficients are to be displayed; default: False.
+    silent: bool
+      Set 'True' to turn off the prints; default: False.
+
+    Returns
+    -------
+    dataframe: Pandas dataframe
+      The dataframe of the simulation.
+    """
+    if not silent:
+      print('[info] instantaneous signals are averaged between '
+            '{} and {} time-units.'.format(self.fx_mean['start'], 
+                                           self.fx_mean['end']))
+    dataframe = pandas.DataFrame([['{0:.4f}'.format(self.coefficient*self.fx_mean['value']),
+                                   '{0:.4f}'.format(self.coefficient*self.fy_mean['value'])]],
+                                 index=['<no description>' if not self.description else self.description],
+                                 columns=[('<Cd>' if display_coefficients else '<Fx>'),
+                                          ('<Cl>' if display_coefficients else '<Fy>')])
+    try:
+      if not silent:
+        print('[info] the Strouhal number is averaged '
+              'over the last {} oscillations of the lift curve '
+              'ending at {} time-units.'.format(self.n_periods_strouhal,
+                                                self.end_time_strouhal))
+      dataframe['<St>'] = '{0:.4f}'.format(self.strouhal)
+    except:
+      pass
+    for simulation in other_simulations:
+      dataframe = dataframe.append(simulation.create_dataframe(display_coefficients=display_coefficients,
+                                                               silent=True))
+    return dataframe
 
 
 class OpenFOAMSimulation(Simulation):
@@ -326,20 +362,16 @@ class OpenFOAMSimulation(Simulation):
     if display_coefficients:
       info = {'directory': '{}/postProcessing/forceCoeffs'.format(self.directory),
               'description': 'force-coefficients',
-              'x-direction': '$C_d$',
-              'y-direction': '$C_l$',
               'usecols': (0, 2, 3)}
     else:
       info = {'directory': '{}/postProcessing/forces'.format(self.directory),
               'description': 'forces',
-              'x-direction': '$F_x$',
-              'y-direction': '$F_y$',
               'usecols': (0, 2, 3)}
     # backward compatibility from 2.2.2 to 2.0.1
     if not os.path.isdir(info['directory']):
       info['directory'] = '{}/forces'.format(self.directory)
       info['usecols'] = (0, 1, 2)
-    print('[info] reading {} in {} ...'.format(info['description'], info['directory'])),
+    print('[info] reading {} in {} ...'.format(info['description'], info['directory']))
     subdirectories = sorted(os.listdir(info['directory']))
     times = numpy.empty(0)
     force_x, force_y = numpy.empty(0), numpy.empty(0)
@@ -350,11 +382,8 @@ class OpenFOAMSimulation(Simulation):
                                   usecols=info['usecols'], unpack=True)
       times = numpy.append(times, t)
       force_x, force_y = numpy.append(force_x, fx), numpy.append(force_y, fy)
-    self.force_x = Force(times, self.coefficient*force_x, 
-                         description=info['x-direction'])
-    self.force_y = Force(times, self.coefficient*force_y, 
-                         description=info['y-direction'])
-    print('done')
+    self.force_x = Force(times, force_x)
+    self.force_y = Force(times, force_y)
 
 
 class CuIBMSimulation(Simulation):
@@ -371,15 +400,12 @@ class CuIBMSimulation(Simulation):
       Set to 'True' if force coefficients are required; default: False (i.e. forces).
     """
     forces_path = '{}/forces'.format(self.directory)
-    print('[info] reading values from {} ...'.format(forces_path)),
+    print('[info] reading values from {} ...'.format(forces_path))
     with open(forces_path, 'r') as infile:
       times, force_x, force_y = numpy.loadtxt(infile, dtype=float, 
                                               usecols=(0, 1, 2), unpack=True)
-    self.force_x = Force(times, self.coefficient*force_x,
-                         description=('$C_d$' if display_coefficients else '$F_x$'))
-    self.force_y = Force(times, self.coefficient*force_y,
-                         description=('$C_l$' if display_coefficients else '$F_y$'))
-    print('done')
+    self.force_x = Force(times, force_x)
+    self.force_y = Force(times, force_y)
 
 
 class PetIBMSimulation(Simulation):
@@ -396,15 +422,12 @@ class PetIBMSimulation(Simulation):
       Set to 'True' if force coefficients are required; default: False (i.e. forces).
     """
     forces_path = '{}/forces.txt'.format(self.directory)
-    print('[info] reading values from {} ...'.format(forces_path)),
+    print('[info] reading values from {} ...'.format(forces_path))
     with open(forces_path, 'r') as infile:
       times, force_x, force_y = numpy.loadtxt(infile, dtype=float, 
                                               usecols=(0, 1, 2), unpack=True)
-    self.force_x = Force(times, self.coefficient*force_x,
-                         description=('$C_d$' if display_coefficients else '$F_x$'))
-    self.force_y = Force(times, self.coefficient*force_y,
-                         description=('$C_l$' if display_coefficients else '$F_y$'))
-    print('done')
+    self.force_x = Force(times, force_x)
+    self.force_y = Force(times, force_y)
 
 
 class IBAMRSimulation(Simulation):
@@ -421,12 +444,9 @@ class IBAMRSimulation(Simulation):
       Set to 'True' if force coefficients are required; default: False (i.e. forces).
     """
     forces_path = '{}/dataIB/ib_Drag_force_struct_no_0'.format(self.directory)
-    print('[info] reading values from {} ...'.format(forces_path)),
+    print('[info] reading values from {} ...'.format(forces_path))
     with open(forces_path, 'r') as infile:
       times, force_x, force_y = numpy.loadtxt(infile, dtype=float, 
                                               usecols=(0, 4, 5), unpack=True)
-    self.force_x = Force(times, self.coefficient*force_x,
-                         description=('$C_d$' if display_coefficients else '$F_x$'))
-    self.force_y = Force(times, self.coefficient*force_y,
-                         description=('$C_l$' if display_coefficients else '$F_y$'))
-    print('done')
+    self.force_x = Force(times, force_x)
+    self.force_y = Force(times, force_y)

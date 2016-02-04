@@ -15,7 +15,7 @@ import miscellaneous
 
 def parse_command_line():
   """Parses the command-line."""
-  print('[info] parsing the command-line ...'),
+  print('[info] parsing the command-line ...')
   # create the parser
   parser = argparse.ArgumentParser(description='Plots the vorticity field with VisIt',
                                    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -37,8 +37,8 @@ def parse_command_line():
   parser.add_argument('--limits', dest='limits',
                       nargs='+', type=float, default=(-1.0, 1.0),
                       help='Range of the field to plot (min, max)')
-  parser.add_argument('--steps', dest='steps',
-                      nargs='+', type=int, default=(None, None, None),
+  parser.add_argument('--states', dest='states',
+                      nargs='+', type=int, default=[0, 2**10000, 1],
                       help='steps to plot (min, max, increment)')
   parser.add_argument('--bottom-left', dest='bottom_left',
                       nargs='+', type=float, default=(-2.0, -2.0),
@@ -53,12 +53,12 @@ def parse_command_line():
   parser.add_argument('--options', 
                       type=open, action=miscellaneous.ReadOptionsFromFile,
                       help='path of the file with options to parse')
-  print('done')
   return parser.parse_args()
 
 
 def main():
   """Plots the two-dimensional field with VisIt."""
+
   args = parse_command_line()
 
   # define field to plot
@@ -99,16 +99,20 @@ def main():
   view_string = '{:.2f}_{:.2f}_{:.2f}_{:.2f}'.format(*view)
   images_directory = '{}/images/{}_{}'.format(args.directory, field_name, view_string)
   if not os.path.isdir(images_directory):
+    print('[info] creating directory {} to save images ...'.format(images_directory))
     os.makedirs(images_directory)
 
-  # Visit 2.8.2 log file
-  ScriptVersion = "2.8.2"
-  if ScriptVersion != Version():
-      print "This script is for VisIt %s. It may not work with version %s" % (ScriptVersion, Version())
+  # check VisIt version
+  script_version = '2.8.2'
+  current_version = Version()
+  if script_version != current_version:
+    print('[warning] This script was created with VisIt-{}.'.format(script_version))
+    print('[warning] It may not work with version {}'.format(current_version))
+
   ShowAllWindows()
 
   # display body
-  OpenDatabase("localhost:{}/{}/lag_data.visit".format(args.directory, args.solution_folder), 0)
+  OpenDatabase("{}:{}/{}/lag_data.visit".format(GetLocalHostName(), args.directory, args.solution_folder), 0)
   AddPlot("Mesh", "{}_vertices".format(args.body_name), 1, 1)
   DrawPlots()
   MeshAtts = MeshAttributes()
@@ -133,7 +137,7 @@ def main():
   SetPlotOptions(MeshAtts)
 
   # display vorticity field
-  OpenDatabase("localhost:{}/{}/dumps.visit".format(args.directory, args.solution_folder), 0)
+  OpenDatabase("{}:{}/{}/dumps.visit".format(GetLocalHostName(), args.directory, args.solution_folder), 0)
   HideActivePlots()
   AddPlot("Pseudocolor", visit_field_name, 1, 1)
   DrawPlots()
@@ -183,20 +187,23 @@ def main():
   PseudocolorAtts.legendFlag = 1
   PseudocolorAtts.lightingFlag = 1
   SetPlotOptions(PseudocolorAtts)
-  TimeSliderNextState()
-  TimeSliderPreviousState()
-  # Begin spontaneous state
-  View2DAtts = View2DAttributes()
-  View2DAtts.windowCoords = (-2, 15, -5, 5)
-  View2DAtts.viewportCoords = (0, 1, 0, 1)
-  View2DAtts.fullFrameActivationMode = View2DAtts.Auto  # On, Off, Auto
-  View2DAtts.fullFrameAutoThreshold = 100
-  View2DAtts.xScale = View2DAtts.LINEAR  # LINEAR, LOG
-  View2DAtts.yScale = View2DAtts.LINEAR  # LINEAR, LOG
-  View2DAtts.windowValid = 1
-  SetView2D(View2DAtts)
-  # End spontaneous state
+  # colorbar of pseudocolor plot
+  legend = GetAnnotationObject(GetPlotList().GetPlots(2).plotName)
+  legend.xScale = 1
+  legend.yScale = 0.5
+  legend.numberFormat = '%# -9.2g'
+  legend.orientation = legend.HorizontalBottom
+  legend.managePosition = 0
+  legend.position = (0.05, 0.10)
+  legend.fontFamily = legend.Courier
+  legend.fontBold = 1
+  legend.fontHeight = 0.05
+  legend.drawMinMax = 0
+  legend.drawTitle = 0
+  print('[info] legend settings:')
+  print(legend)
 
+  # set up view
   View2DAtts = View2DAttributes()
   View2DAtts.windowCoords = (view[0], view[2], view[1], view[3])
   View2DAtts.viewportCoords = (0, 1, 0, 1)
@@ -205,6 +212,8 @@ def main():
   View2DAtts.xScale = View2DAtts.LINEAR  # LINEAR, LOG
   View2DAtts.yScale = View2DAtts.LINEAR  # LINEAR, LOG
   View2DAtts.windowValid = 1
+  print('[info] view settings:')
+  print(View2DAtts)
   SetView2D(View2DAtts)
 
   # Logging for SetAnnotationObjectOptions is not implemented yet.
@@ -215,74 +224,20 @@ def main():
   AnnotationAtts.axes2D.lineWidth = 0
   AnnotationAtts.axes2D.tickLocation = AnnotationAtts.axes2D.Inside  # Inside, Outside, Both
   AnnotationAtts.axes2D.tickAxes = AnnotationAtts.axes2D.BottomLeft  # Off, Bottom, Left, BottomLeft, All
-  AnnotationAtts.axes2D.xAxis.title.visible = 0
-  AnnotationAtts.axes2D.xAxis.title.font.font = AnnotationAtts.axes2D.xAxis.title.font.Courier  # Arial, Courier, Times
-  AnnotationAtts.axes2D.xAxis.title.font.scale = 1
-  AnnotationAtts.axes2D.xAxis.title.font.useForegroundColor = 1
-  AnnotationAtts.axes2D.xAxis.title.font.color = (0, 0, 0, 255)
-  AnnotationAtts.axes2D.xAxis.title.font.bold = 1
-  AnnotationAtts.axes2D.xAxis.title.font.italic = 1
-  AnnotationAtts.axes2D.xAxis.title.userTitle = 0
-  AnnotationAtts.axes2D.xAxis.title.userUnits = 0
-  AnnotationAtts.axes2D.xAxis.title.title = "X-Axis"
-  AnnotationAtts.axes2D.xAxis.title.units = ""
-  AnnotationAtts.axes2D.xAxis.label.visible = 1
-  AnnotationAtts.axes2D.xAxis.label.font.font = AnnotationAtts.axes2D.xAxis.label.font.Courier  # Arial, Courier, Times
-  AnnotationAtts.axes2D.xAxis.label.font.scale = 1
-  AnnotationAtts.axes2D.xAxis.label.font.useForegroundColor = 1
-  AnnotationAtts.axes2D.xAxis.label.font.color = (0, 0, 0, 255)
-  AnnotationAtts.axes2D.xAxis.label.font.bold = 1
-  AnnotationAtts.axes2D.xAxis.label.font.italic = 1
-  AnnotationAtts.axes2D.xAxis.label.scaling = 0
-  AnnotationAtts.axes2D.xAxis.tickMarks.visible = 1
-  AnnotationAtts.axes2D.xAxis.tickMarks.majorMinimum = 0
-  AnnotationAtts.axes2D.xAxis.tickMarks.majorMaximum = 1
-  AnnotationAtts.axes2D.xAxis.tickMarks.minorSpacing = 0.02
-  AnnotationAtts.axes2D.xAxis.tickMarks.majorSpacing = 0.2
-  AnnotationAtts.axes2D.xAxis.grid = 0
-  AnnotationAtts.axes2D.yAxis.title.visible = 0
-  AnnotationAtts.axes2D.yAxis.title.font.font = AnnotationAtts.axes2D.yAxis.title.font.Courier  # Arial, Courier, Times
-  AnnotationAtts.axes2D.yAxis.title.font.scale = 1
-  AnnotationAtts.axes2D.yAxis.title.font.useForegroundColor = 1
-  AnnotationAtts.axes2D.yAxis.title.font.color = (0, 0, 0, 255)
-  AnnotationAtts.axes2D.yAxis.title.font.bold = 1
-  AnnotationAtts.axes2D.yAxis.title.font.italic = 1
-  AnnotationAtts.axes2D.yAxis.title.userTitle = 0
-  AnnotationAtts.axes2D.yAxis.title.userUnits = 0
-  AnnotationAtts.axes2D.yAxis.title.title = "Y-Axis"
-  AnnotationAtts.axes2D.yAxis.title.units = ""
-  AnnotationAtts.axes2D.yAxis.label.visible = 1
-  AnnotationAtts.axes2D.yAxis.label.font.font = AnnotationAtts.axes2D.yAxis.label.font.Courier  # Arial, Courier, Times
-  AnnotationAtts.axes2D.yAxis.label.font.scale = 1
-  AnnotationAtts.axes2D.yAxis.label.font.useForegroundColor = 1
-  AnnotationAtts.axes2D.yAxis.label.font.color = (0, 0, 0, 255)
-  AnnotationAtts.axes2D.yAxis.label.font.bold = 1
-  AnnotationAtts.axes2D.yAxis.label.font.italic = 1
-  AnnotationAtts.axes2D.yAxis.label.scaling = 0
-  AnnotationAtts.axes2D.yAxis.tickMarks.visible = 1
-  AnnotationAtts.axes2D.yAxis.tickMarks.majorMinimum = 0
-  AnnotationAtts.axes2D.yAxis.tickMarks.majorMaximum = 1
-  AnnotationAtts.axes2D.yAxis.tickMarks.minorSpacing = 0.02
-  AnnotationAtts.axes2D.yAxis.tickMarks.majorSpacing = 0.2
-  AnnotationAtts.axes2D.yAxis.grid = 0
-  AnnotationAtts.userInfoFlag = 0
-  AnnotationAtts.userInfoFont.font = AnnotationAtts.userInfoFont.Arial  # Arial, Courier, Times
-  AnnotationAtts.userInfoFont.scale = 1
-  AnnotationAtts.userInfoFont.useForegroundColor = 1
-  AnnotationAtts.userInfoFont.color = (0, 0, 0, 255)
-  AnnotationAtts.userInfoFont.bold = 0
-  AnnotationAtts.userInfoFont.italic = 0
-  AnnotationAtts.databaseInfoFlag = 1
-  AnnotationAtts.timeInfoFlag = 1
-  AnnotationAtts.databaseInfoFont.font = AnnotationAtts.databaseInfoFont.Arial  # Arial, Courier, Times
-  AnnotationAtts.databaseInfoFont.scale = 1
-  AnnotationAtts.databaseInfoFont.useForegroundColor = 1
-  AnnotationAtts.databaseInfoFont.color = (0, 0, 0, 255)
-  AnnotationAtts.databaseInfoFont.bold = 0
-  AnnotationAtts.databaseInfoFont.italic = 0
-  AnnotationAtts.databaseInfoExpansionMode = AnnotationAtts.File  # File, Directory, Full, Smart, SmartDirectory
-  AnnotationAtts.databaseInfoTimeScale = 1
-  AnnotationAtts.databaseInfoTimeOffset = 0
+  # x-axis
+  AnnotationAtts.axes2D.xAxis.title.visible = 0 # hide x-axis title
+  AnnotationAtts.axes2D.xAxis.label.visible = 0 # hide x-axis label
+  AnnotationAtts.axes2D.xAxis.tickMarks.visible = 0 # hide x-axis tick marks
+  AnnotationAtts.axes2D.xAxis.grid = 0 # no grid
+  # y-axis
+  AnnotationAtts.axes2D.yAxis.title.visible = 0 # hide y-axis title
+  AnnotationAtts.axes2D.yAxis.label.visible = 0 # hide y-axis label
+  AnnotationAtts.axes2D.yAxis.tickMarks.visible = 0 # hide y-axis tick marks
+  AnnotationAtts.axes2D.yAxis.grid = 0 # no grid
+  AnnotationAtts.userInfoFlag = 0 # hide text with user's name 
+  # settings for legend
+  AnnotationAtts.databaseInfoFlag = 0
+  AnnotationAtts.timeInfoFlag = 0
   AnnotationAtts.legendInfoFlag = 1
   AnnotationAtts.backgroundColor = (255, 255, 255, 255)
   AnnotationAtts.foregroundColor = (0, 0, 0, 255)
@@ -293,45 +248,34 @@ def main():
   AnnotationAtts.backgroundImage = ""
   AnnotationAtts.imageRepeatX = 1
   AnnotationAtts.imageRepeatY = 1
-  AnnotationAtts.axesArray.visible = 1
-  AnnotationAtts.axesArray.ticksVisible = 1
-  AnnotationAtts.axesArray.autoSetTicks = 1
-  AnnotationAtts.axesArray.autoSetScaling = 1
-  AnnotationAtts.axesArray.lineWidth = 0
-  AnnotationAtts.axesArray.axes.title.visible = 1
-  AnnotationAtts.axesArray.axes.title.font.font = AnnotationAtts.axesArray.axes.title.font.Arial  # Arial, Courier, Times
-  AnnotationAtts.axesArray.axes.title.font.scale = 1
-  AnnotationAtts.axesArray.axes.title.font.useForegroundColor = 1
-  AnnotationAtts.axesArray.axes.title.font.color = (0, 0, 0, 255)
-  AnnotationAtts.axesArray.axes.title.font.bold = 0
-  AnnotationAtts.axesArray.axes.title.font.italic = 0
-  AnnotationAtts.axesArray.axes.title.userTitle = 0
-  AnnotationAtts.axesArray.axes.title.userUnits = 0
-  AnnotationAtts.axesArray.axes.title.title = ""
-  AnnotationAtts.axesArray.axes.title.units = ""
-  AnnotationAtts.axesArray.axes.label.visible = 1
-  AnnotationAtts.axesArray.axes.label.font.font = AnnotationAtts.axesArray.axes.label.font.Arial  # Arial, Courier, Times
-  AnnotationAtts.axesArray.axes.label.font.scale = 1
-  AnnotationAtts.axesArray.axes.label.font.useForegroundColor = 1
-  AnnotationAtts.axesArray.axes.label.font.color = (0, 0, 0, 255)
-  AnnotationAtts.axesArray.axes.label.font.bold = 0
-  AnnotationAtts.axesArray.axes.label.font.italic = 0
-  AnnotationAtts.axesArray.axes.label.scaling = 0
-  AnnotationAtts.axesArray.axes.tickMarks.visible = 1
-  AnnotationAtts.axesArray.axes.tickMarks.majorMinimum = 0
-  AnnotationAtts.axesArray.axes.tickMarks.majorMaximum = 1
-  AnnotationAtts.axesArray.axes.tickMarks.minorSpacing = 0.02
-  AnnotationAtts.axesArray.axes.tickMarks.majorSpacing = 0.2
-  AnnotationAtts.axesArray.axes.grid = 0
+  AnnotationAtts.axesArray.visible = 0
   SetAnnotationAttributes(AnnotationAtts)
+  print('[info] annotation settings:')
+  print(AnnotationAtts)
   SetActiveWindow(1)
 
-  Source("/opt/visit/2.8.2/linux-x86_64/bin/makemovie.py")
-  ToggleCameraViewMode()
+  # create time-annotation
+  time_annotation = CreateAnnotationObject('Text2D')
+  time_annotation.position = (0.05, 0.95)
+  time_annotation.fontFamily = 1
+  time_annotation.fontBold = 0
+  time_annotation.height = 0.03
+  print('[info] time-annotation:')
+  print(time_annotation)
 
-  for step in xrange(args.steps[0], args.steps[1]+1, args.steps[2]):
-    print('[step {}] creating and saving the field ...'.format(step))
-    SetTimeSliderState(step)
+  # check number of states available
+  if args.states[1] > TimeSliderGetNStates():
+    print('[warning] maximum number of states available is {}'.format(TimeSliderGetNStates()))
+    print('[warning] setting new final state ...')
+    args.states[1] = TimeSliderGetNStates()
+
+  # loop over saved time-steps
+  for state in xrange(args.states[0], args.states[1], args.states[2]):
+    SetTimeSliderState(state)
+    time = float(Query('Time')[:-1].split()[-1])
+    print('\n[state {}] time: {} - creating and saving the field ...'.format(state, time))
+    time_annotation.text = 'Time: {0:.3f}'.format(time)
+
     RenderingAtts = RenderingAttributes()
     RenderingAtts.antialiasing = 0
     RenderingAtts.multiresolutionMode = 0
@@ -358,17 +302,18 @@ def main():
     RenderingAtts.compactDomainsActivationMode = RenderingAtts.Never  # Never, Always, Auto
     RenderingAtts.compactDomainsAutoThreshold = 256
     SetRenderingAttributes(RenderingAtts)
+
     SaveWindowAtts = SaveWindowAttributes()
     SaveWindowAtts.outputToCurrentDirectory = 0
     SaveWindowAtts.outputDirectory = images_directory
-    SaveWindowAtts.fileName = '{}{:0>7}'.format(field_name, step)
+    SaveWindowAtts.fileName = '{}{:0>7}'.format(field_name, state)
     SaveWindowAtts.family = 0
     SaveWindowAtts.format = SaveWindowAtts.PNG  # BMP, CURVE, JPEG, OBJ, PNG, POSTSCRIPT, POVRAY, PPM, RGB, STL, TIFF, ULTRA, VTK, PLY
     SaveWindowAtts.width = width
     SaveWindowAtts.height = height
     SaveWindowAtts.screenCapture = 0
     SaveWindowAtts.saveTiled = 0
-    SaveWindowAtts.quality = 80
+    SaveWindowAtts.quality = 100
     SaveWindowAtts.progressive = 0
     SaveWindowAtts.binary = 0
     SaveWindowAtts.stereo = 0
@@ -377,6 +322,7 @@ def main():
     SaveWindowAtts.resConstraint = SaveWindowAtts.NoConstraint  # NoConstraint, EqualWidthHeight, ScreenProportions
     SaveWindowAtts.advancedMultiWindowSave = 0
     SetSaveWindowAttributes(SaveWindowAtts)
+    
     SaveWindow()
 
   return
