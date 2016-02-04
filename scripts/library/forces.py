@@ -217,7 +217,7 @@ class Simulation(object):
   def plot_forces(self, display_lift=True, display_drag=True, display_coefficients=False,
                   limits=[0.0, float('inf'), 0.0, float('inf')],
                   title=None, save_name=None, show=False,
-                  display_extrema=False, order=5, display_gauge=False,
+                  display_extrema=False, order=5, display_gauge=False, fill_between=False,
                   other_simulations=[]):
     """Displays the forces into a figure.
 
@@ -243,6 +243,8 @@ class Simulation(object):
       Number of neighbors used on each side to define an extremum; default: 5.
     display_gauge: bool
       Set 'True' to display gauges to judge steady regime; default: False.
+    fill_between: bool
+      Set 'True' to fill between lines defined by the extrema; default: False.
     other_simulations: list of Simulation objects
       List of other simulations to add to plot; default: [].
     """
@@ -264,15 +266,28 @@ class Simulation(object):
       info.append('$C_l$' if display_coefficients else '$F_x$')
     for index, force in enumerate(forces_to_plot):
       color = next(color_cycle)
-      ax.plot(force.times, self.coefficient*force.values,
+      line, = ax.plot(force.times, self.coefficient*force.values,
               label=' - '.join(filter(None, [self.description, info[index]])),
-              color=color, linestyle='-', zorder=10)
+              color=color, linestyle='-', zorder=9)
       if display_extrema:
         minima, maxima = force.get_extrema(order=order)
         ax.scatter(force.times[minima], self.coefficient*force.values[minima],
                    c=color, marker='o', zorder=10)
         ax.scatter(force.times[maxima], self.coefficient*force.values[maxima],
                    c=color, marker='o', zorder=10)
+        if fill_between:
+          line.remove()
+          ax.plot(force.times[minima], self.coefficient*force.values[minima],
+                  color='white', linestyle='-', zorder=9)
+          ax.plot(force.times[maxima], self.coefficient*force.values[maxima],
+                  color='white', linestyle='-', zorder=9)
+          times = numpy.concatenate((force.times[minima], 
+                                     force.times[maxima][::-1]))
+          values = self.coefficient*numpy.concatenate((force.values[minima], 
+                                                       force.values[maxima][::-1]))
+          ax.fill(times, values, 
+                  label=' - '.join(filter(None, [self.description, info[index]])),
+                  facecolor=color, alpha=0.8, zorder=8)
         if display_gauge:
           ax.axhline(self.coefficient*force.values[minima[-1]],
                      color=color, linestyle=':', zorder=10)
@@ -286,10 +301,30 @@ class Simulation(object):
         forces_to_plot.append(simulation.force_y)
       for index, force in enumerate(forces_to_plot):
         color = next(color_cycle)
-        ax.plot(force.times, simulation.coefficient*force.values,
-                label=' - '.join(filter(None, [simulation.description, info[index]])),
-                color=color, linestyle='--', zorder=10)
-    ax.legend()
+        line, = ax.plot(force.times, simulation.coefficient*force.values,
+                        label=' - '.join(filter(None, [simulation.description, info[index]])),
+                        color=color, linestyle='--', zorder=9)
+        if fill_between:
+          line.remove()
+          minima, maxima = force.get_extrema(order=order)
+          ax.scatter(force.times[minima], simulation.coefficient*force.values[minima],
+                     c=color, marker='o', zorder=10)
+          ax.scatter(force.times[maxima], simulation.coefficient*force.values[maxima],
+                     c=color, marker='o', zorder=10)
+          ax.plot(force.times[minima], simulation.coefficient*force.values[minima],
+                  color='white', linestyle='-', zorder=9)
+          ax.plot(force.times[maxima], simulation.coefficient*force.values[maxima],
+                  color='white', linestyle='-', zorder=9)
+          times = numpy.concatenate((force.times[minima], 
+                                     force.times[maxima][::-1]))
+          values = simulation.coefficient*numpy.concatenate((force.values[minima], 
+                                                             force.values[maxima][::-1]))
+          ax.fill(times, values, 
+                  label=' - '.join(filter(None, [simulation.description, info[index]])),
+                  facecolor=color, alpha=0.5, zorder=7)
+
+    legend = ax.legend()
+    legend.set_zorder(20) # put legend on top
     ax.axis(limits)
     if title:
       ax.title(title)

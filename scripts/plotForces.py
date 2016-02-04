@@ -83,7 +83,11 @@ def parse_command_line():
                       help='displays the forces extrema')
   plot_info.add_argument('--gauge', dest='display_gauge', 
                       action='store_true',
-                      help='display gauges to check the convergence')
+                      help='displays gauges to check the convergence')
+  plot_info.add_argument('--fill-between', dest='fill_between',
+                         action='store_true',
+                         help='fills between lines defined by extrema')
+
   # default options
   parser.set_defaults(display_drag=True, display_lift=True, show=True, save=True)
   # parse given options file
@@ -127,6 +131,7 @@ def main():
                              display_extrema=args.display_extrema, 
                              order=args.order,
                              display_gauge=args.display_gauge,
+                             fill_between=args.fill_between,
                              other_simulations=simulations[1:],
                              limits=args.plot_limits,
                              save_name=args.save_name, 
