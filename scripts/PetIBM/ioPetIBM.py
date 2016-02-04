@@ -37,6 +37,25 @@ class Field(object):
     self.x, self.y = x, y
     self.values = values
 
+  def subtract(self, other, label=None):
+    """Subtract a given field to the current one.
+
+    Parameters
+    ----------
+    other: Field object
+      The field that is subtracted.
+    label: string
+      Label of the new field; default: None.
+
+    Returns
+    -------
+    field: Field object
+      The field difference.
+    """
+    return Field(x=self.x, y=self.y, values=self.values-other.values, 
+                 time_step=self.time_step, label=label)
+
+
 
 class Body(object):
   """Contains information about an immersed body."""
@@ -98,6 +117,41 @@ def read_grid(case_directory, binary=False):
     coords = numpy.loadtxt(infile, dtype=float)
   print('done')
   return numpy.array(numpy.split(coords, numpy.cumsum(nCells[:-1]+1)))
+
+
+def get_field(field_name, directory, time_step, coords, binary=False):
+  """Gets the field at a given time-step and the mesh-grid. 
+
+  Parameters
+  ----------
+  field_name: string
+    Name of the field to get.
+  directory: string
+    Directory of the simulation.
+  time_step: integer
+    Time-step at which the solution is read.
+  coords: list of numpy 1d arrays
+    List of coordinates along each direction.
+  binary: bool
+    Set 'True' is solution written in binary format; default: False.
+
+  Returns
+  -------
+  field: Field object
+    The field.
+  """
+  if field_name == 'vorticity':
+    return compute_vorticity(directory, time_step, coords, binary=binary)
+  elif field_name == 'x-velocity':
+    return read_velocity(directory, time_step, coords, binary=binary)[0]
+  elif field_name == 'y-velocity':
+    return read_velocity(directory, time_step, coords, binary=binary)[1]
+  elif field_name == 'pressure':
+    return read_pressure(directory, time_step, coords, binary=binary)
+  else:
+    print('[error] Field {} provided is not in the list {}'.format(field_name,
+                                                                   known_field_names))
+    sys.exit()
 
 
 def read_velocity(case_directory, time_step, coords, periodic=[], binary=False):
@@ -387,10 +441,12 @@ def plot_contour(field, field_range,
   else:
     levels = numpy.linspace(field.values.min(), field.values.max(), 101)
   color_map = {'pressure': cm.jet, 'vorticity': cm.RdBu_r,
-               'u-velocity': cm.RdBu_r, 'v-velocity': cm.RdBu_r}
+               'x-velocity': cm.RdBu_r, 'x-velocity': cm.RdBu_r}
   X, Y = numpy.meshgrid(field.x, field.y)
   cont = ax.contourf(X, Y, field.values, 
-                     levels=levels, extend='both', cmap=color_map[field.label])
+                     levels=levels, extend='both', 
+                     cmap=(cm.RdBu_r if field.label not in color_map.keys()
+                                     else color_map[field.label]))
   # create colorbar
   if field_range:
     colorbar_ticks = numpy.linspace(field_range[0], field_range[1], 5)

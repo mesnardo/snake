@@ -19,10 +19,10 @@ def parse_command_line():
                                                'pressure and velocity fields',
                         formatter_class= argparse.ArgumentDefaultsHelpFormatter)
   # fill parser with arguments
-  parser.add_argument('--type', '--software', dest='simulation_type',
-                      type=str, 
-                      help='type of simulation (cuibm or petibm)')
-  parser.add_argument('--directory', dest='case_directory', 
+  parser.add_argument('--software', dest='software',
+                      type=str, choices=['cuibm', 'petibm'],
+                      help='software used for the simulation')
+  parser.add_argument('--directory', dest='directory', 
                       type=str, default=os.getcwd(), 
                       help='directory of the simulation')
   parser.add_argument('--binary', dest='binary',
@@ -36,14 +36,13 @@ def parse_command_line():
                       type=float, nargs='+', default=[float('inf'), float('inf')],
                       help='coordinates of the top-right corner of the view')
   # arguments about data to plot
-  parser.add_argument('--field', dest='field',
-                      type=str,
-                      help='field name to plot '
-                           '(vorticity, u-velocity, v-velocity, pressure)')
+  parser.add_argument('--field', dest='field_name',
+                      type=str, choices=['vorticity', 'x-velocity', 'y-velocity', 'pressure'],
+                      help='name of the fieldto plot')
   parser.add_argument('--range', dest='range',
                       type=float, nargs='+', default=(None, None, None),
                       help='field range to plot (min, max, number of levels)')
-  # arguments about the immmersed-boundary
+  # arguments about the immersed-boundary
   parser.add_argument('--bodies', dest='body_paths', 
                       nargs='+', type=str, default=[],
                       help='path of each body file to add to plots')
@@ -51,13 +50,20 @@ def parse_command_line():
   parser.add_argument('--time-steps', '-t', dest='time_steps', 
                       type=int, nargs='+', default=[],
                       help='time-steps to plot (initial, final, increment)')
+  
+  parser.add_argument('--subtract-simulation', dest='subtract',
+                      nargs='+', default=[],
+                      help='adds another simulation to subtract the field '
+                           '(software, directory, binary) '
+                           'to subtract fields.')
+
   # arguments about figure
   parser.add_argument('--width', dest='width', 
                       type=float, default=8.0,
                       help='width of the figure (in inches)')
   parser.add_argument('--dpi', dest='dpi', 
                       type=int, default=100,
-                      help='dots per inch (resoltion of the figure)')
+                      help='dots per inch (resolution of the figure)')
   # parse given options file
   parser.add_argument('--options', 
                       type=open, action=miscellaneous.ReadOptionsFromFile,
@@ -72,41 +78,71 @@ def main():
   for a two-dimensional simulation.
   """
   args = parse_command_line()
+  
   # import appropriate library
-  if args.simulation_type == 'cuibm':
+  if args.software == 'cuibm':
     sys.path.append('{}/scripts/cuIBM'.format(os.environ['SCRIPTS']))
     import ioCuIBM as io
-  elif args.simulation_type == 'petibm':
+  elif args.software == 'petibm':
     sys.path.append('{}/scripts/PetIBM'.format(os.environ['SCRIPTS']))
     import ioPetIBM as io
-  else:
-    print('[error] incorrect simulation-type (choose "cuibm" or "petibm")')
-    exit(1)
 
-
-  time_steps = io.get_time_steps(args.case_directory, args.time_steps)
-  coords = io.read_grid(args.case_directory, binary=args.binary)
+  time_steps = io.get_time_steps(args.directory, args.time_steps)
+  coords = io.read_grid(args.directory, binary=args.binary)
   bodies = [io.Body(path) for path in args.body_paths]
 
   for time_step in time_steps:
-    if args.field == 'vorticity':
-      field = io.compute_vorticity(args.case_directory, time_step, coords, 
-                                   binary=args.binary)
-    elif args.field in ['u-velocity', 'x-velocity']:
-      field, _ = io.read_velocity(args.case_directory, time_step, coords, 
-                                  binary=args.binary)
-    elif args.field in ['v-velocity', 'y-velocity']:
-      _, field = io.read_velocity(args.case_directory, time_step, coords, 
-                                  binary=args.binary)
-    elif args.field == 'pressure':
-      field = io.read_pressure(args.case_directory, time_step, coords, 
-                               binary=args.binary)
+    field = io.get_field(args.field_name, args.directory, time_step, coords, 
+                         binary=args.binary)
 
-    io.plot_contour(field, args.range,
-                    directory=args.case_directory,
+    if args.subtract:
+      other = dict(zip(['software', 'directory', 'binary'], args.subtract))
+      other_field = get_other_field(other['software'], 
+                                    args.field_name, other['directory'], 
+                                    time_step, coords, 
+                                    binary=other['binary'])
+      difference = field.subtract(other_field, label='{}Subtract'.format(args.field_name))
+
+    io.plot_contour((field if not args.subtract else difference), 
+                    args.range,
+                    directory=args.directory,
                     view=args.bottom_left+args.top_right,
                     bodies=bodies,
                     width=args.width, dpi=args.dpi)
+
+
+def get_other_field(software, field_name, directory, time_step, coords, binary=False):
+  """Gets the field from another simulation at a given time-step 
+  that has the same mesh-grid.
+
+  Parameters
+  ----------
+  software: string
+    Software used to compute the numerical solution.
+  field_name: string
+    Name of the field to get.
+  directory: string
+    Directory of the simulation.
+  time_step: integer
+    Time-step at which the solution is read.
+  coords: list of numpy 1d arrays
+    List of coordinates along each direction.
+  binary: bool
+    Set 'True' is solution written in binary format; default: False.
+
+  Returns
+  -------
+  field: io2.Field object
+    The field.
+  """
+  # import appropriate library
+  if software == 'cuibm':
+    sys.path.append('{}/scripts/cuIBM'.format(os.environ['SCRIPTS']))
+    import ioCuIBM as io2
+  elif software == 'petibm':
+    sys.path.append('{}/scripts/PetIBM'.format(os.environ['SCRIPTS']))
+    import ioPetIBM as io2
+  return io2.get_field(field_name, directory, time_step, coords, binary=binary)
 
 
 if __name__ == '__main__':
