@@ -395,7 +395,7 @@ def plot_contour(field, field_range,
                  directory=os.getcwd(),
                  view=[float('-inf'), float('-inf'), float('inf'), float('inf')],
                  bodies=[],
-                 width=8.0, dpi=100): 
+                 save_name=None, width=8.0, dpi=100): 
   """Plots and saves the field.
 
   Parameters
@@ -411,6 +411,8 @@ def plot_contour(field, field_range,
     default: the whole domain.
   bodies: list of Body objects
     The immersed bodies to add to the figure; default: [] (no immersed body).
+  save_name: string
+    Prefix used to create the images directory and to save the .png files; default: None.
   width: float
     Width of the figure (in inches); default: 8.
   dpi: int
@@ -421,7 +423,8 @@ def plot_contour(field, field_range,
   y_bottom = ('bottom' if view[1] == float('-inf') else '{:.2f}'.format(view[1]))
   x_right = ('right' if view[2] == float('inf') else '{:.2f}'.format(view[2]))
   y_top = ('top' if view[3] == float('inf') else '{:.2f}'.format(view[3]))
-  images_directory = '{}/images/{}_{}_{}_{}_{}'.format(directory, field.label, 
+  save_name = (field.label if not save_name else save_name)
+  images_directory = '{}/images/{}_{}_{}_{}_{}'.format(directory, save_name, 
                                                        x_left, y_bottom, x_right, y_top)
   if not os.path.isdir(images_directory):
     print('[info] creating images directory: {} ...'.format(images_directory)),

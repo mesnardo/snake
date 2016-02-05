@@ -58,6 +58,10 @@ def parse_command_line():
                            'to subtract fields.')
 
   # arguments about figure
+  parser.add_argument('--save-name', dest='save_name',
+                      type=str, default=None,
+                      help='prefix used to create the save directory '
+                           'and used as a generic file name')
   parser.add_argument('--width', dest='width', 
                       type=float, default=8.0,
                       help='width of the figure (in inches)')
@@ -100,7 +104,7 @@ def main():
       other_field = get_other_field(other['software'], 
                                     args.field_name, other['directory'], 
                                     time_step, coords, 
-                                    binary=other['binary'])
+                                    binary=(True if other['binary'] == 'True' else False))
       difference = field.subtract(other_field, label='{}Subtract'.format(args.field_name))
 
     io.plot_contour((field if not args.subtract else difference), 
@@ -108,6 +112,7 @@ def main():
                     directory=args.directory,
                     view=args.bottom_left+args.top_right,
                     bodies=bodies,
+                    save_name=(field.label if not args.save_name else args.save_name),
                     width=args.width, dpi=args.dpi)
 
 
