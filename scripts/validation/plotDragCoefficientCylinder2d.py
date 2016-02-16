@@ -13,6 +13,7 @@ from matplotlib import pyplot
 
 sys.path.append('{}/scripts/library'.format(os.environ['SCRIPTS']))
 import forces
+import miscellaneous
 
 
 def parse_command_line():
@@ -25,15 +26,12 @@ def parse_command_line():
   parser.add_argument('--directory', dest='directory', 
                       type=str, default=os.getcwd(),
                       help='directory of the simulation')
-  parser.add_argument('--type', dest='simulation_type',
-                      type=str,
-                      help='type of simulation (petibm or cuibm)')
+  parser.add_argument('--software', dest='software',
+                      type=str, choices=['cuibm', 'petibm'],
+                      help='software used to generate solution')
   parser.add_argument('--description', dest='description',
                       type=str, default=None,
                       help='quick description of the simulation')
-  parser.add_argument('--re', '-re', dest='Re', 
-                      type=float,
-                      help='Reynolds number of the flow')
   parser.add_argument('--validation-data', dest='validation_data_path',
                       type=str,
                       help='path of the validation data file')
@@ -48,62 +46,18 @@ def parse_command_line():
                       help='shared saving file name')
   parser.set_defaults(show=True)
   # parse given options file
-  class LoadFromFile(argparse.Action):
-    """Container to read parameters from file."""
-    def __call__(self, parser, namespace, values, option_string=None):
-      """Fills the namespace with parameters read in file."""
-      with values as f:
-        parser.parse_args(f.read().split(), namespace)
-  parser.add_argument('--file', 
-                      type=open, action=LoadFromFile,
+  parser.add_argument('--options', 
+                      type=open, action=miscellaneous.ReadOptionsFromFile,
                       help='path of the file with options to parse')
   print('done')
   return parser.parse_args()
-
-
-def sanity_checks(args):
-  """Performs some checks on the command-line arguments.
-
-  Parameters
-  ----------
-  args: Namespace
-    Namespace containing the command-line arguments.
-  """
-  sain = True
-  if not os.path.isdir(args.directory):
-    print('[error] {} is not a directory'.format(args.directory)); sain = False
-  elif not os.path.isfile(args.validation_data_path):
-    print('[error] {} is not a file'.format(args.validation_data_path)); sain = False
-  elif args.Re not in [40, 550, 3000]:
-    print('[error] wrong Reynolds number (40, 550, or 3000)'); sain = False
-  elif args.simulation_type not in ['petibm', 'cuibm']:
-    print('[error] wrong simulation type'); sain = False
-  if not sain:
-    sys.exit()
-
-
-def get_SimulationClass(simulation_type):
-  """Gets the appropriate class.
-
-  Parameters
-  ----------
-  simulation_type: string
-    Description of the type of simulation (openfoam, cuibm, petibm)
-  """
-  if simulation_type == 'cuibm':
-    return forces.CuIBMSimulation
-  elif simulation_type == 'petibm':
-    return forces.PetIBMSimulation
-  else:
-    print('[error] type should be "cuibm" or "petibm"')
-    sys.exit()
 
 
 class KoumoutsakosLeonard1995(object):
   """Container to store results from Koumoutsakos and Leonard (1995)."""
   def __init__(self):
     """Initializes."""
-    self.name = 'Koumoutsakos and Leonard (1995)'
+    self.description = 'Koumoutsakos and Leonard (1995)'
 
   def read_drag(self, path):
     """Reads the instantaneous drag coefficients from given file.
@@ -116,7 +70,7 @@ class KoumoutsakosLeonard1995(object):
     print('[info] reading drag coefficients from Koumoutsakos and Leonard (1995) ...'),
     with open(path, 'r') as infile:
       times, drag = numpy.loadtxt(infile, dtype=float, comments='#', unpack=True)
-    self.force_x = forces.Force(0.5*times, drag, name='$C_d$')
+    self.force_x = forces.Force(0.5*times, drag)
     print('done')
 
 
@@ -146,10 +100,10 @@ def plot_drag_coefficients(simulation, validation_data,
   if save_name and not os.path.isdir(images_directory):
     os.makedirs(images_directory)
   pyplot.style.use('{}/styles/mesnardo.mplstyle'.format(os.environ['SCRIPTS']))
-  kwargs_data = {'label': 'PetIBM',
+  kwargs_data = {'label': simulation.description,
                  'color': '#336699', 'linestyle': '-', 'linewidth': 2,
                  'zorder': 10}
-  kwargs_validation_data = {'label': validation_data.name,
+  kwargs_validation_data = {'label': validation_data.description,
                             'color': '#993333', 'linewidth': 0,
                             'markeredgewidth': 2, 'markeredgecolor': '#993333',
                             'markerfacecolor': 'none',
@@ -159,8 +113,12 @@ def plot_drag_coefficients(simulation, validation_data,
   ax.grid(True, zorder=0)
   ax.set_xlabel('non-dimensional time')
   ax.set_ylabel('drag coefficient')
-  ax.plot(simulation.force_x.times, simulation.force_x.values, **kwargs_data)
-  ax.plot(validation_data.force_x.times, validation_data.force_x.values, **kwargs_validation_data)
+  ax.plot(simulation.force_x.times, 
+          simulation.coefficient*simulation.force_x.values, 
+          **kwargs_data)
+  ax.plot(validation_data.force_x.times, 
+          validation_data.force_x.values, 
+          **kwargs_validation_data)
   ax.axis(limits)
   ax.legend()
   if save_name:
@@ -175,15 +133,12 @@ def main():
   and compares to Koumoutsakos and Leonard (1995).
   """
   args = parse_command_line()
-  sanity_checks(args)
   
   print('[info] simulation: {}'.format(args.directory))
-  print('[info] Reynolds number: {}'.format(args.Re))
 
-
-  SimulationClass = get_SimulationClass(args.simulation_type)
-  simulation = SimulationClass(directory=args.directory, name=args.description)
-  simulation.read_forces(force_coefficients=True, coefficient=2.0)
+  simulation = forces.Simulation(directory=args.directory, description=args.description,
+                                 software=args.software, coefficient=2.0)
+  simulation.read_forces(display_coefficients=True)
 
   validation_data = KoumoutsakosLeonard1995()
   validation_data.read_drag(args.validation_data_path)
