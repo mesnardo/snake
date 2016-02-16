@@ -11,6 +11,9 @@ import argparse
 import numpy
 from matplotlib import pyplot
 
+sys.path.append('{}/scripts/library'.format(os.environ['SCRIPTS']))
+import miscellaneous
+
 
 def parse_command_line():
   """Parses the command-line."""
@@ -21,16 +24,20 @@ def parse_command_line():
                         formatter_class= argparse.ArgumentDefaultsHelpFormatter)
   # fill parser with arguments
   parser.add_argument('--directory', dest='directory', 
-                      type=str, default=os.getcwd(),
+                      type=str, 
+                      default=os.getcwd(),
                       help='directory of the simulation')
-  parser.add_argument('--type', dest='simulation_type',
-                      type=str,
-                      help='type of simulation (petibm or cuibm)')
+  parser.add_argument('--software', dest='software',
+                      type=str, 
+                      choices=['petibm', 'cuibm'],
+                      help='software used for the simulation')
   parser.add_argument('--re', '-re', dest='Re', 
-                      type=float, default='100',
+                      type=float, 
+                      choices=[100, 1000, 3200, 5000],
                       help='Reynolds number of the flow')
   parser.add_argument('--time-step', '-ts', dest='time_step', 
-                      type=int, default=None,
+                      type=int, 
+                      default=None,
                       help='time-step to plot')
   parser.add_argument('--validation-data', dest='validation_data_path',
                       type=str, 
@@ -41,42 +48,17 @@ def parse_command_line():
                       action='store_false',
                       help='does not display the figures')
   parser.add_argument('--save-name', dest='save_name',
-                      type=str, default=None,
+                      type=str, 
+                      default=None,
                       help='shared saving file name')
   parser.set_defaults(show=True)
   # parse given options file
-  class LoadFromFile(argparse.Action):
-    """Container to read parameters from file."""
-    def __call__(self, parser, namespace, values, option_string=None):
-      """Fills the namespace with parameters read in file."""
-      with values as f:
-        parser.parse_args(f.read().split(), namespace)
-  parser.add_argument('--file', 
-                      type=open, action=LoadFromFile,
+  parser.add_argument('--options', 
+                      type=open, action=miscellaneous.ReadOptionsFromFile,
                       help='path of the file with options to parse')
   print('done')
+  # return namespace
   return parser.parse_args()
-
-
-def sanity_checks(args):
-  """Performs some checks on the command-line arguments.
-
-  Parameters
-  ----------
-  args: Namespace
-    Namespace containing the command-line arguments.
-  """
-  sain = True
-  if not os.path.isdir(args.directory):
-    print('[error] {} is not a directory'.format(args.directory)); sain = False
-  elif not os.path.isfile(args.validation_data_path):
-    print('[error] {} is not a file'.format(args.validation_data_path)); sain = False
-  elif args.time_step and not(os.path.isdir('{}/{:0>7}'.format(args.directory, args.time_step))):
-    print('[error] {} is not a saved time-step'); sain = False
-  elif args.simulation_type not in ['petibm', 'cuibm']:
-    print('[error] wrong simulation type'); sain = False
-  if not sain:
-    sys.exit()
 
 
 def get_validation_data(path, Re):
@@ -194,11 +176,10 @@ def main():
   and compares with experimental results form Ghia et al. (1982).
   """
   args = parse_command_line()
-  sanity_checks(args)
-  if args.simulation_type == 'cuibm':
+  if args.software == 'cuibm':
     sys.path.append('{}/scripts/cuIBM'.format(os.environ['SCRIPTS']))
     import ioCuIBM as io
-  elif args.simulation_type == 'petibm':
+  elif args.software == 'petibm':
     sys.path.append('{}/scripts/PetIBM'.format(os.environ['SCRIPTS']))
     import ioPetIBM as io
 
@@ -216,7 +197,8 @@ def main():
 
   if args.save_name or args.show:
     plot_centerline_velocities(u, v, grid, validation_data, 
-                               directory=args.directory, save_name=args.save_name, 
+                               directory=args.directory, 
+                               save_name=args.save_name, 
                                show=args.show)
 
 
