@@ -253,7 +253,7 @@ class Simulation(object):
     print('[info] plotting forces ...')
     pyplot.style.use('{}/styles/mesnardo.mplstyle'.format(os.environ['SCRIPTS']))
     fig, ax = pyplot.subplots(figsize=(8, 6))
-    color_cycle = ax._get_lines.color_cycle
+    color_cycle = ax._get_lines.prop_cycler
     ax.grid(True, zorder=0)
     ax.set_xlabel('time')
     ax.set_ylabel('force coefficients' if display_coefficients else 'forces')
@@ -265,7 +265,7 @@ class Simulation(object):
       forces_to_plot.append(self.force_y)
       info.append('$C_l$' if display_coefficients else '$F_x$')
     for index, force in enumerate(forces_to_plot):
-      color = next(color_cycle)
+      color = next(color_cycle)['color']
       line, = ax.plot(force.times, self.coefficient*force.values,
               label=' - '.join(filter(None, [self.description, info[index]])),
               color=color, linestyle='-', zorder=9)
@@ -300,7 +300,7 @@ class Simulation(object):
       if display_lift:
         forces_to_plot.append(simulation.force_y)
       for index, force in enumerate(forces_to_plot):
-        color = next(color_cycle)
+        color = next(color_cycle)['color']
         line, = ax.plot(force.times, simulation.coefficient*force.values,
                         label=' - '.join(filter(None, [simulation.description, info[index]])),
                         color=color, linestyle='--', zorder=9)
