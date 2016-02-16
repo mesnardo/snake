@@ -1,5 +1,5 @@
-# file: generateGrid.py
-# author: Anush Krishnan (anush@bu.edu), Olivier Mesnard (mesnardo@gwu.edu)
+# file: generateGridParameters.py
+# author: Olivier Mesnard (mesnardo@gwu.edu)
 # description: Generates the cartesianMesh.yaml file for stretched grids.
 
 
@@ -9,161 +9,205 @@ import os
 import re
 import math
 
+sys.path.append('{}/scripts/library'.format(os.environ['SCRIPTS']))
+import miscellaneous
 
-def read_inputs():
-  """Parses the command-line."""
+
+def parse_command_line():
+  """Parses the command-line with module argparse."""
   # create parser
   parser = argparse.ArgumentParser(description='Generates cartesianMesh.yaml '
                                                'file for a uniform region '
                                                'surrounded by a stretched grid',
                                    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
   # fill parser with arguments
-  parser.add_argument('--parameters', dest='parameters_path', type=str, 
-                      default=os.path.dirname(os.path.realpath(__file__))+'/gridParameters',
-                      help='path of the file containing grid parameters')
-  parser.add_argument('--case', dest='case_directory', type=str,
-                      default=os.getcwd(),
+  parser.add_argument('--directory', dest='directory',
+                      type=str, default=os.getcwd(),
                       help='directory of the simulation')
+  parser.add_argument('--bottom-left', '-bl', dest='bottom_left',
+                      type=float, nargs='+',
+                      help='position of the bottom-left corner of the domain')
+  parser.add_argument('--top-right', '-tr', dest='top_right',
+                      type=float, nargs='+',
+                      help='position of the top-right corner of the domain')
+  parser.add_argument('--bottom-left-uniform', '-blu', dest='bottom_left_uniform',
+                      type=float, nargs='+',
+                      help='position of the bottom-left corner of the uniform region')
+  parser.add_argument('--top-right-uniform', '-tru', dest='top_right_uniform',
+                      type=float, nargs='+',
+                      help='position of the top-right corner of the uniform region')
+  parser.add_argument('--ds', '-ds', dest='ds',
+                      type=float, nargs='+',
+                      help='cell-widths in the uniform region')
+  parser.add_argument('--aspect-ratio', '-ar', dest='aspect_ratio',
+                      type=float, nargs='+',
+                      help='aspect-ratio between the width of the external '
+                           'boundary cells (start and end) '
+                           ' and the cell-width in the uniform region '
+                           'in each direction between ')
+
   parser.add_argument('--precision', dest='precision', type=int, default=2,
                       help='precision of the aspect ratio computed')
+  parser.add_argument('--save-name', dest='save_name',
+                      type=str,
+                      default='cartesianMesh.yaml',
+                      help='name of the file to create')
+
+
+  # parse given options file
+  parser.add_argument('--options', 
+                      type=open, action=miscellaneous.ReadOptionsFromFile,
+                      help='path of the file with options to parse')
   # parse command-line
   return parser.parse_args()
 
 
-def read_parameters_file(parameters):
-  """Creates a database with all grid parameters read from file.
+class CartesianMesh(object):
+  """Contains info related to the stretched grid."""
+  def __init__(self):
+    self.directions = []
 
-  Parameters
-  ----------
-  parameters: Namespace
-    Database with command-line arguments.
+  def add_direction(self, name, regions=[]):
+    """Adds information about one direction.
 
-  Returns
-  -------
-  database: dict
-    Database as a dictionary.
-  """
-  database = {'file_path': parameters.parameters_path,
-              'case_directory': parameters.case_directory,
-              'precision': parameters.precision}
-  with open(database['file_path'], 'r') as infile:
-    lines = filter(None, (line.rstrip() for line in infile if not line.startswith('#')))
-    for line in lines:
-      line = filter(None, re.split('\[|\]|\n|:|,|\s+', line))
-      direction, values = line[0], [float(value) for value in line[1:]]
-      database[direction] = {'min': values[0],
-                             'min uniform': values[1],
-                             'max uniform': values[2],
-                             'max': values[3],
-                             'spacing': values[4],
-                             'aspect ratio': [values[5], values[6]]}
-  return database
+    Parameters
+    ----------
+    name: string
+      Name of the direction ('x', 'y', or 'z').
+    regions: list of instances of the classes UniformGridLine or StretchedGridLine
+      List containing information about the regions 
+      that forms the grid-line along a direction; default: [].
+    """
+    self.directions.append({'name': name, 'regions': regions})
 
+  def write_yaml_file(self, path='{}/cartesianMesh.yaml'.format(os.getcwd())):
+    """Writes the file cartesianMesh.yaml into the simulation directory.
 
-def get_ratios(database):
-  """Computes stretching ratio and number of cells 
-  in each direction for each subdomain.
-
-  Parameters
-  ----------
-  database: dict
-    Dictionary containing the grid parameters.
-  """
-  compute_ratio('x', database)
-  compute_ratio('y', database)
-  try:
-    compute_ratio('z', database)
-  except:
-    pass
+    Parameters
+    ----------
+    path: string
+      Path of the file to write; default: <current directory>/cartesianMesh.yaml.
+    """
+    print('[info] writing {} ...'.format(path)),
+    with open(path, 'w') as outfile:
+      outfile.write('# {}\n\n'.format(os.path.basename(path)))
+      for direction in self.directions:
+        outfile.write('- direction: {}\n'.format(direction['name']))
+        outfile.write('  start: {}\n'.format(direction['regions'][0].start))
+        outfile.write('  subDomains:\n')
+        for region in direction['regions']: 
+          outfile.write('    - end: {}\n'.format(region.end))
+          outfile.write('      cells: {}\n'.format(region.n))
+          outfile.write('      stretchRatio: {}\n'.format(region.stretching_ratio))
+        outfile.write('\n')
+    print('done')
 
 
-def compute_ratio(direction, database):
-  """Computes the aspect ratio for each sub-domain.
+class UniformGridLine(object):
+  """Contains information about a uniform grid-line."""
+  def __init__(self, start, end, h):
+    """Sets the information about the uniform grid-line.
 
-  Parameters
-  ----------
-  direction: str
-    Direction name ('x', 'y' or 'z').
-  database: dict
-    Dictionary with the grid parameters.
-  """
-  def compute_stretched_ratio():
-    """Computes the stretching ratio and number of cells."""
-    precision = database['precision']
+    Parameters
+    ----------
+    start: float
+      Stating point of the line.
+    end: float
+      Ending point of the line.
+    h: float
+      Segment-length used to divide the line.
+    """
+    self.start, self.end = start, end
+    self.length = abs(self.end-self.start)
+    self.h = h
+    self.n = int(round(self.length/self.h))
+    if abs(self.n - self.length/self.h) > 1.0E-08:
+      print('Choose a mesh spacing such that the uniform region is an '
+            'integral multiple of it')
+      sys.exit(1)
+    self.stretching_ratio = 1.0
+
+
+class StretchedGridLine(object):
+  """Contains information about a stretched grid-line."""
+  def __init__(self, start, end, h, aspect_ratio, precision):
+    """Sets information about the stretched grid-line.
+
+    Parameters
+    ----------
+    start: float
+      Stating point of the line.
+    end: float
+      Ending point of the line.
+    h: float
+      Segment-length just before the stretched line.
+    aspect_ratio: float
+      Ratio between the previous segment-length and the biggest segment-length.
+    precision: integer
+      Number of decimals required to approximate the stretching ratio.
+    """
+    self.start, self.end = start, end
+    self.length = abs(self.end-self.start)
+    self.stretching_ratio, self.n = self.compute_ratio(h, aspect_ratio, precision) 
+
+  def compute_ratio(self, h, aspect_ratio, precision):
+    """Computes the stretching ratio and number of cells.
+
+    Parameters
+    ----------
+    h: float
+      Segment-length just before the stretched line.
+    aspect_ratio: float
+      Ratio between the previous segment-length and the biggest segment-length.
+    precision: integer
+      Number of decimals required to approximate the stretching ratio.
+
+    Returns
+    -------
+    r: float
+      The stretching ratio.
+    n: integer
+      THe number of segments that composes the grid-line.
+    """
     current_precision = 1
     next_ratio = 2.0
     while current_precision <= precision:
       r = next_ratio
-      n = int(round(math.log(1.0 - l/h*(1.0-r))/math.log(r)))
+      n = int(round(math.log(1.0 - self.length/h*(1.0-r))/math.log(r)))
       ar = r**(n-1)
-      if ar < max_ar:
+      if ar < aspect_ratio:
         next_ratio += (0.1)**current_precision
         current_precision += 1
       else:
         next_ratio -= (0.1)**current_precision
     return r, n
-  
-  h = database[direction]['spacing']
-
-  # before uniform region
-  l = database[direction]['min uniform'] - database[direction]['min']
-  max_ar = database[direction]['aspect ratio'][0]
-  r, n = compute_stretched_ratio()
-  database[direction]['stretch1'] = {'end': database[direction]['min uniform'], 
-                                     'stretching ratio': 1.0/r, 
-                                     'number cells': n}
-
-  # uniform region
-  l = database[direction]['max uniform']-database[direction]['min uniform']
-  n = int(round(l/h))
-  if abs(n-l/h) > 1.0E-08:
-    print('Choose a mesh spacing such that the uniform region is an '
-          'integral multiple of it')
-    print('{}-direction: length l={} \t spacing h={} \t l/h={}'.format(direction, 
-                                                                       l, h, l/h))
-    sys.exit()
-  database[direction]['uniform'] = {'end': database[direction]['max uniform'], 
-                                    'stretching ratio': 1.0, 
-                                    'number cells': n}
-
-  # after uniform region
-  l = database[direction]['max'] - database[direction]['max uniform']
-  max_ar = database[direction]['aspect ratio'][1]
-  r, n = compute_stretched_ratio()
-  database[direction]['stretch2'] = {'end': database[direction]['max'], 
-                                     'stretching ratio': r, 
-                                     'number cells': n}
-
-
-def write_yaml_file(database):
-  """Writes the file cartesianMesh.yaml into the case directory.
-
-  Parameters
-  ----------
-  database: dict
-    Dictionary with all grid parameters.
-  """
-  file_path = '{}/cartesianMesh.yaml'.format(database['case_directory'])
-  with open(file_path, 'w') as outfile:
-    directions = [d for d in ['x', 'y', 'z'] if d in list(database.keys())]
-    for direction in directions:
-      outfile.write('- direction: {}\n'.format(direction))
-      outfile.write('  start: {}\n'.format(database[direction]['min']))
-      outfile.write('  subDomains:\n')
-      for region in ['stretch1', 'uniform', 'stretch2']: 
-        outfile.write('    - end: {}\n'.format(database[direction][region]['end']))
-        outfile.write('      cells: {}\n'.format(database[direction][region]['number cells']))
-        outfile.write('      stretchRatio: {}\n'.format(database[direction][region]['stretching ratio']))
-      outfile.write('\n')
-  print('cartesianMesh.yaml written into {}'.format(database['case_directory']))
 
 
 def main():
   """Creates cartesianMesh.yaml file for stretched grid."""
-  args = read_inputs()
-  database = read_parameters_file(args)
-  get_ratios(database)
-  write_yaml_file(database)
+  args = parse_command_line()
+  mesh = CartesianMesh()
+
+  directions = list(['x', 'y', 'z'])[:len(args.bottom_left)]
+  for d, name in enumerate(directions):
+    regions = []
+    regions.append(StretchedGridLine(args.bottom_left[d], 
+                                     args.bottom_left_uniform[d], 
+                                     args.ds[d], 
+                                     args.aspect_ratio[2*d], 
+                                     args.precision))
+    regions[-1].stretching_ratio = 1.0/regions[-1].stretching_ratio
+    regions.append(UniformGridLine(args.bottom_left_uniform[d],
+                                   args.top_right_uniform[d],
+                                   args.ds[d]))
+    regions.append(StretchedGridLine(args.top_right_uniform[d], 
+                                     args.top_right[d], 
+                                     args.ds[d], 
+                                     args.aspect_ratio[2*d+1], 
+                                     args.precision))
+    mesh.add_direction(name, regions)
+
+  mesh.write_yaml_file('{}/{}'.format(args.directory, args.save_name))
 
 
 if __name__ == '__main__':
