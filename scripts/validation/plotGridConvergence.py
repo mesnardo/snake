@@ -247,28 +247,30 @@ def plot_grid_convergence(cases,
     Set 'True' if you want to display the figure; default: False. 
   """
   print('[info] plotting the grid convergence ...')
-  fig, ax = pyplot.subplots(figsize=(6, 6))
+  fig, ax = pyplot.subplots(figsize=(8, 8))
   ax.grid(False)
   ax.set_xlabel('grid-spacing')
   ax.set_ylabel('$L_2$-norm error')
   # plot errors in u-velocity
-  ax.plot([case.grid_spacing for case in cases[:-1]], 
-          [case.u.error for case in cases[:-1]], 
-          label='u-velocity')
+  ax.plot([case.grid_spacing for case in cases], 
+          [case.u.error for case in cases], 
+          label='u-velocity', marker='o')
   # plot errors in v-velocity
-  ax.plot([case.grid_spacing for case in cases[:-1]], 
-          [case.v.error for case in cases[:-1]], 
-          label='v-velocity')
+  ax.plot([case.grid_spacing for case in cases], 
+          [case.v.error for case in cases], 
+          label='v-velocity', marker='o')
   # plot errors in pressure
-  ax.plot([case.grid_spacing for case in cases[:-1]], 
-          [case.p.error for case in cases[:-1]], 
-          label='pressure')
+  ax.plot([case.grid_spacing for case in cases], 
+          [case.p.error for case in cases], 
+          label='pressure', marker='o')
   # plot convergence-guides for first and second-orders
   h = numpy.linspace(cases[0].grid_spacing, cases[-1].grid_spacing, 101)
-  ax.plot(h, h, label='$1^{st}$-order convergence', color='k')
-  ax.plot(h, h**2, label='$2^{nd}$-order convergence', 
-              color='k', linestyle='--')
+  ax.plot(h, h/max(cases[0].u.error, cases[0].p.error, cases[0].p.error), 
+          label='$1^{st}$-order convergence', color='k')
+  ax.plot(h, h**2/min(cases[0].u.error, cases[0].p.error, cases[0].p.error), 
+          label='$2^{nd}$-order convergence', color='k', linestyle='--')
   ax.legend()
+  ax.set_xlim(0.5*h.min(), 1.5*h.max())
   pyplot.xscale('log')
   pyplot.yscale('log')
   if save_name:
@@ -303,7 +305,7 @@ def main():
     cases[index].compute_error(cases[-1])
 
   if args.save_name or args.show:
-    plot_grid_convergence(cases, 
+    plot_grid_convergence(cases[:-1], 
                           directory=args.directory, 
                           save_name=args.save_name, 
                           show=args.show)
