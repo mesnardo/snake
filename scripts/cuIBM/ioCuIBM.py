@@ -167,7 +167,7 @@ def get_field(field_name, directory, time_step, coords, binary=False, periodic=N
     sys.exit()
 
 
-def read_velocity(directory, time_step, coords, binary=False):
+def read_velocity(directory, time_step, coords, binary=False, periodic=None):
   """Reads the velocity field from solution file at a given time-step.
 
   Parameters
@@ -180,6 +180,8 @@ def read_velocity(directory, time_step, coords, binary=False):
     Cell-centered coordinates of the mesh.
   binary: bool
     Set `True` if binary format; default: False.
+  periodic: None
+    Not supported in cuIBM. To be ignored.
 
   Returns
   -------
