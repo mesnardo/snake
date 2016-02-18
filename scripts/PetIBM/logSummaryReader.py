@@ -115,7 +115,7 @@ class Series(object):
     ax.yaxis.grid(zorder=0)
     pyplot.xlabel('process count', fontsize=16)
     pyplot.ylabel('% of wall time', fontsize=16)
-    color_cycle = ax._get_lines.color_cycle
+    color_cycle = ax._get_lines.prop_cycler
     index = numpy.arange(len(self.runs))
     bar_width=0.5
     bar_offset = numpy.zeros(len(self.runs))
@@ -123,7 +123,7 @@ class Series(object):
       percents = [run.log_summary.events[name].percent for run in self.runs]
       pyplot.bar(index, percents, bar_width, 
                  label=name, bottom=bar_offset, 
-                 color=next(color_cycle), linewidth=0, zorder=0)
+                 color=next(color_cycle)['color'], linewidth=0, zorder=0)
       bar_offset += percents
     pyplot.legend(bbox_to_anchor=(1.0, 1.0), frameon=False)
     pyplot.xticks(index+0.5*bar_width, self.nprocs.astype('str'))
