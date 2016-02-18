@@ -119,7 +119,7 @@ def read_grid(case_directory, binary=False):
   return numpy.array(numpy.split(coords, numpy.cumsum(nCells[:-1]+1)))
 
 
-def get_field(field_name, directory, time_step, coords, binary=False):
+def get_field(field_name, directory, time_step, coords, periodic=[], binary=False):
   """Gets the field at a given time-step and the mesh-grid. 
 
   Parameters
@@ -132,8 +132,10 @@ def get_field(field_name, directory, time_step, coords, binary=False):
     Time-step at which the solution is read.
   coords: list of numpy 1d arrays
     List of coordinates along each direction.
+  periodic: list of strings
+    List direction that uses periodic boundary conditions; default: [].
   binary: bool
-    Set 'True' is solution written in binary format; default: False.
+    Not supported in PetIBM. To be ignored.
 
   Returns
   -------
@@ -141,11 +143,11 @@ def get_field(field_name, directory, time_step, coords, binary=False):
     The field.
   """
   if field_name == 'vorticity':
-    return compute_vorticity(directory, time_step, coords, binary=binary)
+    return compute_vorticity(directory, time_step, coords, periodic=periodic, binary=binary)
   elif field_name == 'x-velocity':
-    return read_velocity(directory, time_step, coords, binary=binary)[0]
+    return read_velocity(directory, time_step, coords, periodic=periodic, binary=binary)[0]
   elif field_name == 'y-velocity':
-    return read_velocity(directory, time_step, coords, binary=binary)[1]
+    return read_velocity(directory, time_step, coords, periodic=periodic, binary=binary)[1]
   elif field_name == 'pressure':
     return read_pressure(directory, time_step, coords, binary=binary)
   else:
@@ -476,7 +478,7 @@ def plot_contour(field, field_range,
   print('done')
 
 
-def compute_vorticity(directory, time_step, coords, binary=False):
+def compute_vorticity(directory, time_step, coords, periodic=[], binary=False):
   """Computes the vorticity field for a two-dimensional simulation.
 
   Parameters
@@ -487,15 +489,17 @@ def compute_vorticity(directory, time_step, coords, binary=False):
     Time-step at which to read the pressure field.
   coords: Numpy 1d arrays of float
     Mesh-grid coordinates.
+  periodic: list of strings
+    List of directions with periodic boundary conditions.
   binary: bool
-    Set `True` iif written in binary format; default: False.
+    Not supported for PetIBM solutions. To be ignored.
 
   Returns
   -------
   vorticity: ioPetIBM.Field object
     The vorticity field.
   """
-  u, v = read_velocity(directory, time_step, coords, binary=binary)
+  u, v = read_velocity(directory, time_step, coords, periodic=periodic, binary=binary)
   print('[time-step {}] computing the vorticity field ...'.format(time_step)),
   mask_x = numpy.where(numpy.logical_and(u.x > v.x[0], u.x < v.x[-1]))[0]
   mask_y = numpy.where(numpy.logical_and(v.y > u.y[0], v.y < u.y[-1]))[0]

@@ -27,7 +27,7 @@ def parse_command_line():
                       help='directory of the simulation')
   parser.add_argument('--binary', dest='binary',
                       action='store_true',
-                      help='use flag if data written in binary format')
+                      help='cuIBM solution: use flag if data written in binary format')
   # arguments about view
   parser.add_argument('--bottom-left', '-bl', dest='bottom_left', 
                       type=float, nargs='+', default=[float('-inf'), float('-inf')],
@@ -42,6 +42,10 @@ def parse_command_line():
   parser.add_argument('--range', dest='range',
                       type=float, nargs='+', default=(None, None, None),
                       help='field range to plot (min, max, number of levels)')
+  parser.add_argument('--periodic', dest='periodic',
+                      type=str, nargs='+', choices=['x', 'y', 'z'],
+                      help='For PetIBM solutions: list of directions with '
+                           'periodic boundary conditions')
   # arguments about the immersed-boundary
   parser.add_argument('--bodies', dest='body_paths', 
                       nargs='+', type=str, default=[],
@@ -97,7 +101,7 @@ def main():
 
   for time_step in time_steps:
     field = io.get_field(args.field_name, args.directory, time_step, coords, 
-                         binary=args.binary)
+                         periodic=args.periodic, binary=args.binary)
 
     if args.subtract:
       other = dict(zip(['software', 'directory', 'binary'], args.subtract))

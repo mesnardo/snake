@@ -263,7 +263,7 @@ class Simulation(object):
       info.append('$C_d$' if display_coefficients else '$F_x$')
     if display_lift:
       forces_to_plot.append(self.force_y)
-      info.append('$C_l$' if display_coefficients else '$F_x$')
+      info.append('$C_l$' if display_coefficients else '$F_y$')
     for index, force in enumerate(forces_to_plot):
       color = next(color_cycle)['color']
       line, = ax.plot(force.times, self.coefficient*force.values,

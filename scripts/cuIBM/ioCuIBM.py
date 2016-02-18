@@ -130,7 +130,7 @@ def read_grid(directory, binary=False):
   return x, y
 
 
-def get_field(field_name, directory, time_step, coords, binary=False):
+def get_field(field_name, directory, time_step, coords, binary=False, periodic=None):
   """Gets the field at a given time-step and the mesh-grid. 
 
   Parameters
@@ -145,6 +145,8 @@ def get_field(field_name, directory, time_step, coords, binary=False):
     List of coordinates along each direction.
   binary: bool
     Set 'True' is solution written in binary format; default: False.
+  periodic: not supported
+    Periodic boundary conditions are not supported in cuIBM. To be ignored.
 
   Returns
   -------
@@ -165,7 +167,7 @@ def get_field(field_name, directory, time_step, coords, binary=False):
     sys.exit()
 
 
-def read_velocity(directory, time_step, coords, binary=False):
+def read_velocity(directory, time_step, coords, binary=False, periodic=None):
   """Reads the velocity field from solution file at a given time-step.
 
   Parameters
@@ -178,6 +180,8 @@ def read_velocity(directory, time_step, coords, binary=False):
     Cell-centered coordinates of the mesh.
   binary: bool
     Set `True` if binary format; default: False.
+  periodic: None
+    Not supported in cuIBM. To be ignored.
 
   Returns
   -------
