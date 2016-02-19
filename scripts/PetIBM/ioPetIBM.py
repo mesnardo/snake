@@ -393,7 +393,8 @@ def write_vtk(field, case_directory, time_step, name,
                       fmt='%6f', delimiter='\t')    
 
 
-def plot_contour(field, field_range, 
+def plot_contour(field, 
+                 field_range=None, 
                  directory=os.getcwd(),
                  view=[float('-inf'), float('-inf'), float('inf'), float('inf')],
                  bodies=[],
@@ -405,7 +406,7 @@ def plot_contour(field, field_range,
   field: ioCuIBM.Field instance
     Nodes and values of the field.
   field_range: list(float)
-    Min, max and number of countours to plot.
+    Min, max and number of countours to plot; default: None.
   directory: str
     Parent directory where to save the images: default: $PWD.
   view: list(float)
@@ -456,7 +457,7 @@ def plot_contour(field, field_range,
   if field_range:
     colorbar_ticks = numpy.linspace(field_range[0], field_range[1], 5)
   else:
-    colorbar_ticks = numpy.linspace(field.values.min(), field.values.max(), 5)
+    colorbar_ticks = numpy.linspace(field.values.min(), field.values.max(), 3)
   ains = inset_axes(pyplot.gca(), width='30%', height='2%', loc=3)
   cont_bar = fig.colorbar(cont, 
                           cax=ains, orientation='horizontal',
