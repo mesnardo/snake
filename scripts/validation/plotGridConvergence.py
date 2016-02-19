@@ -73,7 +73,7 @@ def restriction(field, grid):
   ----------
   field: Field object
     Field where solution will be restricted.
-  grid: list of numpy array of floats
+  grid: list of numpy arrays of floats
     Nodal stations in each direction of the coarser grid.
 
   Returns
@@ -161,6 +161,19 @@ class SimulationSolution(object):
                / numpy.linalg.norm(exact_field.values)  )
       setattr(getattr(self, field_name), 'error', error)
 
+  def plot_differences(self, exact):
+    field_names = ['u', 'v', 'p']
+    sys.path.append('{}/scripts/PetIBM'.format(os.environ['SCRIPTS']))
+    import ioPetIBM
+    for field_name in field_names:
+      field = getattr(self, field_name)
+      exact_field = getattr(exact, field_name)
+      difference = field.subtract(exact_field, 
+                                  label='{}SubtractAnalytical'.format(field_name))
+      ioPetIBM.plot_contour(difference, 
+                            view=[field.x[0], field.y[0], field.x[-1], field.y[-1]], 
+                            save_name=difference.label)
+
 
 def observed_order_convergence(field_name, coarse, medium, fine, ratio, grid):
   """Computes the observed order of convergence  (L2-norm)
@@ -223,7 +236,7 @@ def get_observed_orders_convergence(cases,
   label = ('last three' if last_three else 'first three')
   print('[info] computing observed orders of '
         'convergence using the {} grids...'.format(label))
-  coarse, medium, fine = (cases[1:] if last_three else cases[:-1])
+  coarse, medium, fine = (cases[-3:] if last_three else cases[:2])
   ratio = coarse.grid_spacing/medium.grid_spacing
   field_names = ['u', 'v', 'p']
   alpha = {} # will contain observed order of convergence
