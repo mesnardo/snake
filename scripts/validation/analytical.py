@@ -105,7 +105,7 @@ class TaylorGreenVortex(object):
                           view=self.bottom_left+self.top_right, 
                           save_name='{}_analytical'.format(self.v.label))
     ioPetIBM.plot_contour(self.p, 
-                          field_range=[-1.0, 1.0, 101],
+                          field_range=[-0.5, 0.5, 101],
                           view=self.bottom_left+self.top_right, 
                           save_name='{}_analytical'.format(self.p.label))
 
