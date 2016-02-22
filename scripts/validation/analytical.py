@@ -6,10 +6,11 @@
 import os
 import sys
 import math
+
 import numpy
 
-
-from ..library.field import Field
+sys.path.append(os.environ['SCRIPTS'])
+from library.field import Field
 
 
 class TaylorGreenVortex(object):
@@ -66,13 +67,13 @@ class TaylorGreenVortex(object):
       The velocity components.
     """
     u = Field()
-    u.label = 'u-velocity'
+    u.label = 'x-velocity'
     u.time_step = 1 # does not matter
     u.x, u.y = self.grid[0][1:-1], 0.5*(self.grid[1][:-1]+self.grid[1][1:])
     X, Y = self.mapped_meshgrid(u.x, u.y)
     u.values = -self.amplitude*numpy.cos(X)*numpy.sin(Y)*math.exp(-2.0*(2.0*math.pi)**2*self.time/self.Re)
     v = Field()
-    v.label = 'v-velocity'
+    v.label = 'y-velocity'
     v.time_step = 1 # does not matter
     v.x, v.y = 0.5*(self.grid[0][:-1]+self.grid[0][1:]), self.grid[1][1:-1]
     X, Y = self.mapped_meshgrid(v.x, v.y)
@@ -109,7 +110,6 @@ class TaylorGreenVortex(object):
                                directory='{}/images'.format(os.getcwd()),
                                view=self.bottom_left+self.top_right,
                                save_name='analytical')
-
 
 
 # dictionary that contains the plug-in classes

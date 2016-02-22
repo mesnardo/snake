@@ -11,8 +11,10 @@ import argparse
 import numpy
 from matplotlib import pyplot
 
-from ..library import miscellaneous
-from ..library.simulation import Simulation
+sys.path.append(os.environ['SCRIPTS'])
+from library import miscellaneous
+from library.simulation import Simulation
+from library.force import Force
 
 
 def parse_command_line():
@@ -69,7 +71,7 @@ class KoumoutsakosLeonard1995(object):
     print('[info] reading drag coefficients from Koumoutsakos and Leonard (1995) ...'),
     with open(path, 'r') as infile:
       times, drag = numpy.loadtxt(infile, dtype=float, comments='#', unpack=True)
-    self.force_x = forces.Force(0.5*times, drag)
+    self.force_x = Force(0.5*times, drag)
     print('done')
 
 

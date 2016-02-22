@@ -7,13 +7,14 @@ import os
 import sys
 import argparse
 
+sys.path.append(os.environ['SCRIPTS'])
 from library import miscellaneous
 from library.simulation import Simulation
 
 
 def parse_command_line():
   """Parses the command-line."""
-  print('[info] parsing command-line ...')
+  print('[info] parsing command-line ...'),
   # create parser
   parser = argparse.ArgumentParser(description='Plots the instantaneous forces',
                         formatter_class= argparse.ArgumentDefaultsHelpFormatter)
@@ -93,6 +94,7 @@ def parse_command_line():
   parser.add_argument('--options', 
                       type=open, action=miscellaneous.ReadOptionsFromFile,
                       help='path of the file with options to parse')
+  print('done')
   # return namespace
   return parser.parse_args()
 
@@ -112,9 +114,9 @@ def main():
   # read and compute some statistics
   for index, simulation in enumerate(simulations):
     simulations[index].read_forces(display_coefficients=args.display_coefficients)
-    simulation.get_means(limits=args.average_limits, 
-                         last_period=args.last_period, 
-                         order=args.order)
+    simulation.get_mean_forces(limits=args.average_limits, 
+                               last_period=args.last_period, 
+                               order=args.order)
     if args.strouhal[0] > 0:
       simulation.get_strouhal(n_periods=args.strouhal[0], 
                               end_time=args.strouhal[1],
@@ -129,13 +131,15 @@ def main():
                              display_guides=args.display_guides,
                              fill_between=args.fill_between,
                              other_simulations=simulations[1:],
-                             other_coefficients=[other[-1] for other in args.others],
+                             other_coefficients=[float(other[-1]) for other in args.others],
                              limits=args.plot_limits,
                              save_name=args.save_name, 
                              show=args.show)
   # display time-averaged values in table
-  print(simulations[0].create_dataframe_forces(other_simulations=simulations[1:],
-                                               display_coefficients=args.display_coefficients))
+  print(simulations[0].create_dataframe_forces(display_coefficients=args.display_coefficients,
+                                               coefficient=args.coefficient,
+                                               other_simulations=simulations[1:],
+                                               other_coefficients=[float(other[-1]) for other in args.others]))
 
 
 if __name__ == '__main__':

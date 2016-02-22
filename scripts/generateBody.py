@@ -7,8 +7,9 @@ import os
 import sys
 import argparse
 
-from .library import geometry
-from .library import miscellaneous
+sys.path.append(os.environ['SCRIPTS'])
+from library import geometry
+from library import miscellaneous
 
 
 def parse_command_line():

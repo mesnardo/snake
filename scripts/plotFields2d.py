@@ -7,6 +7,7 @@ import os
 import sys
 import argparse
 
+sys.path.append(os.environ['SCRIPTS'])
 from library import miscellaneous
 from library.simulation import Simulation
 from library.body import Body
@@ -41,7 +42,8 @@ def parse_command_line():
                       type=float, nargs='+', default=(None, None, None),
                       help='field range to plot (min, max, number of levels)')
   parser.add_argument('--periodic', dest='periodic_directions',
-                      type=str, nargs='+', choices=['x', 'y', 'z'],
+                      type=str, nargs='+', 
+                      default=[],
                       help='For PetIBM solutions: list of directions with '
                            'periodic boundary conditions')
   # arguments about the immersed-boundary
@@ -86,7 +88,7 @@ def main():
   args = parse_command_line()
   
   simulation = Simulation(directory=args.directory, software=args.software)
-  time_steps = simulation.get_time_steps(range=args.time_steps_range)
+  time_steps = simulation.get_time_steps(time_steps_range=args.time_steps_range)
   simulation.read_grid()
   bodies = [Body(path) for path in args.body_paths]
 
@@ -97,8 +99,9 @@ def main():
       info = dict(zip(['software', 'directory'], 
                       args.subtract_simulation))
       other = Simulation(**info)
+      other.read_grid()
       other.read_fields([args.field_name], time_step, 
-                      periodic_directions=args.periodic_directions)
+                        periodic_directions=args.periodic_directions)
       simulation.subtract(other, args.field_name)
 
     simulation.plot_contour(args.field_name,

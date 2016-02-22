@@ -1,0 +1,15 @@
+--software petibm
+--directory $SCRIPTS/tests/petibmSimulation
+--description present
+--display-coefficients --coefficient 2.0
+--average 32.0 64.0
+--strouhal 5 64.0
+--limits 0.0 80.0 0.0 3.0
+--extrema --order 200
+--add-simulation
+cuibm
+$SCRIPTS/resources/flyingSnake2d_cuibm_anush/flyingSnake2dRe2000AoA35
+Krishnan_et_al._(2014)
+2.0
+--save-name forceCoefficientsCompareAnush
+--no-show

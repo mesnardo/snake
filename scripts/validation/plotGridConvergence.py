@@ -11,8 +11,9 @@ import numpy
 from matplotlib import pyplot
 pyplot.style.use('{}/styles/mesnardo.mplstyle'.format(os.environ['SCRIPTS']))
 
-from ..library import miscellaneous
-from ..library.simulation import Simulation
+sys.path.append(os.environ['SCRIPTS'])
+from library import miscellaneous
+from library.simulation import Simulation
 
 
 def parse_command_line():
@@ -37,6 +38,7 @@ def parse_command_line():
                       help='time-step at which the solution will be read')
   parser.add_argument('--fields', dest='field_names',
                       type=str, nargs='+',
+                      default=['x-velocity', 'y-velocity', 'pressure'],
                       help='list of fields to consider '
                            '(x-velocity, y-velocity, and/or pressure)')
   parser.add_argument('--save-name', dest='save_name',
@@ -88,11 +90,11 @@ def observed_order_convergence(field_name, coarse, medium, fine, ratio, grid):
     The observed order of convergence.
   """
   # get restricted field from coarse solution
-  coarse_field = getattr(coarse, field_name).restriction(grid)
+  coarse_field = getattr(coarse, field_name.replace('-', '_')).restriction(grid)
   # get restricted field from medium solution
-  medium_field = getattr(medium, field_name).restriction(grid)
+  medium_field = getattr(medium, field_name.replace('-', '_')).restriction(grid)
   # get restricted field from fine solution
-  fine_field = getattr(fine, field_name).restriction(grid)
+  fine_field = getattr(fine, field_name.replace('-', '_')).restriction(grid)
   # observed order using the L2-norm
   return (  numpy.log(  numpy.linalg.norm(  medium_field.values
                                           - coarse_field.values  ) 
@@ -135,8 +137,8 @@ def get_observed_orders_convergence(simulations, field_names,
   alpha = {} # will contain observed order of convergence
   for field_name in field_names:
     # get grid (coarsest one) where solutions will be restricted
-    grid = [getattr(simulations[0], field_name).x, 
-            getattr(simulations[0], field_name).y]
+    grid = [getattr(simulations[0], field_name.replace('-', '_')).x, 
+            getattr(simulations[0], field_name.replace('-', '_')).y]
     alpha[field_name] = observed_order_convergence(field_name, 
                                                    coarse, medium, fine, 
                                                    ratio, grid)
@@ -176,21 +178,24 @@ def plot_grid_convergence(simulations, field_names,
   ax.set_ylabel('$L_2$-norm error')
   for field_name in field_names:
     ax.plot([case.get_grid_spacing() for case in simulations],
-            [getattr(case, 'errors')[field_name] for case in simulations],
+            [getattr(case, 'errors')[field_name.replace('-', '_')] 
+             for case in simulations],
             label=field_name, marker='o')
   # plot convergence-guides for first and second-orders
   h = numpy.linspace(1.0E-05, 1.0E+05, 101)
-  ax.plot(h, h/max(value for value in simulations.errors.itervalues()), 
+  ax.plot(h, h/max(value for value in simulations[0].errors.itervalues()), 
           label='$1^{st}$-order convergence', color='k')
-  ax.plot(h, h**2/min(value for value in simulations.errors.itervalues()), 
+  ax.plot(h, h**2/min(value for value in simulations[0].errors.itervalues()), 
           label='$2^{nd}$-order convergence', color='k', linestyle='--')
   ax.legend()
   ax.set_xlim(0.1*simulations[-1].get_grid_spacing(), 
               10.0*simulations[0].get_grid_spacing())
-  ax.set_ylim(0.1*min(getattr(case, 'errors')[field_name] for case in simulations 
-                                                          for field_name in field_names),
-              10.0*max(getattr(case, 'errors')[field_name] for case in simulations 
-                                                           for field_name in field_names))
+  ax.set_ylim(0.1*min(getattr(case, 'errors')[field_name.replace('-', '_')] 
+                      for case in simulations 
+                      for field_name in field_names),
+              10.0*max(getattr(case, 'errors')[field_name.replace('-', '_')] 
+                       for case in simulations 
+                       for field_name in field_names))
   pyplot.xscale('log')
   pyplot.yscale('log')
   # save and display
@@ -224,7 +229,7 @@ def main():
                            periodic_directions=args.periodic_directions)
     simulations.append(simulation)
 
-  get_observed_orders_convergence(simulations, args.field_names
+  get_observed_orders_convergence(simulations, args.field_names,
                                   last_three=args.last_three,
                                   directory=args.directory,
                                   save_name=args.save_name)

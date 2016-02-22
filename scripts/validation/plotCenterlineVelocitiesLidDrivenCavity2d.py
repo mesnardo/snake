@@ -11,8 +11,10 @@ import argparse
 import numpy
 from matplotlib import pyplot
 
-from ..library import miscellaneous
-from ..library.field import Field
+sys.path.append(os.environ['SCRIPTS'])
+from library import miscellaneous
+from library.simulation import Simulation
+from library.field import Field
 
 
 def parse_command_line():
