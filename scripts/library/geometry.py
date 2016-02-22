@@ -681,12 +681,4 @@ class Sphere(Geometry3d):
     z = numpy.append(z, self.center.z - self.radius)
     # create points
     self.points = [Point(x[i], y[i], z[i]) for i in xrange(x.size)]
-    self.points_initial = copy.deepcopy(self.points) 
-
-
-def main():
-  pass
-
-
-if __name__ == '__main__':
-  main()
+    self.points_initial = copy.deepcopy(self.points)

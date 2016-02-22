@@ -9,6 +9,9 @@ import math
 import numpy
 
 
+from ..library.field import Field
+
+
 class TaylorGreenVortex(object):
   """Analytical plug-in for the Taylor-Green vortex case."""
   def __init__(self, grid, time, Re, amplitude):
@@ -32,8 +35,8 @@ class TaylorGreenVortex(object):
     self.grid = grid
     self.bottom_left = [grid[0][0], grid[1][0]]
     self.top_right = [grid[0][-1], grid[1][-1]]
-    self.u, self.v = self.get_velocity()
-    self.p = self.get_pressure()
+    self.x_velocity, self.y_velocity = self.get_velocity()
+    self.pressure = self.get_pressure()
     self.plot_fields()
 
   def mapped_meshgrid(self, x, y):
@@ -94,28 +97,21 @@ class TaylorGreenVortex(object):
 
   def plot_fields(self):
     """Plots the velocity and pressure fields."""
-    sys.path.append('{}/scripts/PetIBM'.format(os.environ['SCRIPTS']))
-    import ioPetIBM
-    ioPetIBM.plot_contour(self.u, 
-                          field_range=[-1.0, 1.0, 101],
-                          view=self.bottom_left+self.top_right, 
-                          save_name='{}_analytical'.format(self.u.label))
-    ioPetIBM.plot_contour(self.v, 
-                          field_range=[-1.0, 1.0, 101],
-                          view=self.bottom_left+self.top_right, 
-                          save_name='{}_analytical'.format(self.v.label))
-    ioPetIBM.plot_contour(self.p, 
-                          field_range=[-0.5, 0.5, 101],
-                          view=self.bottom_left+self.top_right, 
-                          save_name='{}_analytical'.format(self.p.label))
+    self.x_velocity.plot_contour(field_range=[-1.0, 1.0, 101],
+                                 directory='{}/images'.format(os.getcwd()),
+                                 view=self.bottom_left+self.top_right,
+                                 save_name='analytical')
+    self.y_velocity.plot_contour(field_range=[-1.0, 1.0, 101],
+                                 directory='{}/images'.format(os.getcwd()),
+                                 view=self.bottom_left+self.top_right,
+                                 save_name='analytical')
+    self.pressure.plot_contour(field_range=[-0.5, 0.5, 101],
+                               directory='{}/images'.format(os.getcwd()),
+                               view=self.bottom_left+self.top_right,
+                               save_name='analytical')
+
 
 
 # dictionary that contains the plug-in classes
 # key is a string that contains the name of the class
 dispatcher = {'TaylorGreenVortex': TaylorGreenVortex}
-
-
-# fake class Field
-class Field(object):
-  def __init__(self):
-    pass

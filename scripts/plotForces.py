@@ -7,9 +7,8 @@ import os
 import sys
 import argparse
 
-sys.path.append('{}/scripts/library'.format(os.environ['SCRIPTS']))
-import forces
-import miscellaneous
+from library import miscellaneous
+from library.simulation import Simulation
 
 
 def parse_command_line():
@@ -81,9 +80,9 @@ def parse_command_line():
   plot_info.add_argument('--extrema', dest='display_extrema', 
                       action='store_true',
                       help='displays the forces extrema')
-  plot_info.add_argument('--gauge', dest='display_gauge', 
+  plot_info.add_argument('--guides', dest='display_guides', 
                       action='store_true',
-                      help='displays gauges to check the convergence')
+                      help='displays guides to check the convergence')
   plot_info.add_argument('--fill-between', dest='fill_between',
                          action='store_true',
                          help='fills between lines defined by extrema')
@@ -103,17 +102,13 @@ def main():
   args = parse_command_line()
   simulations = []
   # register main simulation
-  simulations.append(forces.Simulation(description=args.description, 
-                                       directory=args.directory,
-                                       software=args.software,
-                                       coefficient=args.coefficient))
+  simulations.append(Simulation(description=args.description, 
+                                directory=args.directory,
+                                software=args.software))
   # register other simulations used for comparison
   for other in args.others:
-    info = dict(zip(['software', 'directory', 'description', 'coefficient'], other))
-    simulations.append(forces.Simulation(description=info['description'],
-                                         directory=info['directory'],
-                                         software=info['software'],
-                                         coefficient=float(info['coefficient'])))
+    info = dict(zip(['software', 'directory', 'description'], other[:-1]))
+    simulations.append(Simulation(**info))
   # read and compute some statistics
   for index, simulation in enumerate(simulations):
     simulations[index].read_forces(display_coefficients=args.display_coefficients)
@@ -128,17 +123,19 @@ def main():
   simulations[0].plot_forces(display_drag=args.display_drag,
                              display_lift=args.display_lift,
                              display_coefficients=args.display_coefficients,
+                             coefficient=args.coefficient,
                              display_extrema=args.display_extrema, 
                              order=args.order,
-                             display_gauge=args.display_gauge,
+                             display_guides=args.display_guides,
                              fill_between=args.fill_between,
                              other_simulations=simulations[1:],
+                             other_coefficients=[other[-1] for other in args.others],
                              limits=args.plot_limits,
                              save_name=args.save_name, 
                              show=args.show)
   # display time-averaged values in table
-  print(simulations[0].create_dataframe(other_simulations=simulations[1:],
-                                        display_coefficients=args.display_coefficients))
+  print(simulations[0].create_dataframe_forces(other_simulations=simulations[1:],
+                                               display_coefficients=args.display_coefficients))
 
 
 if __name__ == '__main__':

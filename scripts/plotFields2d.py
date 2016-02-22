@@ -7,8 +7,9 @@ import os
 import sys
 import argparse
 
-sys.path.append('{}/scripts/library'.format(os.environ['SCRIPTS']))
-import miscellaneous
+from library import miscellaneous
+from library.simulation import Simulation
+from library.body import Body
 
 
 def parse_command_line():
@@ -25,9 +26,6 @@ def parse_command_line():
   parser.add_argument('--directory', dest='directory', 
                       type=str, default=os.getcwd(), 
                       help='directory of the simulation')
-  parser.add_argument('--binary', dest='binary',
-                      action='store_true',
-                      help='cuIBM solution: use flag if data written in binary format')
   # arguments about view
   parser.add_argument('--bottom-left', '-bl', dest='bottom_left', 
                       type=float, nargs='+', default=[float('-inf'), float('-inf')],
@@ -42,7 +40,7 @@ def parse_command_line():
   parser.add_argument('--range', dest='range',
                       type=float, nargs='+', default=(None, None, None),
                       help='field range to plot (min, max, number of levels)')
-  parser.add_argument('--periodic', dest='periodic',
+  parser.add_argument('--periodic', dest='periodic_directions',
                       type=str, nargs='+', choices=['x', 'y', 'z'],
                       help='For PetIBM solutions: list of directions with '
                            'periodic boundary conditions')
@@ -51,11 +49,11 @@ def parse_command_line():
                       nargs='+', type=str, default=[],
                       help='path of each body file to add to plots')
   # arguments about time-steps
-  parser.add_argument('--time-steps', '-t', dest='time_steps', 
+  parser.add_argument('--time-steps', '-t', dest='time_steps_range', 
                       type=int, nargs='+', default=[],
                       help='time-steps to plot (initial, final, increment)')
   
-  parser.add_argument('--subtract-simulation', dest='subtract',
+  parser.add_argument('--subtract-simulation', dest='subtract_simulation',
                       nargs='+', default=[],
                       help='adds another simulation to subtract the field '
                            '(software, directory, binary) '
@@ -82,76 +80,34 @@ def parse_command_line():
 
 
 def main():
-  """Plots the the velocity, pressure and vorticity fields at saved time-steps
+  """Plots the the velocity, pressure, or vorticity fields at saved time-steps
   for a two-dimensional simulation.
   """
   args = parse_command_line()
   
-  # import appropriate library
-  if args.software == 'cuibm':
-    sys.path.append('{}/scripts/cuIBM'.format(os.environ['SCRIPTS']))
-    import ioCuIBM as io
-  elif args.software == 'petibm':
-    sys.path.append('{}/scripts/PetIBM'.format(os.environ['SCRIPTS']))
-    import ioPetIBM as io
-
-  time_steps = io.get_time_steps(args.directory, args.time_steps)
-  coords = io.read_grid(args.directory, binary=args.binary)
-  bodies = [io.Body(path) for path in args.body_paths]
+  simulation = Simulation(directory=args.directory, software=args.software)
+  time_steps = simulation.get_time_steps(range=args.time_steps_range)
+  simulation.read_grid()
+  bodies = [Body(path) for path in args.body_paths]
 
   for time_step in time_steps:
-    field = io.get_field(args.field_name, args.directory, time_step, coords, 
-                         periodic=args.periodic, binary=args.binary)
+    simulation.read_fields([args.field_name], time_step, 
+                           periodic_directions=args.periodic_directions)
+    if args.subtract_simulation:
+      info = dict(zip(['software', 'directory'], 
+                      args.subtract_simulation))
+      other = Simulation(**info)
+      other.read_fields([args.field_name], time_step, 
+                      periodic_directions=args.periodic_directions)
+      simulation.subtract(other, args.field_name)
 
-    if args.subtract:
-      other = dict(zip(['software', 'directory', 'binary'], args.subtract))
-      other_field = get_other_field(other['software'], 
-                                    args.field_name, other['directory'], 
-                                    time_step, coords, 
-                                    binary=(True if other['binary'] == 'True' else False))
-      difference = field.subtract(other_field, label='{}Subtract'.format(args.field_name))
-
-    io.plot_contour((field if not args.subtract else difference), 
-                    args.range,
-                    directory=args.directory,
-                    view=args.bottom_left+args.top_right,
-                    bodies=bodies,
-                    save_name=(field.label if not args.save_name else args.save_name),
-                    width=args.width, dpi=args.dpi)
-
-
-def get_other_field(software, field_name, directory, time_step, coords, binary=False):
-  """Gets the field from another simulation at a given time-step 
-  that has the same mesh-grid.
-
-  Parameters
-  ----------
-  software: string
-    Software used to compute the numerical solution.
-  field_name: string
-    Name of the field to get.
-  directory: string
-    Directory of the simulation.
-  time_step: integer
-    Time-step at which the solution is read.
-  coords: list of numpy 1d arrays
-    List of coordinates along each direction.
-  binary: bool
-    Set 'True' is solution written in binary format; default: False.
-
-  Returns
-  -------
-  field: io2.Field object
-    The field.
-  """
-  # import appropriate library
-  if software == 'cuibm':
-    sys.path.append('{}/scripts/cuIBM'.format(os.environ['SCRIPTS']))
-    import ioCuIBM as io2
-  elif software == 'petibm':
-    sys.path.append('{}/scripts/PetIBM'.format(os.environ['SCRIPTS']))
-    import ioPetIBM as io2
-  return io2.get_field(field_name, directory, time_step, coords, binary=binary)
+    simulation.plot_contour(args.field_name,
+                            field_range=args.range,
+                            view=args.bottom_left+args.top_right,
+                            bodies=bodies,
+                            save_name=args.save_name,
+                            width=args.width, 
+                            dpi=args.dpi)
 
 
 if __name__ == '__main__':

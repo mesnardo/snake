@@ -8,37 +8,44 @@ import argparse
 
 import numpy
 
-import ioPetIBM
+from ..library.simulation import Simulation
 
 
-def read_inputs():
+def parse_command_line():
   """Parses the command-line."""
   # create parser
   parser = argparse.ArgumentParser(description='Converts PETSc output to VTK '
                                                'format for 3D case',
                         formatter_class= argparse.ArgumentDefaultsHelpFormatter)
   # fill parser with arguments
-  parser.add_argument('--case', dest='case_directory', type=str, 
-                      default=os.getcwd(), help='directory of the simulation')
-  parser.add_argument('--variables', '-v', dest='variables', type=str, 
-                      nargs='+', default=['velocity', 'pressure'],
-                      help='list of variables to generate (velocity, pressure)')
-  parser.add_argument('--bottom-left', '-bl', dest='bottom_left', type=float,
-                      nargs='+', 
+  parser.add_argument('--directory', dest='directory', 
+                      type=str, 
+                      default=os.getcwd(), 
+                      help='directory of the simulation')
+  parser.add_argument('--fields', dest='field_names', 
+                      type=str, nargs='+', 
+                      default=['velocity', 'pressure'],
+                      help='list of fields to generate')
+  parser.add_argument('--bottom-left', '-bl', dest='bottom_left', 
+                      type=float, nargs='+', 
                       default=[float('-inf'), float('-inf'), float('-inf')],
                       help='coordinates of the bottom-left corner')
-  parser.add_argument('--top-right', '-tr', dest='top_right', type=float,
-                      nargs='+', 
+  parser.add_argument('--top-right', '-tr', dest='top_right', 
+                      type=float, nargs='+', 
                       default=[float('inf'), float('inf'), float('inf')],
                       help='coordinates of the top-right corner')
-  parser.add_argument('--time-steps', '-t', dest='time_steps', type=int,
-                      nargs='+', default=[],
+  parser.add_argument('--time-steps', '-t', dest='time_steps', 
+                      type=int, nargs='+', 
+                      default=[],
                       help='time-steps to convert (start, end, increment)')
-  parser.add_argument('--stride', '-s', dest='stride', type=int, default=1,
+  parser.add_argument('--stride', '-s', dest='stride', 
+                      type=int, 
+                      default=1,
                       help='stride at which vector are written')
-  parser.add_argument('--periodic', '-p', dest='periodic', type=str, nargs='+',
-                      default=[], help='direction(s) (x and/or y and/or z) '
-                                       'with periodic boundary conditions')
+  parser.add_argument('--periodic', dest='periodic_directions', 
+                      type=str, nargs='+', default=[], 
+                      help='direction(s) (x and/or y and/or z) '
+                           'with periodic boundary conditions')
   # parse command-line
   return parser.parse_args()
 
@@ -85,32 +92,28 @@ def interpolate_cell_centers(velocity):
 def main():
   """Converts PETSc output to .vtk format."""
   # parse command-line
-  args = read_inputs()
-  print('[case-directory] {}'.format(args.case_directory))
-  print('[variables] {}'.format(args.variables))
+  args = parse_command_line()
 
-  # list of time-steps to post-process
-  time_steps = ioPetIBM.get_time_steps(args.case_directory, args.time_steps)
+  simulation = Simulation(directory=args.directory, software='petibm')
 
-  # read mesh grid
-  grid = ioPetIBM.read_grid(args.case_directory)
+  time_steps = simulation.get_time_steps(args.case_directory, args.time_steps)
+
+  simulation.read_grid()
 
   for time_step in time_steps:
-    if 'velocity' in args.variables:
-      velocity = ioPetIBM.read_velocity(args.case_directory, time_step, grid,
-                                        periodic=args.periodic)
+    if 'velocity' in args.field_names:
+      simulation.read_fields(['x-velocity', 'y-velocity', 'z-velocity'], time_step,
+                             periodic_directions=args.periodic_directions)
       # need to get velocity at cell-centers, not staggered arrangement
-      velocity = interpolate_cell_centers(velocity)
-      ioPetIBM.write_vtk(velocity, args.case_directory, time_step, 
-                         name='velocity',
-                         view=[args.bottom_left, args.top_right],
-                         stride=args.stride)
-    if 'pressure' in args.variables:
-      pressure = ioPetIBM.read_pressure(args.case_directory, time_step, grid)
-      ioPetIBM.write_vtk(pressure, args.case_directory, time_step,
-                         name='pressure',
-                         view=[args.bottom_left, args.top_right],
-                         stride=args.stride)
+      simulation.get_velocity_cell_centers()
+      simulation.get_velocity_cell_centers('velocity', 
+                                           view=[args.bottom_left, args.top_right],
+                                           stride=args.stride)
+    if 'pressure' in args.field_names:
+      simulation.read_fields(['pressure'], time_step)
+      simulation.write_vtk('pressure',
+                           view=[args.bottom_left, args.top_right],
+                           stride=args.stride)
 
 
 if __name__ == '__main__':

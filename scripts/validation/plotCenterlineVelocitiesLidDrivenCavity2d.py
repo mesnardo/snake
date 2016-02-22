@@ -1,7 +1,7 @@
 # file: plotCenterlineVelocitiesLidDrivenCavity2d.py
 # author: Olivier Mesnard (mesnardo@gwu.edu)
 # description: Plots the centerline velocities for lid-driven cavity flow case
-#              and compare with experimental data from Ghia et al. (1982).
+#              and compares with experimental data from Ghia et al. (1982).
 
 
 import os
@@ -11,8 +11,8 @@ import argparse
 import numpy
 from matplotlib import pyplot
 
-sys.path.append('{}/scripts/library'.format(os.environ['SCRIPTS']))
-import miscellaneous
+from ..library import miscellaneous
+from ..library.field import Field
 
 
 def parse_command_line():
@@ -47,10 +47,6 @@ def parse_command_line():
   parser.add_argument('--no-show', dest='show',
                       action='store_false',
                       help='does not display the figures')
-  parser.add_argument('--save-name', dest='save_name',
-                      type=str, 
-                      default=None,
-                      help='shared saving file name')
   parser.set_defaults(show=True)
   # parse given options file
   parser.add_argument('--options', 
@@ -70,6 +66,12 @@ def get_validation_data(path, Re):
     Path of the file containing the validation data.
   Re: float
     Reynolds number of the simulation.
+
+  Returns
+  -------
+  d: 2-tuple of Field objects
+    Contains stations and velocity values along center-lines 
+    (vertical and horizontal).
   """
   Re = str(int(round(Re)))
   # column indices in file with experimental results
@@ -80,95 +82,11 @@ def get_validation_data(path, Re):
           '10000': {'u': 5, 'v': 11}}
 
   with open(path, 'r') as infile:
-    y, u = numpy.loadtxt(infile, dtype=float, usecols= (0, cols[Re]['u']), unpack=True)
-  with open(path, 'r') as infile:
-    x, v = numpy.loadtxt(infile, dtype=float, usecols= (6, cols[Re]['v']), unpack=True)
-  return {'y': y, 'u': u, 'x': x, 'v': v}
-
-def plot_centerline_velocities(u, v, grid, validation_data, 
-                               directory=os.getcwd(), save_name=None, 
-                               show=False):
-  """Plots the centerline velocities and compares to experimental results
-  from Ghia et al. (1982).
-
-  Parameters
-  ----------
-  u, v: instances of class Field
-    x- and y- velocity fields.
-  grid: lists of floats
-    x- and y-coordinates along a grid-line of the Cartesian structured mesh.
-  directory: string
-    Directory of the simulation; default: $PWD.
-  save_name: string
-    Common name of files to save; default: None (does not save the figures).
-  show: bool
-    Displays the figures; default: False.
-  """
-  nx, ny = grid[0].size-1, grid[1].size-1
-  images_directory = '{}/images'.format(directory)
-  if save_name and not os.path.isdir(images_directory):
-    os.makedirs(images_directory)
-  pyplot.style.use('{}/styles/mesnardo.mplstyle'.format(os.environ['SCRIPTS']))
-  kwargs_data = {'label': 'PetIBM',
-                 'color': '#336699', 'linestyle': '-', 'linewidth': 2,
-                 'zorder': 10}
-  kwargs_validation_data = {'label': 'Ghia et al. (1982)',
-                            'color': '#993333', 'linewidth': 0,
-                            'markeredgewidth': 2, 'markeredgecolor': '#993333',
-                            'markerfacecolor': 'none',
-                            'marker': 'o', 'markersize': 4,
-                            'zorder': 10}
-
-  print('[info] plotting the u-velocity along vertical centerline ...'),
-  fig, ax = pyplot.subplots(figsize=(6, 6))
-  ax.grid(True, zorder=0)
-  ax.set_xlabel('y-coordinate')
-  ax.set_ylabel('u-velocity along vertical centerline')
-  u_centerline = (u.values[:, nx/2] if nx%2 == 0 
-                  else 0.5*(u.values[:, nx/2-1]+u.values[:, nx/2+1]))
-  ax.plot(u.y, u_centerline, **kwargs_data)
-  ax.plot(validation_data['y'], validation_data['u'], **kwargs_validation_data)
-  ax.axis([0.0, 1.0, -0.75, 1.25])
-  ax.legend()
-  if save_name:
-    pyplot.savefig('{}/{}_uCenterline{:0>7}.png'.format(images_directory, 
-                                                        save_name, 
-                                                        u.time_step))
-    data_path = '{}/{}_uCenterline{:0>7}.dat'.format(images_directory, 
-                                                     save_name, 
-                                                     u.time_step)
-    with open(data_path, 'w') as outfile:
-      numpy.savetxt(outfile, numpy.c_[u.y, u_centerline], 
-                    fmt='%.6f', delimiter='\t',
-                    header='u-velocity along vertical centerline')
-  if show:
-    pyplot.show()
-  print('done')
-  print('[info] plotting the v-velocity along horizontal centerline ...'),
-  fig, ax = pyplot.subplots(figsize=(6, 6))
-  ax.grid(True, zorder=0)
-  ax.set_xlabel('x-coordinate')
-  ax.set_ylabel('v-velocity along horizontal centerline')
-  v_centerline = (v.values[ny/2, :] if ny%2 == 0 
-                  else 0.5*(v.values[ny/2-1, :]+v.values[ny/2+1, :]))
-  ax.plot(v.x, v_centerline, **kwargs_data)
-  ax.plot(validation_data['x'], validation_data['v'], **kwargs_validation_data)
-  ax.axis([0.0, 1.0, -0.75, 1.25])
-  ax.legend()
-  if save_name:
-    pyplot.savefig('{}/{}_vCenterline{:0>7}.png'.format(images_directory, 
-                                                        save_name, 
-                                                        v.time_step))
-    data_path = '{}/{}_vCenterline{:0>7}.dat'.format(images_directory, 
-                                                     save_name, 
-                                                     v.time_step)
-    with open(data_path, 'w') as outfile:
-      numpy.savetxt(outfile, numpy.c_[u.y, u_centerline], 
-                    fmt='%.6f', delimiter='\t',
-                    header='v-velocity along horizonatal centerline')
-  if show:
-    pyplot.show()
-  print('done')
+    y, u, x, v = numpy.loadtxt(infile, 
+                               dtype=float, 
+                               usecols=(0, cols[Re]['u'], 6, cols[Re]['v']),
+                               unpack=True)
+  return Field(y=y, values=u), Field(x=x, values=v)
 
 
 def main():
@@ -176,30 +94,25 @@ def main():
   and compares with experimental results form Ghia et al. (1982).
   """
   args = parse_command_line()
-  if args.software == 'cuibm':
-    sys.path.append('{}/scripts/cuIBM'.format(os.environ['SCRIPTS']))
-    import ioCuIBM as io
-  elif args.software == 'petibm':
-    sys.path.append('{}/scripts/PetIBM'.format(os.environ['SCRIPTS']))
-    import ioPetIBM as io
-
-  if not args.time_step:
-    args.time_step = io.get_time_steps(args.directory)[-1]
   
-  print('[info] simulation: {}'.format(args.directory))
-  print('[info] time-step: {}'.format(args.time_step))
-  print('[info] Reynolds number: {}'.format(args.Re))
+  # register simulation
+  simulation = Simulation(directory=args.directory, 
+                          software=args.software)
+  
+  # get time-step
+  if not args.time_step:
+    simulation.get_time_steps()
+    args.time_step = simulation.time_steps[-1]
+  
+  simulation.read_grid()
+  simulation.read_fields(['x-velocity', 'y-velocity'], args.time_step)
 
-  grid = io.read_grid(args.directory)
-  u, v = io.read_velocity(args.directory, args.time_step, grid)
+  # read validation data from Ghia et al. (1982)
+  u, v = get_validation_data(args.validation_data_path, args.Re)
 
-  validation_data = get_validation_data(args.validation_data_path, args.Re)
-
-  if args.save_name or args.show:
-    plot_centerline_velocities(u, v, grid, validation_data, 
-                               directory=args.directory, 
-                               save_name=args.save_name, 
-                               show=args.show)
+  simulation.plot_centerline_velocities(validation_data={'x-velocity': u, 
+                                                         'y-velocity': v},
+                                        show=args.show)
 
 
 if __name__ == '__main__':

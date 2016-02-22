@@ -11,9 +11,8 @@ import argparse
 import numpy
 from matplotlib import pyplot
 
-sys.path.append('{}/scripts/library'.format(os.environ['SCRIPTS']))
-import forces
-import miscellaneous
+from ..library import miscellaneous
+from ..library.simulation import Simulation
 
 
 def parse_command_line():
@@ -114,7 +113,7 @@ def plot_drag_coefficients(simulation, validation_data,
   ax.set_xlabel('non-dimensional time')
   ax.set_ylabel('drag coefficient')
   ax.plot(simulation.force_x.times, 
-          simulation.coefficient*simulation.force_x.values, 
+          2.0*simulation.force_x.values, 
           **kwargs_data)
   ax.plot(validation_data.force_x.times, 
           validation_data.force_x.values, 
@@ -136,16 +135,19 @@ def main():
   
   print('[info] simulation: {}'.format(args.directory))
 
-  simulation = forces.Simulation(directory=args.directory, description=args.description,
-                                 software=args.software, coefficient=2.0)
+  simulation = Simulation(directory=args.directory, 
+                          description=args.description,
+                          software=args.software)
   simulation.read_forces(display_coefficients=True)
 
   validation_data = KoumoutsakosLeonard1995()
   validation_data.read_drag(args.validation_data_path)
 
   plot_drag_coefficients(simulation, validation_data, 
-                         directory=args.directory, save_name=args.save_name,
-                         limits=args.plot_limits, show=args.show)
+                         directory=args.directory, 
+                         save_name=args.save_name,
+                         limits=args.plot_limits, 
+                         show=args.show)
 
 
 if __name__ == '__main__':

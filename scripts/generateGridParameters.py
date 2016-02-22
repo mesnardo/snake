@@ -9,8 +9,7 @@ import os
 import re
 import math
 
-sys.path.append('{}/scripts/library'.format(os.environ['SCRIPTS']))
-import miscellaneous
+from .library import miscellaneous
 
 
 def parse_command_line():
