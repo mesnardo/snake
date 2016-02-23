@@ -12,6 +12,9 @@ from ..force import Force
 
 
 class OpenFOAMSimulation(Simulation):
+  """Contains info about a OpenFOAM simulation.
+  Inherits from class Simulation.
+  """
   def __init__(self):
     pass
 
@@ -21,7 +24,8 @@ class OpenFOAMSimulation(Simulation):
     Parameters
     ----------
     display_coefficients: boolean
-      Set to 'True' if force coefficients are required; default: False (i.e. forces).
+      Set to 'True' if force coefficients are required; 
+      default: False (i.e. forces).
     """
     if display_coefficients:
       info = {'directory': '{}/postProcessing/forceCoeffs'.format(self.directory),
@@ -46,5 +50,6 @@ class OpenFOAMSimulation(Simulation):
                                   usecols=info['usecols'], unpack=True)
       times = numpy.append(times, t)
       force_x, force_y = numpy.append(force_x, fx), numpy.append(force_y, fy)
+    # set Force objects
     self.force_x = Force(times, force_x)
     self.force_y = Force(times, force_y)

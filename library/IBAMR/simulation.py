@@ -12,10 +12,14 @@ from ..force import Force
 
 
 class IBAMRSimulation(Simulation):
+  """Contains info about a IBAMR simulation.
+  Inherits from class Simulation.
+  """
   def __init__(self):
     pass
 
-  def read_forces(self, relative_file_path='dataIB/ib_Drag_force_struct_no_0', display_coefficients=False):
+  def read_forces(self, relative_file_path='dataIB/ib_Drag_force_struct_no_0', 
+                  display_coefficients=False):
     """Reads forces from files.
 
     Parameters
@@ -24,7 +28,8 @@ class IBAMRSimulation(Simulation):
       Path (relative to the simulation directory) of the file containing the forces;
       default: 'dataIB/ib_Drag_force_struct_no_0'.
     display_coefficients: boolean
-      Set to 'True' if force coefficients are required; default: False (i.e. forces).
+      Set to 'True' if force coefficients are required; 
+      default: False (i.e. forces).
     """
     forces_path = '{}/{}'.format(self.directory, relative_file_path)
     print('[info] reading forces from {} ...'.format(forces_path)),

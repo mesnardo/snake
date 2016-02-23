@@ -14,6 +14,9 @@ from ..force import Force
 
 
 class CuIBMSimulation(Simulation, BarbaGroupSimulation):
+  """Contains info about a cuIBM simulation.
+  Inherits from classes Simulation and BarbaGroupSimulation.
+  """
   def __init__(self):
     pass
 
@@ -90,6 +93,7 @@ class CuIBMSimulation(Simulation, BarbaGroupSimulation):
     for j in xrange(ny-1):
       for i in xrange(nx):
         v[j*nx+i] = q[offset+j*nx+i] / dx[i]
+    # set velocity Field objects
     self.x_velocity = Field(x=x[1:-1], y=0.5*(y[:-1]+y[1:]), 
                             values=u.reshape(ny, nx-1), 
                             time_step=time_step, label='x-velocity')
@@ -124,6 +128,7 @@ class CuIBMSimulation(Simulation, BarbaGroupSimulation):
       with open(lambda_file, 'r') as infile:
         nlambda = int(infile.readline())
         p = numpy.loadtxt(infile, dtype=float)[:nx*ny]
+    # set pressure Field object
     self.pressure = Field(x=0.5*(x[:-1]+x[1:]), y=0.5*(y[:-1]+y[1:]), 
                           values=p.reshape(nx, ny), 
                           time_step=time_step ,label='pressure')
@@ -135,15 +140,18 @@ class CuIBMSimulation(Simulation, BarbaGroupSimulation):
     Parameters
     ----------
     file_name: string
-      Name of the file containing the forces; default: 'forces'.
+      Name of the file containing the forces; 
+      default: 'forces'.
     display_coefficients: boolean
-      Set to 'True' if force coefficients are required; default: False (i.e. forces).
+      Set to 'True' if force coefficients are required; 
+      default: False (i.e. forces).
     """
     print('[info] reading forces from file ...'),
     forces_path = '{}/{}'.format(self.directory, file_name)
     with open(forces_path, 'r') as infile:
       times, force_x, force_y = numpy.loadtxt(infile, dtype=float, 
                                               usecols=(0, 1, 2), unpack=True)
+    # set Force objects
     self.force_x = Force(times, force_x)
     self.force_y = Force(times, force_y)
     print('done')

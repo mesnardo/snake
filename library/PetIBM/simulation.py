@@ -17,6 +17,9 @@ from ..force import Force
 
 
 class PetIBMSimulation(Simulation, BarbaGroupSimulation):
+  """Contains info about a PetIBM simulation.
+  Inherits from classes Simulation and BarbaGroupSimulation.
+  """
   def __init__(self):
     pass
 
@@ -45,67 +48,68 @@ class PetIBMSimulation(Simulation, BarbaGroupSimulation):
     time_step: integer
       Time-step at which the field will be read.
     periodic_directions: list of strings
-      Directions that have periodic boundary conditions; default: [].
+      Directions that have periodic boundary conditions; 
+      default: [].
     """
     print('[time-step {}] reading velocity field ...'.format(time_step)),
     dim3 = (True if len(self.grid) == 3 else False)
-    x, y, z = self.grid[0], self.grid[1], (None if not dim3 else self.grid[2])
-    # compute cell-widths
-    dx, dy, dz = x[1:]-x[:-1], y[1:]-y[:-1], (None if not dim3 else z[1:]-z[:-1])
-    # number of of cells
-    nx, ny, nz = dx.size, dy.size, (None if not dim3 else dz.size)
+    # get stations, cell-widths, and number of cells in x- and y-directions
+    x, y = self.grid[:2]
+    dx, dy = x[1:]-x[:-1], y[1:]-y[:-1]
+    nx, ny = dx.size, dy.size
+    # get stations, cell-widths, and number of cells in z-direction
+    if dim3:
+      z = self.grid[2]
+      dz = z[1:]-z[:-1]
+      nz = dz.size
     # folder with numerical solution
-    solution_directory = '{}/{:0>7}'.format(self.directory, time_step)
-    # read x-flux
-    flux_path = '{}/qx.dat'.format(solution_directory)
-    qx = PetscBinaryIO.PetscBinaryIO().readBinaryFile(flux_path)[0]
-    # read y-flux
-    flux_path = '{}/qy.dat'.format(solution_directory)
-    qy = PetscBinaryIO.PetscBinaryIO().readBinaryFile(flux_path)[0]
-    # get velocity nodes coordinates
+    folder = '{}/{:0>7}'.format(self.directory, time_step)
+    # read fluxes in x- and y-directions
+    qx = PetscBinaryIO.PetscBinaryIO().readBinaryFile('{}/qx.dat'.format(folder))[0]
+    qy = PetscBinaryIO.PetscBinaryIO().readBinaryFile('{}/qy.dat'.format(folder))[0]
+    # get cell-faces stations hosting velocity nodes along x- and y-directions
     xu, yu = x[1:-1], 0.5*(y[:-1]+y[1:])
     xv, yv = 0.5*(x[:-1]+x[1:]), y[1:-1]
     if dim3:
-      # get third-dimension coordinate of x-velocity nodes
+      # get stations of x-velocity nodes along z-direction
       zu = 0.5*(z[:-1]+z[1:])
-      # compute x-velocity field
+      # compute x-velocity from x-flux
       qx = qx.reshape((nz, ny, (nx if 'x' in periodic_directions else nx-1)))
       u = ( qx[:, :, :(-1 if 'x' in periodic_directions else None)]
             /reduce(numpy.multiply, numpy.ix_(dz, dy, numpy.ones(nx-1))) )
-      # get third-dimension coordinate of y-velocity nodes
+      # get stations of y-velocity nodes along z-direction
       zv = 0.5*(z[:-1]+z[1:])
-      # compute y-velocity field
+      # compute y-velocity from y-flux
       qy = qy.reshape((nz, (ny if 'y' in periodic_directions else ny-1), nx))
       v = ( qy[:, :(-1 if 'y' in periodic_directions else None), :]
             /reduce(numpy.multiply, numpy.ix_(dz, numpy.ones(ny-1), dx)) )
-      # read z-flux
-      flux_path = '{}/qz.dat'.format(solution_directory)
-      qz = PetscBinaryIO.PetscBinaryIO().readBinaryFile(flux_path)[0]
-      # get coordinates of z-velocity nodes
+      # read fluxes in z-direction
+      qz = PetscBinaryIO.PetscBinaryIO().readBinaryFile('{}/qz.dat'.format(folder))[0]
+      # get stations of y-velocity nodes along x-, y-, and z-directions
       xw, yw, zw = 0.5*(x[:-1]+x[1:]), 0.5*(y[:-1]+y[1:]), z[1:-1]
-      # compute z-velocity field
+      # compute z-velocity from z-flux
       qz = qz.reshape(((nz if 'z' in periodic_directions else nz-1), ny, nx))
       w = ( qz[:(-1 if 'z' in periodic_directions else None), :, :]
             /reduce(numpy.multiply, numpy.ix_(numpy.ones(nz-1), dy, dx)) )
-      # tests
-      assert (zu.size, yu.size, xu.size) == u.shape
-      assert (zv.size, yv.size, xv.size) == v.shape
-      assert (zw.size, yw.size, xw.size) == w.shape
-      self.x_velocity = Field(x=xu, y=yu, z=zu, time_step=time_step, values=u, label='x-velocity')
-      self.y_velocity = Field(x=xv, y=yv, z=zv, time_step=time_step, values=v, label='y-velocity')
-      self.z_velocity = Field(x=xw, y=yw, z=zw, time_step=time_step, values=w, label='z-velocity')
+      # set Field objects
+      self.x_velocity = Field(x=xu, y=yu, z=zu, values=u, 
+                              time_step=time_step, label='x-velocity')
+      self.y_velocity = Field(x=xv, y=yv, z=zv, values=v, 
+                              time_step=time_step, label='y-velocity')
+      self.z_velocity = Field(x=xw, y=yw, z=zw, values=w, 
+                              time_step=time_step, label='z-velocity')
     else:
-      # compute x-velocity field
+      # compute x-velocity from x-flux
       qx = qx.reshape((ny, (nx if 'x' in periodic_directions else nx-1)))
       u = qx[:, :(-1 if 'x' in periodic_directions else None)]/numpy.outer(dy, numpy.ones(nx-1))
-      # compute y-velocity field
+      # compute y-velocity from y-flux
       qy = qy.reshape(((ny if 'y' in periodic_directions else ny-1), nx))
       v = qy[:(-1 if 'y' in periodic_directions else None), :]/numpy.outer(numpy.ones(ny-1), dx)
-      # tests
-      assert (yu.size, xu.size) == u.shape
-      assert (yv.size, xv.size) == v.shape
-      self.x_velocity = Field(x=xu, y=yu, time_step=time_step, values=u, label='x-velocity')
-      self.y_velocity = Field(x=xv, y=yv, time_step=time_step, values=v, label='y-velocity')
+      # set Field objects
+      self.x_velocity = Field(x=xu, y=yu, values=u, 
+                              time_step=time_step, label='x-velocity')
+      self.y_velocity = Field(x=xv, y=yv, values=v, 
+                              time_step=time_step, label='y-velocity')
     print('done')
 
   def read_pressure(self, time_step):
@@ -118,30 +122,26 @@ class PetIBMSimulation(Simulation, BarbaGroupSimulation):
     """
     print('[time-step {}] reading the pressure field ...'.format(time_step)),
     dim3 = (True if len(self.grid) == 3 else False)
-    x, y, z = self.grid[0], self.grid[1], (None if not dim3 else self.grid[2])
-    # folder with numerical solution
-    solution_directory = '{}/{:0>7}'.format(self.directory, time_step)
-    # pressure
-    pressure_path = '{}/phi.dat'.format(solution_directory)
-    p = PetscBinaryIO.PetscBinaryIO().readBinaryFile(pressure_path)[0]
-    # get pressure nodes coordinates
+    # get stations, cell-widths, and number of cells in x- and y-directions
+    x, y = self.grid[:2]
     xp, yp = 0.5*(x[:-1]+x[1:]), 0.5*(y[:-1]+y[1:])
     nx, ny = xp.size, yp.size
+    # get stations, cell-widths, and number of cells in z-direction
     if dim3:
-      # get third-dimension coordinates of pressure nodes
+      z = self.grid[2]
       zp = 0.5*(z[:-1]+z[1:])
       nz = zp.size
-      # compute pressure field
-      p = p.reshape((nz, ny, nx))
-      # tests
-      assert (zp.size, yp.size, xp.size) == p.shape
-      self.pressure = Field(x=xp, y=yp, z=zp, values=p, label='pressure')
+    # folder with numerical solution
+    folder = '{}/{:0>7}'.format(self.directory, time_step)
+    # read pressure
+    p = PetscBinaryIO.PetscBinaryIO().readBinaryFile('{}/phi.dat'.format(folder))[0]
+    # set pressure Field object
+    if dim3:
+      self.pressure = Field(x=xp, y=yp, z=zp, values=p.reshape((nz, ny, nx)), 
+                            time_step=time_step, label='pressure')
     else:
-      # compute pressure field
-      p = p.reshape((ny, nx))
-      # tests
-      assert (yp.size, xp.size) == p.shape
-      self.pressure = Field(x=xp, y=yp, time_step=time_step, values=p, label='pressure')
+      self.pressure = Field(x=xp, y=yp, values=p.reshape((ny, nx)), 
+                            time_step=time_step, label='pressure')
     print('done')
 
   def read_forces(self, file_name='forces.txt', display_coefficients=False):
@@ -150,15 +150,18 @@ class PetIBMSimulation(Simulation, BarbaGroupSimulation):
     Parameters
     ----------
     file_name: string
-      Name of the file containing the forces; default: 'forces.txt'.
+      Name of the file containing the forces; 
+      default: 'forces.txt'.
     display_coefficients: boolean
-      Set to 'True' if force coefficients are required; default: False (i.e. forces).
+      Set to 'True' if force coefficients are required; 
+      default: False (i.e. forces).
     """
     forces_path = '{}/{}'.format(self.directory, file_name)
     print('[info] reading forces from file {} ...'.format(forces_path)),
     with open(forces_path, 'r') as infile:
       times, force_x, force_y = numpy.loadtxt(infile, dtype=float, 
                                               usecols=(0, 1, 2), unpack=True)
+    # set Force objects
     self.force_x = Force(times, force_x)
     self.force_y = Force(times, force_y)
     print('done')
