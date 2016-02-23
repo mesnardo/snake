@@ -73,25 +73,31 @@ class Field(object):
                                          if mask_y[j]])
     return restricted_field
 
-  def get_relative_difference(self, exact, grid):
-    """Computes the difference (relative to an exact solution) in the L2-norm.
+  def get_difference(self, exact, mask=None, norm='L2'):
+    """Returns the difference between two fields in a given norm.
 
     Parameters
     ----------
     exact: Field object
-      The 'exact' solution used as reference.
-    grid: list of two 1d numpy arrays of floats
-      Nodal stations in each direction used to restrict fields.
+      The exact solution to compare with.
+    mask: Field object
+      Field whose grid is used as a mask;
+      default: None.
+    norm: string
+      Norm used;
+      default: L2 (L2-norm).
 
     Returns
     -------
-    error: float
-      The relative difference in the L2-norm of the field with an exact field.
+    difference: float
+      The difference using the indicated norm.
     """
+    norms = {'L2': None, 'Linf': numpy.inf}
+    grid = [mask.x, mask.y]
     field_restricted = self.restriction(grid)
     exact_restricted = exact.restriction(grid)
-    return (  numpy.linalg.norm(field_restricted.values- exact_restricted.values)
-            / numpy.linalg.norm(exact_restricted.values)  )
+    return numpy.linalg.norm(field_restricted.values-exact_restricted.values, 
+                             ord=norms[norm])
 
   def plot_contour(self, 
                    field_range=None, 

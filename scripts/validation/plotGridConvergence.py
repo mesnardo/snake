@@ -41,9 +41,13 @@ def parse_command_line():
                       default=['x-velocity', 'y-velocity', 'pressure'],
                       help='list of fields to consider '
                            '(x-velocity, y-velocity, and/or pressure)')
+  parser.add_argument('--norms', dest='norms',
+                      type=str, nargs='+', choices=['L2', 'Linf'],
+                      default=['L2'],
+                      help='norms used to compute the errors')
   parser.add_argument('--save-name', dest='save_name',
                       type=str, default=None,
-                      help='Name of the .png file to save')
+                      help='name of the .png file to save')
   parser.add_argument('--no-show', dest='show', 
                       action='store_false',
                       help='does not display the figure')
@@ -154,7 +158,10 @@ def get_observed_orders_convergence(simulations, field_names,
   return alpha
 
 
-def plot_grid_convergence(simulations, field_names,
+def plot_grid_convergence(simulations, exact,
+                          mask=None,
+                          field_names=[],
+                          norms=[],
                           directory=os.getcwd(), save_name=None, show=False):
   """Plots the grid-convergence in a log-log figure.
 
@@ -165,39 +172,37 @@ def plot_grid_convergence(simulations, field_names,
   field_names: list of strings
     Names of the fields to include in the figure.
   directory: string
-    Shared path of all cases; default: current directory.
+    Shared path of all cases; 
+    default: current directory.
   save_name: string
-    Name of the .png file to save; default: None (does not save).
+    Name of the .png file to save; 
+    default: None (does not save).
   show: boolean
-    Set 'True' if you want to display the figure; default: False. 
+    Set 'True' if you want to display the figure; 
+    default: False. 
   """
   print('[info] plotting the grid convergence ...')
   fig, ax = pyplot.subplots(figsize=(6, 6))
-  ax.grid(False)
+  ax.grid(True, zorder=0)
   ax.set_xlabel('grid-spacing')
-  ax.set_ylabel('$L_2$-norm error')
+  ax.set_ylabel('errors')
+  all_grid_spacings, all_errors = [], []
+  label_norms = {'L2': '$L_2$', 'Linf': '$L_\infty$'}
   for field_name in field_names:
-    ax.plot([case.get_grid_spacing() for case in simulations],
-            [getattr(case, 'errors')[field_name.replace('-', '_')] 
-             for case in simulations],
-            label=field_name, marker='o')
-  # plot convergence-guides for first and second-orders
-  h = numpy.linspace(1.0E-05, 1.0E+05, 101)
-  ax.plot(h, h/max(value for value in simulations[0].errors.itervalues()), 
-          label='$1^{st}$-order convergence', color='k')
-  ax.plot(h, h**2/min(value for value in simulations[0].errors.itervalues()), 
-          label='$2^{nd}$-order convergence', color='k', linestyle='--')
+    for norm in norms:
+      grid_spacings = [case.get_grid_spacing() for case in simulations]
+      errors = [case.get_error(exact, field_name, 
+                               mask=mask, norm=norm) for case in simulations]  
+      ax.plot(grid_spacings, errors,
+              label='{} - {}-norm'.format(field_name, label_norms[norm]), 
+              marker='o', zorder=10)
+      all_grid_spacings += grid_spacings
+      all_errors += errors
   ax.legend()
-  ax.set_xlim(0.1*simulations[-1].get_grid_spacing(), 
-              10.0*simulations[0].get_grid_spacing())
-  ax.set_ylim(0.1*min(getattr(case, 'errors')[field_name.replace('-', '_')] 
-                      for case in simulations 
-                      for field_name in field_names),
-              10.0*max(getattr(case, 'errors')[field_name.replace('-', '_')] 
-                       for case in simulations 
-                       for field_name in field_names))
+  ax.set_xlim(0.1*min(all_grid_spacings), 10.0*max(all_grid_spacings))
   pyplot.xscale('log')
   pyplot.yscale('log')
+  ax.axis('equal')
   # save and display
   if save_name:
     print('[info] saving figure ...')
@@ -209,6 +214,34 @@ def plot_grid_convergence(simulations, field_names,
   if show:
     print('[info] displaying figure ...')
     pyplot.show()
+
+
+def get_exact_solution(simulations, *arguments):
+  """Get the exact solution on the finest grid available.
+  If no analytical solution is available, the solution on the finest grid is 
+  considered to be exact.
+
+  Parameters
+  ----------
+  simulations: list of Simulation objects
+    Solutions on grids with constant refinement ratio.
+  arguments:
+    Arguments for the analytical plug-in.
+
+  Returns
+  -------
+  exact: AnalyticalClass object
+    Contains the exact solution.
+  """
+  if arguments:
+    from library.analytical import analytical
+    AnalyticalClass = analytical.dispatcher[arguments[0]]
+    # compute the analytical solution on finest grid
+    exact = AnalyticalClass(simulations[-1].grid, *arguments[1:])
+  else:
+    exact = simulations[-1] # assume finest grid contains exact solution if no analytical solution
+    del simulations[-1]
+  return exact
 
 
 def main():
@@ -234,24 +267,14 @@ def main():
                                   directory=args.directory,
                                   save_name=args.save_name)
 
-  # analytical solution
-  if args.analytical_plug:
-    import analytical
-    AnalyticalClass = analytical.dispatcher[args.analytical_plug[0]]
-    # compute the analytical solution on finest grid
-    exact = AnalyticalClass(simulations[-1].grid, *args.analytical_plug[1:])
-  else:
-    exact = simulations[-1] # assume finest grid contains exact solution if no analytical solution
-    del simulations[-1]
-
-  # compute relative differences using L2-norm
-  for index, simulation in enumerate(simulations):
-    simulations[index].get_relative_differences(exact, simulations[0],
-                                                field_names=args.field_names) 
+  exact = get_exact_solution(simulations, *args.analytical_plug)
   
-  plot_grid_convergence(simulations, args.field_names,
-                        directory=args.directory, 
-                        save_name=args.save_name, 
+  plot_grid_convergence(simulations, exact, 
+                        mask=simulations[0], 
+                        field_names=args.field_names,
+                        norms=args.norms,
+                        directory=args.directory,
+                        save_name=args.save_name,
                         show=args.show)
 
 

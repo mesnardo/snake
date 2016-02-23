@@ -386,6 +386,33 @@ class BarbaGroupSimulation(object):
     field_name = field_name.replace('-', '_')
     getattr(self, field_name).subtract(getattr(other, field_name))
 
+  def get_error(self, exact, field_name, mask=None, norm=None):
+    """Returns the difference between a field and an exact solution.
+
+    Parameters
+    ----------
+    exact: Simulation object
+      The exact solution.
+    field_name: string
+      Name of the field to use.
+    mask: Simulation object
+      Simulation whose staggered grid arrangement is used to restrict the solutions;
+      default: None.
+    norm: string
+      Norm to use to compute the difference;
+      default: None.
+
+    Returns
+    -------
+    error: float
+      The difference between the two fields.
+    """
+    field = getattr(self, field_name.replace('-', '_'))
+    exact_field = getattr(exact, field_name.replace('-', '_'))
+    if mask:
+      mask_field = getattr(mask, field_name.replace('-', '_'))
+    return field.get_difference(exact_field, mask=mask_field, norm=norm)
+
   def get_relative_differences(self, exact, reference, field_names=[]):
     """Computes the relative differences between a list of simulations 
     and an analytical solution for a given list of fields.
