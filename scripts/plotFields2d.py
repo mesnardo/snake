@@ -37,9 +37,9 @@ def parse_command_line():
   # arguments about data to plot
   parser.add_argument('--field', dest='field_name',
                       type=str, choices=['vorticity', 'x-velocity', 'y-velocity', 'pressure'],
-                      help='name of the fieldto plot')
+                      help='name of the field to plot')
   parser.add_argument('--range', dest='range',
-                      type=float, nargs='+', default=(None, None, None),
+                      type=float, nargs='+', default=None,
                       help='field range to plot (min, max, number of levels)')
   parser.add_argument('--periodic', dest='periodic_directions',
                       type=str, nargs='+', 
