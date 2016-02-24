@@ -332,8 +332,8 @@ class BarbaGroupSimulation(object):
       default: [].
     """
     if 'vorticity' in field_names:
-      self.compute_vorticity(time_step, 
-                             periodic_directions=periodic_directions)
+      self.read_velocity(time_step, periodic_directions=periodic_directions)
+      self.compute_vorticity()
     if any(name in ['x-velocity', 'y-velocity'] for name in field_names):
       self.read_velocity(time_step, 
                          periodic_directions=periodic_directions)
@@ -344,19 +344,15 @@ class BarbaGroupSimulation(object):
     """Returns the grid-spacing of a uniform grid."""
     return (self.grid[0][-1]-self.grid[0][0])/(self.grid[0].size-1)
 
-  def compute_vorticity(self, time_step, periodic_directions=[]):
+  def compute_vorticity(self):
     """Computes the vorticity field for a two-dimensional simulation.
 
     Parameters
     ----------
     time_step: integer
       Time-step at which to read the velocity fields.
-    periodic_directions: list of strings
-      Directions with periodic boundary conditions;
-      choices: 'x', 'y',
-      default: [].
     """
-    self.read_velocity(time_step, periodic_directions=periodic_directions)
+    time_step = self.x_velocity.time_step
     print('[time-step {}] computing the vorticity field ...'.format(time_step)),
     u, v = self.x_velocity, self.y_velocity
     mask_x = numpy.where(numpy.logical_and(u.x > v.x[0], u.x < v.x[-1]))[0]
