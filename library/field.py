@@ -128,17 +128,19 @@ class Field(object):
     dpi: int
       Dots per inch (resolution); default: 100
     """
+    if abs(self.values.min()-self.values.max()) <= 1.0E-06:
+      print('[warning] uniform field; plot contour skipped!')
+      return
     # create images directory
     save_name = (self.label if not save_name else save_name)
     images_directory = '{}/{}_{:.2f}_{:.2f}_{:.2f}_{:.2f}'.format(directory, 
                                                                   save_name, 
                                                                   *view)
     if not os.path.isdir(images_directory):
-      print('[info] creating images directory: {} ...'.format(images_directory)),
+      print('[info] creating images directory: {} ...'.format(images_directory))
       os.makedirs(images_directory)
-      print('done')
 
-    print('[info] plotting the {} contour ...'.format(self.label)),
+    print('[info] plotting the {} contour ...'.format(self.label))
     height = width*(view[3]-view[1])/(view[2]-view[0])
     fig, ax = pyplot.subplots(figsize=(width, height), dpi=dpi)
     ax.tick_params(axis='x', labelbottom='off')
@@ -147,9 +149,12 @@ class Field(object):
     if field_range:
       levels = numpy.linspace(*field_range)
       colorbar_ticks = numpy.linspace(field_range[0], field_range[1], 5)
+      colorbar_format = '%.01f'
     else:
       levels = numpy.linspace(self.values.min(), self.values.max(), 101)
+      print('min={}, max={}, steps={}'.format(levels[0], levels[-1], levels.size))
       colorbar_ticks = numpy.linspace(self.values.min(), self.values.max(), 3)
+      colorbar_format= '%.04f'
     color_map = {'pressure': cm.jet, 'vorticity': cm.RdBu_r,
                  'x-velocity': cm.RdBu_r, 'y-velocity': cm.RdBu_r}
     X, Y = numpy.meshgrid(self.x, self.y)
@@ -160,7 +165,7 @@ class Field(object):
     ains = inset_axes(pyplot.gca(), width='30%', height='2%', loc=3)
     cont_bar = fig.colorbar(cont, 
                             cax=ains, orientation='horizontal',
-                            ticks=colorbar_ticks, format='%.01f')
+                            ticks=colorbar_ticks, format=colorbar_format)
     cont_bar.ax.tick_params(labelsize=10) 
     ax.text(0.05, 0.12, self.label, transform=ax.transAxes, fontsize=10)
     cont_bar.ax.xaxis.set_ticks_position('top')
@@ -176,4 +181,3 @@ class Field(object):
     image_path = '{}/{}{:0>7}.png'.format(images_directory, self.label, self.time_step)
     pyplot.savefig(image_path, dpi=dpi, bbox_inches='tight', pad_inches=0)
     pyplot.close()
-    print('done')
