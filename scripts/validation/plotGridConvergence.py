@@ -59,11 +59,20 @@ def parse_command_line():
                       type=str, nargs='+',
                       default=[],
                       help='PetIBM: directions with periodic boundary conditions')
-  parser.add_argument('--analytical-plug', dest='analytical_plug',
+  parser.add_argument('--analytical-solution', dest='analytical_solution',
                       type=str, nargs='+',
                       default=[],
                       help='class name followed by parameters required '
                            'to initialize the object')
+  parser.add_argument('--plot-analytical-solution', dest='plot_analytical_solution',
+                      action='store_true',
+                      help='plots the analytical fields')
+  parser.add_argument('--bottom-left', '-bl', dest='bottom_left',
+                      type=float, nargs='+',
+                      help='bottom-left corner of the domain')
+  parser.add_argument('--top-right', '-tr', dest='top_right',
+                      type=float, nargs='+',
+                      help='top-right corner of the domain')
   parser.set_defaults(show=True, last_three=False, binary=False)
   # parse given options file
   parser.add_argument('--options', 
@@ -136,7 +145,7 @@ def get_observed_orders_convergence(simulations, field_names,
   label = ('last three' if last_three else 'first three')
   print('[info] computing observed orders of '
         'convergence using the {} grids...'.format(label))
-  coarse, medium, fine = (simulations[-3:] if last_three else simulations[:2])
+  coarse, medium, fine = (simulations[-3:] if last_three else simulations[:3])
   ratio = coarse.get_grid_spacing()/medium.get_grid_spacing()
   alpha = {} # will contain observed order of convergence
   for field_name in field_names:
@@ -151,7 +160,8 @@ def get_observed_orders_convergence(simulations, field_names,
   if save_name:
     print('[info] writing orders into .dat file ...')
     label = ('lastThree' if last_three else 'firstThree')
-    file_path = '{}/{}_{}.dat'.format(directory, save_name, label)
+    time_step = getattr(simulations[0], field_names[0].replace('-', '_')).time_step
+    file_path = '{}/{}{:0>7}_{}.dat'.format(directory, save_name, time_step, label)
     with open(file_path, 'w') as outfile:
       for field_name in field_names:
         outfile.write('{}: {}\n'.format(field_name, alpha[field_name]))
@@ -210,7 +220,8 @@ def plot_grid_convergence(simulations, exact,
     if not os.path.isdir(images_directory):
       print('[info] creating images directory: {} ...'.format(images_directory))
       os.makedirs(images_directory)
-    pyplot.savefig('{}/{}.png'.format(images_directory, save_name))
+    time_step = getattr(simulations[0], field_names[0].replace('-', '_')).time_step
+    pyplot.savefig('{}/{}{:0>7}.png'.format(images_directory, save_name, time_step))
   if show:
     print('[info] displaying figure ...')
     pyplot.show()
@@ -230,14 +241,16 @@ def get_exact_solution(simulations, *arguments):
 
   Returns
   -------
-  exact: AnalyticalClass object
+  exact: SolutionClass object
     Contains the exact solution.
   """
   if arguments:
-    from library.analytical import analytical
-    AnalyticalClass = analytical.dispatcher[arguments[0]]
+    from library.solutions.dispatcher import dispatcher
+    SolutionClass = dispatcher[arguments[0]]
     # compute the analytical solution on finest grid
-    exact = AnalyticalClass(simulations[-1].grid, *arguments[1:])
+    exact = SolutionClass(simulations[-1].grid[0],
+                          simulations[-1].grid[1],
+                          *arguments[1:])
   else:
     exact = simulations[-1] # assume finest grid contains exact solution if no analytical solution
     del simulations[-1]
@@ -267,7 +280,11 @@ def main():
                                   directory=args.directory,
                                   save_name=args.save_name)
 
-  exact = get_exact_solution(simulations, *args.analytical_plug)
+  exact = get_exact_solution(simulations, *args.analytical_solution)
+  if args.plot_analytical_solution:
+    exact.plot_fields(args.time_step, 
+                      view=args.bottom_left+args.top_right, 
+                      directory=args.directory)
   
   plot_grid_convergence(simulations, exact, 
                         mask=simulations[0], 
