@@ -7,14 +7,14 @@ import os
 import sys
 import argparse
 
-sys.path.append('{}/scripts/library'.format(os.environ['SCRIPTS']))
-import forces
-import miscellaneous
+sys.path.append(os.environ['SCRIPTS'])
+from library import miscellaneous
+from library.simulation import Simulation
 
 
 def parse_command_line():
   """Parses the command-line."""
-  print('[info] parsing command-line ...')
+  print('[info] parsing command-line ...'),
   # create parser
   parser = argparse.ArgumentParser(description='Plots the instantaneous forces',
                         formatter_class= argparse.ArgumentDefaultsHelpFormatter)
@@ -81,9 +81,9 @@ def parse_command_line():
   plot_info.add_argument('--extrema', dest='display_extrema', 
                       action='store_true',
                       help='displays the forces extrema')
-  plot_info.add_argument('--gauge', dest='display_gauge', 
+  plot_info.add_argument('--guides', dest='display_guides', 
                       action='store_true',
-                      help='displays gauges to check the convergence')
+                      help='displays guides to check the convergence')
   plot_info.add_argument('--fill-between', dest='fill_between',
                          action='store_true',
                          help='fills between lines defined by extrema')
@@ -94,6 +94,7 @@ def parse_command_line():
   parser.add_argument('--options', 
                       type=open, action=miscellaneous.ReadOptionsFromFile,
                       help='path of the file with options to parse')
+  print('done')
   # return namespace
   return parser.parse_args()
 
@@ -103,23 +104,19 @@ def main():
   args = parse_command_line()
   simulations = []
   # register main simulation
-  simulations.append(forces.Simulation(description=args.description, 
-                                       directory=args.directory,
-                                       software=args.software,
-                                       coefficient=args.coefficient))
+  simulations.append(Simulation(description=args.description, 
+                                directory=args.directory,
+                                software=args.software))
   # register other simulations used for comparison
   for other in args.others:
-    info = dict(zip(['software', 'directory', 'description', 'coefficient'], other))
-    simulations.append(forces.Simulation(description=info['description'],
-                                         directory=info['directory'],
-                                         software=info['software'],
-                                         coefficient=float(info['coefficient'])))
+    info = dict(zip(['software', 'directory', 'description'], other[:-1]))
+    simulations.append(Simulation(**info))
   # read and compute some statistics
   for index, simulation in enumerate(simulations):
     simulations[index].read_forces(display_coefficients=args.display_coefficients)
-    simulation.get_means(limits=args.average_limits, 
-                         last_period=args.last_period, 
-                         order=args.order)
+    simulation.get_mean_forces(limits=args.average_limits, 
+                               last_period=args.last_period, 
+                               order=args.order)
     if args.strouhal[0] > 0:
       simulation.get_strouhal(n_periods=args.strouhal[0], 
                               end_time=args.strouhal[1],
@@ -128,17 +125,21 @@ def main():
   simulations[0].plot_forces(display_drag=args.display_drag,
                              display_lift=args.display_lift,
                              display_coefficients=args.display_coefficients,
+                             coefficient=args.coefficient,
                              display_extrema=args.display_extrema, 
                              order=args.order,
-                             display_gauge=args.display_gauge,
+                             display_guides=args.display_guides,
                              fill_between=args.fill_between,
                              other_simulations=simulations[1:],
+                             other_coefficients=[float(other[-1]) for other in args.others],
                              limits=args.plot_limits,
                              save_name=args.save_name, 
                              show=args.show)
   # display time-averaged values in table
-  print(simulations[0].create_dataframe(other_simulations=simulations[1:],
-                                        display_coefficients=args.display_coefficients))
+  print(simulations[0].create_dataframe_forces(display_coefficients=args.display_coefficients,
+                                               coefficient=args.coefficient,
+                                               other_simulations=simulations[1:],
+                                               other_coefficients=[float(other[-1]) for other in args.others]))
 
 
 if __name__ == '__main__':

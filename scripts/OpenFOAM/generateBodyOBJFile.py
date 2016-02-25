@@ -7,7 +7,8 @@ import os
 import argparse
 import sys
 
-import OBJFile
+sys.path.append(os.environ['SCRIPTS'])
+from library.OpenFOAM import OBJFile
 
 
 def parse_command_line():

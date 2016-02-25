@@ -10,8 +10,8 @@ import sys
 import numpy
 from paraview.simple import *
 
-sys.path.append('{}/scripts/library'.format(os.environ['SCRIPTS']))
-import miscellaneous
+sys.path.append(os.environ['SCRIPTS'])
+from library import miscellaneous
 
 
 def parse_command_line():
@@ -53,7 +53,7 @@ def parse_command_line():
                       help='figure width in pixels')
   parser.add_argument('--coeff', dest='coeff', 
                       type=float, default=1.0,
-                      help='WIP: coefficient to adjust the view')
+                      help='coefficient to adjust the view')
   # parse given options file
   parser.add_argument('--options', 
                       type=open, action=miscellaneous.ReadOptionsFromFile,

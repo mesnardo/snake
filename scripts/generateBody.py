@@ -7,12 +7,12 @@ import os
 import sys
 import argparse
 
-sys.path.append('{}/scripts/library'.format(os.environ['SCRIPTS']))
-import geometry
-import miscellaneous
+sys.path.append(os.environ['SCRIPTS'])
+from library import geometry
+from library import miscellaneous
 
 
-def read_inputs():
+def parse_command_line():
   """Parses the command-line."""
   print('[info] parsing command-line ...'),
   # create parser
@@ -92,7 +92,7 @@ def read_inputs():
 def main():
   """Generates a file containing the coordinates of a body."""
   # parse command-line
-  args = read_inputs()
+  args = parse_command_line()
 
   # generate the geometry
   if args.body_type == 'file':

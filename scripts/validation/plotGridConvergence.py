@@ -6,12 +6,14 @@
 import os
 import sys
 import argparse
+
 import numpy
 from matplotlib import pyplot
 pyplot.style.use('{}/styles/mesnardo.mplstyle'.format(os.environ['SCRIPTS']))
 
-sys.path.append('{}/scripts/library'.format(os.environ['SCRIPTS']))
-import miscellaneous
+sys.path.append(os.environ['SCRIPTS'])
+from library import miscellaneous
+from library.simulation import Simulation
 
 
 def parse_command_line():
@@ -34,9 +36,18 @@ def parse_command_line():
   parser.add_argument('--time-step', '-ts', dest='time_step', 
                       type=int,
                       help='time-step at which the solution will be read')
+  parser.add_argument('--fields', dest='field_names',
+                      type=str, nargs='+',
+                      default=['x-velocity', 'y-velocity', 'pressure'],
+                      help='list of fields to consider '
+                           '(x-velocity, y-velocity, and/or pressure)')
+  parser.add_argument('--norms', dest='norms',
+                      type=str, nargs='+', choices=['L2', 'Linf'],
+                      default=['L2'],
+                      help='norms used to compute the errors')
   parser.add_argument('--save-name', dest='save_name',
                       type=str, default=None,
-                      help='Name of the .png file to save')
+                      help='name of the .png file to save')
   parser.add_argument('--no-show', dest='show', 
                       action='store_false',
                       help='does not display the figure')
@@ -44,18 +55,24 @@ def parse_command_line():
                       action='store_true',
                       help='uses the three finest grids to compute '
                            'the observed order of convergence')
-  parser.add_argument('--periodic', dest='periodic',
+  parser.add_argument('--periodic', dest='periodic_directions',
                       type=str, nargs='+',
                       default=[],
-                      help='PetIBM: list of directions with periodic boundary conditions')
-  parser.add_argument('--binary', dest='binary',
-                      action='store_true',
-                      help='cuIBM: use flag if data written in binary format')
-  parser.add_argument('--analytical-plug', dest='analytical_plug',
+                      help='PetIBM: directions with periodic boundary conditions')
+  parser.add_argument('--analytical-solution', dest='analytical_solution',
                       type=str, nargs='+',
                       default=[],
                       help='class name followed by parameters required '
                            'to initialize the object')
+  parser.add_argument('--plot-analytical-solution', dest='plot_analytical_solution',
+                      action='store_true',
+                      help='plots the analytical fields')
+  parser.add_argument('--bottom-left', '-bl', dest='bottom_left',
+                      type=float, nargs='+',
+                      help='bottom-left corner of the domain')
+  parser.add_argument('--top-right', '-tr', dest='top_right',
+                      type=float, nargs='+',
+                      help='top-right corner of the domain')
   parser.set_defaults(show=True, last_three=False, binary=False)
   # parse given options file
   parser.add_argument('--options', 
@@ -63,116 +80,6 @@ def parse_command_line():
                       help='path of the file with options to parse')
   # return namespace
   return parser.parse_args()
-
-
-def restriction(field, grid):
-  """Restriction of the field solution onto a coarser grid.
-  Note: all nodes on the coarse grid are present in the fine grid.
-
-  Parameters
-  ----------
-  field: Field object
-    Field where solution will be restricted.
-  grid: list of numpy arrays of floats
-    Nodal stations in each direction of the coarser grid.
-
-  Returns
-  -------
-  restricted_field: Field
-    Field restricted onto the coarser grid.
-  """
-  def intersection(a, b, tolerance=1.0E-06):
-    return numpy.any(numpy.abs(a-b[:, numpy.newaxis]) <= tolerance, axis=0)
-  mask_x = intersection(field.x, grid[0])
-  mask_y = intersection(field.y, grid[1])
-  restricted_field = Field()
-  restricted_field.x = field.x[mask_x]
-  restricted_field.y = field.y[mask_y]
-  restricted_field.values = numpy.array([field.values[j][mask_x]
-                                       for j in xrange(field.y.size)
-                                       if mask_y[j]])
-  return restricted_field
-
-
-# fake class Field (just used as a container)
-class Field(object):
-  def __init__(self):
-    pass
-
-
-class SimulationSolution(object):
-  def __init__(self, directory, time_step, software, periodic=[], binary=False):
-    """Reads the solution of a simulation at a given time-step.
-
-    Parameters
-    ----------
-    directory: string
-      Directory of the simulation.
-    time_step: integer
-      Time-step at which the solution is read.
-    software: string
-      Software used to compute the solution (currently supported: 'petibm', 'cuibm').
-    periodic: list of strings
-      Only supported from PetIBM solutions.
-      List of directions with periodic boundary conditions; default: [].
-    binary: boolean
-      Only supported for cuIBM solutions. 
-      Set 'True' if solution written in binary format; default: False.
-    """
-    # import appropriate library depending on software used
-    if software == 'cuibm':
-      sys.path.append('{}/scripts/cuIBM'.format(os.environ['SCRIPTS']))
-      import ioCuIBM as io
-    elif software == 'petibm':
-      sys.path.append('{}/scripts/PetIBM'.format(os.environ['SCRIPTS']))
-      import ioPetIBM as io
-    print('[info] registering solution ...')
-    print('\t- directory: {}'.format(directory))
-    print('\t- software: {}'.format(software))
-    print('\t- time-step: {}'.format(time_step))
-    self.directory = directory
-    self.time_step = time_step
-    self.grid = io.read_grid(self.directory, binary=binary)
-    self.grid_spacing = self.get_grid_spacing()
-    self.u, self.v = io.read_velocity(self.directory, self.time_step, self.grid, 
-                                      periodic=periodic, binary=binary)
-    self.p = io.read_pressure(self.directory, self.time_step, self.grid, binary=binary)
-
-  def get_grid_spacing(self):
-    """Returns the grid-spacing of a uniform grid."""
-    return (self.grid[0][-1]-self.grid[0][0])/(self.grid[0].size-1)
-
-  def compute_errors(self, exact, reference):
-    """Computes the errors (relative to an exact solution) in the L2-norm.
-
-    Parameters
-    ----------
-    exact: SimulationSolution object
-      The 'exact' solution used as reference.
-    reference: SimulationSolution object
-      Solution used as a reference for the grids.
-    """
-    field_names = ['u', 'v', 'p']
-    for field_name in field_names:
-      grid = [getattr(reference, field_name).x, getattr(reference, field_name).y]
-      field = restriction(getattr(self, field_name), grid)
-      exact_field = restriction(getattr(exact, field_name), grid)
-      error = (  numpy.linalg.norm(field.values- exact_field.values)
-               / numpy.linalg.norm(exact_field.values)  )
-      setattr(getattr(self, field_name), 'error', error)
-
-  def plot_differences(self, exact):
-    field_names = ['u', 'v', 'p']
-    sys.path.append('{}/scripts/PetIBM'.format(os.environ['SCRIPTS']))
-    import ioPetIBM
-    for field_name in field_names:
-      field = getattr(self, field_name)
-      exact_field = getattr(exact, field_name)
-      difference = field.subtract(exact_field, 
-                                  label='{}SubtractAnalytical'.format(field_name))
-      ioPetIBM.plot_contour(difference, 
-                            view=[field.x[0], field.y[0], field.x[-1], field.y[-1]], 
-                            save_name=difference.label)
 
 
 def observed_order_convergence(field_name, coarse, medium, fine, ratio, grid):
@@ -196,11 +103,11 @@ def observed_order_convergence(field_name, coarse, medium, fine, ratio, grid):
     The observed order of convergence.
   """
   # get restricted field from coarse solution
-  coarse_field = restriction(getattr(coarse, field_name), grid)
+  coarse_field = getattr(coarse, field_name.replace('-', '_')).restriction(grid)
   # get restricted field from medium solution
-  medium_field = restriction(getattr(medium, field_name), grid)
+  medium_field = getattr(medium, field_name.replace('-', '_')).restriction(grid)
   # get restricted field from fine solution
-  fine_field = restriction(getattr(fine, field_name), grid)
+  fine_field = getattr(fine, field_name.replace('-', '_')).restriction(grid)
   # observed order using the L2-norm
   return (  numpy.log(  numpy.linalg.norm(  medium_field.values
                                           - coarse_field.values  ) 
@@ -209,7 +116,7 @@ def observed_order_convergence(field_name, coarse, medium, fine, ratio, grid):
           / numpy.log(ratio)  )
 
 
-def get_observed_orders_convergence(cases,
+def get_observed_orders_convergence(simulations, field_names,
                                     last_three=False,
                                     directory=os.getcwd(),
                                     save_name=None):
@@ -219,8 +126,10 @@ def get_observed_orders_convergence(cases,
 
   Parameters
   ----------
-  cases: list of SimulationSolution objects
-    List containing the three cases.
+  simulations: list of Simulation objects
+    Contains the simulations.
+  field_names: list of strings
+    List of field names whose observed order of convergence will be computed.
   last_three: boolean
     Set 'True' to compute the orders using the three finest grid; default: False.
   directory: string
@@ -236,12 +145,13 @@ def get_observed_orders_convergence(cases,
   label = ('last three' if last_three else 'first three')
   print('[info] computing observed orders of '
         'convergence using the {} grids...'.format(label))
-  coarse, medium, fine = (cases[-3:] if last_three else cases[:2])
-  ratio = coarse.grid_spacing/medium.grid_spacing
-  field_names = ['u', 'v', 'p']
+  coarse, medium, fine = (simulations[-3:] if last_three else simulations[:3])
+  ratio = coarse.get_grid_spacing()/medium.get_grid_spacing()
   alpha = {} # will contain observed order of convergence
   for field_name in field_names:
-    grid = [getattr(cases[0], field_name).x, getattr(cases[0], field_name).y]
+    # get grid (coarsest one) where solutions will be restricted
+    grid = [getattr(simulations[0], field_name.replace('-', '_')).x, 
+            getattr(simulations[0], field_name.replace('-', '_')).y]
     alpha[field_name] = observed_order_convergence(field_name, 
                                                    coarse, medium, fine, 
                                                    ratio, grid)
@@ -250,50 +160,59 @@ def get_observed_orders_convergence(cases,
   if save_name:
     print('[info] writing orders into .dat file ...')
     label = ('lastThree' if last_three else 'firstThree')
-    file_path = '{}/{}_{}.dat'.format(directory, save_name, label)
+    time_step = getattr(simulations[0], field_names[0].replace('-', '_')).time_step
+    file_path = '{}/{}{:0>7}_{}.dat'.format(directory, save_name, time_step, label)
     with open(file_path, 'w') as outfile:
       for field_name in field_names:
         outfile.write('{}: {}\n'.format(field_name, alpha[field_name]))
   return alpha
 
 
-def plot_grid_convergence(cases, 
+def plot_grid_convergence(simulations, exact,
+                          mask=None,
+                          field_names=[],
+                          norms=[],
                           directory=os.getcwd(), save_name=None, show=False):
   """Plots the grid-convergence in a log-log figure.
 
   Parameters
   ----------
-  cases: list of SimulationSolution objects
+  simulations: list of Simulation objects
     List of the cases.
+  field_names: list of strings
+    Names of the fields to include in the figure.
   directory: string
-    Shared path of all cases; default: current directory.
+    Shared path of all cases; 
+    default: current directory.
   save_name: string
-    Name of the .png file to save; default: None (does not save).
+    Name of the .png file to save; 
+    default: None (does not save).
   show: boolean
-    Set 'True' if you want to display the figure; default: False. 
+    Set 'True' if you want to display the figure; 
+    default: False. 
   """
   print('[info] plotting the grid convergence ...')
   fig, ax = pyplot.subplots(figsize=(6, 6))
-  ax.grid(False)
+  ax.grid(True, zorder=0)
   ax.set_xlabel('grid-spacing')
-  ax.set_ylabel('$L_2$-norm error')
-  field_names = ['u', 'v', 'p']
+  ax.set_ylabel('errors')
+  all_grid_spacings, all_errors = [], []
+  label_norms = {'L2': '$L_2$', 'Linf': '$L_\infty$'}
   for field_name in field_names:
-    ax.plot([case.grid_spacing for case in cases],
-            [getattr(case, field_name).error for case in cases],
-            label=field_name, marker='o')
-  # plot convergence-guides for first and second-orders
-  h = numpy.linspace(1.0E-05, 1.0E+05, 101)
-  ax.plot(h, h/max(cases[0].u.error, cases[0].p.error, cases[0].p.error), 
-          label='$1^{st}$-order convergence', color='k')
-  ax.plot(h, h**2/min(cases[0].u.error, cases[0].p.error, cases[0].p.error), 
-          label='$2^{nd}$-order convergence', color='k', linestyle='--')
+    for norm in norms:
+      grid_spacings = [case.get_grid_spacing() for case in simulations]
+      errors = [case.get_error(exact, field_name, 
+                               mask=mask, norm=norm) for case in simulations]  
+      ax.plot(grid_spacings, errors,
+              label='{} - {}-norm'.format(field_name, label_norms[norm]), 
+              marker='o', zorder=10)
+      all_grid_spacings += grid_spacings
+      all_errors += errors
   ax.legend()
-  ax.set_xlim(0.1*cases[-1].grid_spacing, 10.0*cases[0].grid_spacing)
-  ax.set_ylim(0.1*min([getattr(case, field_name).error for case in cases for field_name in field_names]),
-              10.0*max([getattr(case, field_name).error for case in cases for field_name in field_names]))
+  ax.set_xlim(0.1*min(all_grid_spacings), 10.0*max(all_grid_spacings))
   pyplot.xscale('log')
   pyplot.yscale('log')
+  ax.axis('equal')
   # save and display
   if save_name:
     print('[info] saving figure ...')
@@ -301,10 +220,41 @@ def plot_grid_convergence(cases,
     if not os.path.isdir(images_directory):
       print('[info] creating images directory: {} ...'.format(images_directory))
       os.makedirs(images_directory)
-    pyplot.savefig('{}/{}.png'.format(images_directory, save_name))
+    time_step = getattr(simulations[0], field_names[0].replace('-', '_')).time_step
+    pyplot.savefig('{}/{}{:0>7}.png'.format(images_directory, save_name, time_step))
   if show:
     print('[info] displaying figure ...')
     pyplot.show()
+
+
+def get_exact_solution(simulations, *arguments):
+  """Get the exact solution on the finest grid available.
+  If no analytical solution is available, the solution on the finest grid is 
+  considered to be exact.
+
+  Parameters
+  ----------
+  simulations: list of Simulation objects
+    Solutions on grids with constant refinement ratio.
+  arguments:
+    Arguments for the analytical plug-in.
+
+  Returns
+  -------
+  exact: SolutionClass object
+    Contains the exact solution.
+  """
+  if arguments:
+    from library.solutions.dispatcher import dispatcher
+    SolutionClass = dispatcher[arguments[0]]
+    # compute the analytical solution on finest grid
+    exact = SolutionClass(simulations[-1].grid[0],
+                          simulations[-1].grid[1],
+                          *arguments[1:])
+  else:
+    exact = simulations[-1] # assume finest grid contains exact solution if no analytical solution
+    del simulations[-1]
+  return exact
 
 
 def main():
@@ -316,36 +266,33 @@ def main():
   args = parse_command_line()
 
   # get solution of simulations at given time-step
-  cases = []
+  simulations = []
   for gridline_size in args.gridline_sizes:
-    cases.append(SimulationSolution('{}/{}'.format(args.directory, gridline_size),
-                                    args.time_step, args.software, 
-                                    periodic=args.periodic, binary=args.binary))
+    simulation = Simulation(directory='{}/{}'.format(args.directory, gridline_size),
+                            software=args.software)
+    simulation.read_grid()
+    simulation.read_fields(args.field_names, args.time_step,
+                           periodic_directions=args.periodic_directions)
+    simulations.append(simulation)
 
-  get_observed_orders_convergence(cases, 
+  get_observed_orders_convergence(simulations, args.field_names,
                                   last_three=args.last_three,
                                   directory=args.directory,
                                   save_name=args.save_name)
 
-  # analytical solution
-  if args.analytical_plug:
-    import analytical
-    AnalyticalClass = analytical.dispatcher[args.analytical_plug[0]]
-    exact = AnalyticalClass(cases[-1].grid, *args.analytical_plug[1:])
-  else:
-    exact = cases[-1] # assume finest grid contains exact solution if no analytical solution
-    del cases[-1]
-
-  # compute L2-norm errors
-  for index, case in enumerate(cases):
-    cases[index].compute_errors(exact, cases[0])
-
-  # save and display error vs. grid-spacing
-  if args.save_name or args.show:
-    plot_grid_convergence(cases, 
-                          directory=args.directory, 
-                          save_name=args.save_name, 
-                          show=args.show)
+  exact = get_exact_solution(simulations, *args.analytical_solution)
+  if args.plot_analytical_solution:
+    exact.plot_fields(args.time_step, 
+                      view=args.bottom_left+args.top_right, 
+                      directory=args.directory)
+  
+  plot_grid_convergence(simulations, exact, 
+                        mask=simulations[0], 
+                        field_names=args.field_names,
+                        norms=args.norms,
+                        directory=args.directory,
+                        save_name=args.save_name,
+                        show=args.show)
 
 
 if __name__ == '__main__':
