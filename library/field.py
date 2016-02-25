@@ -162,6 +162,10 @@ class Field(object):
                        levels=levels, extend='both', 
                        cmap=(cm.RdBu_r if self.label not in color_map.keys()
                                        else color_map[self.label]))
+    # cont = ax.contour(X, Y, self.values, 
+    #                   levels=levels, extend='both', 
+    #                   cmap=(cm.RdBu_r if self.label not in color_map.keys()
+    #                                   else color_map[self.label]))
     ains = inset_axes(pyplot.gca(), width='30%', height='2%', loc=3)
     cont_bar = fig.colorbar(cont, 
                             cax=ains, orientation='horizontal',
