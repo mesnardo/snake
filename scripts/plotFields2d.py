@@ -92,14 +92,17 @@ def main():
   simulation.read_grid()
   bodies = [Body(path) for path in args.body_paths]
 
+  if args.subtract_simulation:
+    info = dict(zip(['software', 'directory'], 
+                    args.subtract_simulation))
+    other = Simulation(**info)
+    other.read_grid()
+
   for time_step in time_steps:
     simulation.read_fields([args.field_name], time_step, 
                            periodic_directions=args.periodic_directions)
+    
     if args.subtract_simulation:
-      info = dict(zip(['software', 'directory'], 
-                      args.subtract_simulation))
-      other = Simulation(**info)
-      other.read_grid()
       other.read_fields([args.field_name], time_step, 
                         periodic_directions=args.periodic_directions)
       simulation.subtract(other, args.field_name)
