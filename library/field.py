@@ -101,6 +101,7 @@ class Field(object):
 
   def plot_contour(self, 
                    field_range=None, 
+                   filled_contour=False,
                    view=[float('-inf'), float('-inf'), float('inf'), float('inf')],
                    bodies=[],
                    save_name=None,
@@ -113,6 +114,9 @@ class Field(object):
     ----------
     field_range: list of floats
       Min, max and number of contours to plot; default: None.
+    filled_contour: boolean
+      Set 'True' to create a filled contour;
+      default: False.
     view: list of floats
       Bottom-left and top-right coordinates of the rectangular view to plot;
       default: the whole domain.
@@ -158,14 +162,11 @@ class Field(object):
     color_map = {'pressure': cm.jet, 'vorticity': cm.RdBu_r,
                  'x-velocity': cm.RdBu_r, 'y-velocity': cm.RdBu_r}
     X, Y = numpy.meshgrid(self.x, self.y)
-    cont = ax.contourf(X, Y, self.values, 
-                       levels=levels, extend='both', 
-                       cmap=(cm.RdBu_r if self.label not in color_map.keys()
-                                       else color_map[self.label]))
-    # cont = ax.contour(X, Y, self.values, 
-    #                   levels=levels, extend='both', 
-    #                   cmap=(cm.RdBu_r if self.label not in color_map.keys()
-    #                                   else color_map[self.label]))
+    contour_type = ax.contourf if filled_contour else ax.contour
+    cont = contour_type(X, Y, self.values, 
+                        levels=levels, extend='both', 
+                        cmap=(cm.RdBu_r if self.label not in color_map.keys()
+                                        else color_map[self.label]))
     ains = inset_axes(pyplot.gca(), width='30%', height='2%', loc=3)
     cont_bar = fig.colorbar(cont, 
                             cax=ains, orientation='horizontal',

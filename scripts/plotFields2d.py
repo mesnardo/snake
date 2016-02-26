@@ -38,6 +38,10 @@ def parse_command_line():
   parser.add_argument('--field', dest='field_name',
                       type=str, choices=['vorticity', 'x-velocity', 'y-velocity', 'pressure'],
                       help='name of the field to plot')
+  parser.add_argument('--no-filled-contour', dest='filled_contour',
+                      action='store_false',
+                      help='use flag to create a filled contour, '
+                           'otherwise a simple contour is used')
   parser.add_argument('--range', dest='range',
                       type=float, nargs='+', default=None,
                       help='field range to plot (min, max, number of levels)')
@@ -76,6 +80,7 @@ def parse_command_line():
   parser.add_argument('--options', 
                       type=open, action=miscellaneous.ReadOptionsFromFile,
                       help='path of the file with options to parse')
+  parser.set_defaults(filled_contour=True)
   print('done')
   # parse command-line
   return parser.parse_args()
@@ -109,6 +114,7 @@ def main():
 
     simulation.plot_contour(args.field_name,
                             field_range=args.range,
+                            filled_contour=args.filled_contour,
                             view=args.bottom_left+args.top_right,
                             bodies=bodies,
                             save_name=args.save_name,
