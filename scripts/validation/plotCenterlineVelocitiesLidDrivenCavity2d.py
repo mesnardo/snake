@@ -103,8 +103,7 @@ def main():
   
   # get time-step
   if not args.time_step:
-    simulation.get_time_steps()
-    args.time_step = simulation.time_steps[-1]
+    args.time_step = simulation.get_time_steps()[-1]
   
   simulation.read_grid()
   simulation.read_fields(['x-velocity', 'y-velocity'], args.time_step)
