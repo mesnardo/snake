@@ -16,7 +16,7 @@ from .force import Force
 
 class Simulation(object):
   """Simulation manager."""
-  def __init__(self, description=None, directory=os.getcwd(), software=None):
+  def __init__(self, description=None, directory=os.getcwd(), software=None, **kwargs):
     """Registers the simulations.
 
     Parameters
@@ -27,6 +27,8 @@ class Simulation(object):
       Directory of the simulation; default: current working directory.
     software: string
       Name of the software used for the simulation; default: None.
+    **kwargs: dictionary
+      Other attributes to create.
     """
     try:
       self.description = description.replace('_', ' ')
@@ -34,6 +36,8 @@ class Simulation(object):
       self.description = description
     self.directory = directory
     self.software = software
+    for key, value in kwargs.iteritems():
+      setattr(self, key, value)
     self.print_registration()
     self.derive_class()
 
