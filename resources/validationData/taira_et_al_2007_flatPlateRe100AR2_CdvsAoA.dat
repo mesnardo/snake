@@ -1,6 +1,6 @@
 # Drag coefficient as a function of the angle of attack
 # of a flat-plate with aspect ratio 2 at Re=100
-# Experimental results from Dickson reported by Taira (2008)
+# Experimental results from Dickson reported by Taira et al. (2007) and Taira (2008)
 # AoA (deg)	Cd
 1.07856	0.39189
 2.15712	0.38176

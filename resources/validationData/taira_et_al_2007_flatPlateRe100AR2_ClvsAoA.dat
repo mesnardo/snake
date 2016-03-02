@@ -1,6 +1,6 @@
 # Lift coefficient as a function of the angle of attack
 # of a flat-plate with aspect ratio 2 at Re=100
-# Experimental results from Dickson reported by Taira (2008)
+# Experimental results from Dickson reported by Taira et al. (2007) and Taira (2008)
 # AoA (deg) Cl
 0.95872	0.03547
 2.03728	0.06757
