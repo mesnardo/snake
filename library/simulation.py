@@ -507,7 +507,8 @@ class BarbaGroupSimulation(object):
     if not os.path.isdir(images_directory):
       os.makedirs(images_directory)
     pyplot.style.use('{}/styles/mesnardo.mplstyle'.format(os.environ['SCRIPTS']))
-    kwargs_data = {'label': 'present',
+    software_description = {'cuibm': 'cuIBM', 'petibm': 'PetIBM'}
+    kwargs_data = {'label': software_description[self.software],
                    'color': '#336699', 'linestyle': '-', 'linewidth': 2,
                    'zorder': 10}
     kwargs_validation_data = {'label': 'Ghia et al. (1982)',
