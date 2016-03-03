@@ -444,7 +444,7 @@ class BarbaGroupSimulation(object):
 
   def plot_contour(self, field_name, 
                    field_range=None,
-                   filled_contour=False, 
+                   filled_contour=True, 
                    view=[float('-inf'), float('-inf'), float('inf'), float('inf')],
                    bodies=[],
                    save_name=None, 
@@ -460,7 +460,7 @@ class BarbaGroupSimulation(object):
       Min, max and number of contours to plot; default: None.
     filled_contour: boolean
       Set 'True' to create a filled contour;
-      default: False.
+      default: True.
     view: list of floats
       Bottom-left and top-right coordinates of the rectangular view to plot;
       default: the whole domain.
