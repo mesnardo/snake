@@ -102,12 +102,14 @@ def observed_order_convergence(field_name, coarse, medium, fine, ratio, grid):
   alpha: float
     The observed order of convergence.
   """
+  # get the attribute name as a string
+  field_attribute_name = field_name.replace('-', '_')
   # get restricted field from coarse solution
-  coarse_field = getattr(coarse, field_name.replace('-', '_')).restriction(grid)
+  coarse_field = getattr(coarse, field_attribute_name).restriction(grid)
   # get restricted field from medium solution
-  medium_field = getattr(medium, field_name.replace('-', '_')).restriction(grid)
+  medium_field = getattr(medium, field_attribute_name).restriction(grid)
   # get restricted field from fine solution
-  fine_field = getattr(fine, field_name.replace('-', '_')).restriction(grid)
+  fine_field = getattr(fine, field_attribute_name).restriction(grid)
   # observed order using the L2-norm
   return (  numpy.log(  numpy.linalg.norm(  medium_field.values
                                           - coarse_field.values  ) 
@@ -150,8 +152,9 @@ def get_observed_orders_convergence(simulations, field_names,
   alpha = {} # will contain observed order of convergence
   for field_name in field_names:
     # get grid (coarsest one) where solutions will be restricted
-    grid = [getattr(simulations[0], field_name.replace('-', '_')).x, 
-            getattr(simulations[0], field_name.replace('-', '_')).y]
+    attribute_name = field_name.replace('-', '_')
+    grid = [getattr(simulations[0], attribute_name).x, 
+            getattr(simulations[0], attribute_name).y]
     alpha[field_name] = observed_order_convergence(field_name, 
                                                    coarse, medium, fine, 
                                                    ratio, grid)
@@ -160,7 +163,7 @@ def get_observed_orders_convergence(simulations, field_names,
   if save_name:
     print('[info] writing orders into .dat file ...')
     label = ('lastThree' if last_three else 'firstThree')
-    time_step = getattr(simulations[0], field_names[0].replace('-', '_')).time_step
+    time_step = getattr(simulations[0], attribute_name).time_step
     file_path = '{}/{}{:0>7}_{}.dat'.format(directory, save_name, time_step, label)
     with open(file_path, 'w') as outfile:
       for field_name in field_names:
@@ -197,14 +200,14 @@ def plot_grid_convergence(simulations, exact,
   ax.set_xlabel('grid-spacing')
   ax.set_ylabel('errors')
   all_grid_spacings, all_errors = [], []
-  label_norms = {'L2': '$L_2$', 'Linf': '$L_\infty$'}
+  norm_labels = {'L2': '$L_2$', 'Linf': '$L_\infty$'}
   for field_name in field_names:
     for norm in norms:
       grid_spacings = [case.get_grid_spacing() for case in simulations]
       errors = [case.get_error(exact, field_name, 
                                mask=mask, norm=norm) for case in simulations]  
       ax.plot(grid_spacings, errors,
-              label='{} - {}-norm'.format(field_name, label_norms[norm]), 
+              label='{} - {}-norm'.format(field_name, norm_labels[norm]), 
               marker='o', zorder=10)
       all_grid_spacings += grid_spacings
       all_errors += errors
@@ -247,12 +250,13 @@ def get_exact_solution(simulations, *arguments):
   if arguments:
     from library.solutions.dispatcher import dispatcher
     SolutionClass = dispatcher[arguments[0]]
-    # compute the analytical solution on finest grid
+    # compute analytical solution on finest grid
     exact = SolutionClass(simulations[-1].grid[0],
                           simulations[-1].grid[1],
                           *arguments[1:])
   else:
-    exact = simulations[-1] # assume finest grid contains exact solution if no analytical solution
+    # assume finest grid contains exact solution if no analytical solution
+    exact = simulations[-1]
     del simulations[-1]
   return exact
 
