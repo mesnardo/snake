@@ -1,6 +1,6 @@
 # file: OBJFile.py
 # author: Olivier Mesnard (mesnardo@gwu.edu)
-# brief: Definition of the classes to generate OBJ files.
+# description: Definition of the classes to generate OBJ files.
 
 
 import os
@@ -16,10 +16,13 @@ class Vertex(object):
     
     Parameters
     ----------
-    index: int
+    index: integer
       Index of the vertex in the mesh.
-    x, y, z: float
-      Coordinates of the vertex; default: z=0.0.
+    x, y: floats
+      x- and y-coordinates of the vertex.
+    z: float, optional
+      z-coordinate of the vertex; 
+      default: z=0.0.
     """
     self.index = index
     self.x, self.y, self.z = x, y, z
@@ -55,21 +58,29 @@ class OBJFile(object):
 
 class Box2d(OBJFile):
   """Contains information about a 2d box OBJ file."""
-  def __init__(self, name, bottom_left=[-1.0, -1.0], top_right=[1.0, 1.0], n=[10, 10], z=0.0):
+  def __init__(self, name, 
+               bottom_left=[-1.0, -1.0], 
+               top_right=[1.0, 1.0], 
+               n=[10, 10], 
+               z=0.0):
     """Creates the 2d box.
 
     Parameters
     ----------
     name: string
       Name of the box.
-    bottom_left: list(float)
-      Bottom-left corner of the box; default: [-1.0, -1.0].
-    top_right: list(float)
-      Top-right corner of the box; default: [1.0, 1.0].
-    n: list(int)
-      Number of points for the discretization in each direction; default: [10, 10].
-    z: float
-      z-location of the 2d box; default: 0.0.
+    bottom_left: 2-list offloats, optional
+      Bottom-left corner of the box; 
+      default: [-1.0, -1.0].
+    top_right: 2-list of floats, optional
+      Top-right corner of the box; 
+      default: [1.0, 1.0].
+    n: 2-list of integers, optional
+      Number of points for the discretization in each direction; 
+      default: [10, 10].
+    z: float, optional
+      z-location of the 2d box; 
+      default: 0.0.
     """
     OBJFile.__init__(self, name)
     self.x, self.y = self.create_coordinates(bottom_left, top_right, n)
@@ -77,21 +88,27 @@ class Box2d(OBJFile):
     self.vertices = self.create_vertices()
     self.faces = self.create_faces()
 
-  def create_coordinates(self, bottom_left=[-1.0, -1.0], top_right=[1.0, 1.0], n=[10, 10]):
+  def create_coordinates(self, 
+                         bottom_left=[-1.0, -1.0], 
+                         top_right=[1.0, 1.0], 
+                         n=[10, 10]):
     """Creates the coordinates of the box along each direction.
 
     Parameters
     ----------
-    bottom_left: list(float)
-      Bottom-left corner of the box; default: [-1.0, -1.0].
-    top_right: list(float)
-      Top-right corner of the box; default: [1.0, 1.0].
-    n: list(int)
-      Number of points for the discretization in each direction; default: [10, 10].
+    bottom_left: 2-list offloats, optional
+      Bottom-left corner of the box; 
+      default: [-1.0, -1.0].
+    top_right: 2-list of floats, optional
+      Top-right corner of the box; 
+      default: [1.0, 1.0].
+    n: 2-list of integers, optional
+      Number of points for the discretization in each direction; 
+      default: [10, 10].
 
     Returns
     -------
-    x, y: numpy.array(float)
+    x, y: 1d arrays of floats
       Coordinates along each direction of the box.
     """
     return (numpy.linspace(bottom_left[0], top_right[0], n[0]), 
@@ -102,7 +119,7 @@ class Box2d(OBJFile):
 
     Returns
     -------
-    vertices: numpy.array(Vertex)
+    vertices: 1d array of Vertex objects
       Array containing the vertices.
     """
     nx, ny = self.x.size, self.y.size
@@ -117,7 +134,7 @@ class Box2d(OBJFile):
 
     Returns
     -------
-    faces: numpy.array(Face)
+    faces: 1d array of Face objects
       Array containing the faces.
     """
     nx, ny = self.x.size, self.y.size
@@ -133,13 +150,15 @@ class Box2d(OBJFile):
                                        self.vertices[j*nx+(i+1)])
     return numpy.insert(upper_faces, numpy.arange(len(lower_faces)), lower_faces)
 
-  def write(self, save_directory=os.getcwd()):
+  def write(self, 
+            save_directory=os.getcwd()):
     """Writes object into a OBJ file.
 
     Parameters
     ----------
-    save_directory: string
-      Directory where to save the OBJ file; default: 'current directory'.
+    save_directory: string, optional
+      Directory where to save the OBJ file; 
+      default: <current directory>.
     """
     print('[info] writing OBJ file ...'),
     nx, ny = self.x.size, self.y.size
@@ -164,18 +183,27 @@ class Box2d(OBJFile):
 
 class Body2d(OBJFile):
   """Contains information about the body OBJ file"""
-  def __init__(self, name, file_path):
+  def __init__(self, file_path, 
+               name=None, 
+               extrusion_limits=[0.0, 1.0]):
     """Reads the coordinates of the 2d geometry.
 
     Parameters
     ----------
-    name: string
-      Name of the body.
     file_path: string
       Path of the coordinates file.
+    name: string, optional
+      Name of the body;
+      default: None.
+    extrusion_limits: list of floats, optional
+      Limits of the extrusion;
+      default: [0.0, 1.0].
     """
+    if not name:
+      name = os.path.splitext(os.path.basename(file_path))[0]
     OBJFile.__init__(self, name)
     self.x, self.y = self.read_coordinates(file_path)
+    self.extrusion_limits = extrusion_limits
 
   def read_coordinates(self, file_path):
     """Reads the x- and y- coordinates from input file.
@@ -187,7 +215,7 @@ class Body2d(OBJFile):
 
     Returns
     -------
-    x, y: numpy.array
+    x, y: 1d arrays of floats
       x- and y-coordinates in closed loop form.
     """
     print('[info] reading input coordinates from {} ...'.format(file_path)),
@@ -200,13 +228,15 @@ class Body2d(OBJFile):
     print('done')
     return x, y
 
-  def write(self, save_directory=os.getcwd()):
+  def write(self, 
+            save_directory=os.getcwd()):
     """Writes the coordinates in a .obj format.
 
     Parameters
     ----------
-    save_directory: string
-      Directory where to save the .obj file; default: 'current directory'.
+    save_directory: string, optional
+      Directory where to save the .obj file; 
+      default: <current directory>.
     """
     print('[info] writing OBJ file ...'),
     outfile_path = '{}/{}.obj'.format(save_directory, self.name)
@@ -218,8 +248,8 @@ class Body2d(OBJFile):
     with open(outfile_path, 'w') as outfile:
       outfile.write(header)
       for i in xrange(self.x.size):
-        for j in xrange(1, -1, -1):
-          outfile.write('v {} {} {}\n'.format(self.x[i], self.y[i], j))
+        for z in self.extrusion_limits[::-1]:
+          outfile.write('v {} {} {}\n'.format(self.x[i], self.y[i], z))
       outfile.write('g {}\n'.format(self.name))
       for i in xrange(1, self.x.size):
         outfile.write('f {} {} {}\n'.format(2*i, 2*i-1, 2*i+1))
