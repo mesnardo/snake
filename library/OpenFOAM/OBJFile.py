@@ -250,6 +250,8 @@ class Body2d(OBJFile):
       for i in xrange(self.x.size):
         for z in self.extrusion_limits[::-1]:
           outfile.write('v {} {} {}\n'.format(self.x[i], self.y[i], z))
+          # rotated geometry required by Nikos to run their code
+          # outfile.write('v {} {} {}\n'.format(self.y[i], z, self.x[i]))
       outfile.write('g {}\n'.format(self.name))
       for i in xrange(1, self.x.size):
         outfile.write('f {} {} {}\n'.format(2*i, 2*i-1, 2*i+1))
