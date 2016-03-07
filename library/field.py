@@ -65,13 +65,12 @@ class Field(object):
       return numpy.any(numpy.abs(a-b[:, numpy.newaxis]) <= tolerance, axis=0)
     mask_x = intersection(self.x, grid[0])
     mask_y = intersection(self.y, grid[1])
-    restricted_field = Field()
-    restricted_field.x = self.x[mask_x]
-    restricted_field.y = self.y[mask_y]
-    restricted_field.values = numpy.array([self.values[j][mask_x]
-                                         for j in xrange(self.y.size)
-                                         if mask_y[j]])
-    return restricted_field
+    return Field(x=self.x[mask_x], y=self.y[mask_y], 
+                 values=numpy.array([self.values[j][mask_x] 
+                                     for j in xrange(self.y.size)
+                                     if mask_y[j]]),
+                 time_step=self.time_step,
+                 label=self.label+'-restricted')
 
   def get_difference(self, exact, mask=None, norm='L2'):
     """Returns the difference between two fields in a given norm.
