@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 # file: convertGMSHToFOAM.py
 # author: Olivier Mesnard (mesnardo@gwu.edu)
 # brief: Changes the boundary patches in folder constant/polyMesh.
@@ -12,20 +10,23 @@ import argparse
 def parse_command_line():
   """Parses the command-line."""
   # create the parser
-  print('-> parsing command-line... '),
+  print('[info] parsing the command-line ...'),
   parser = argparse.ArgumentParser(description='Change the boundary patches '
                                    'in the file constant/polyMesh/boundary '
                                    'of the OpenFOAM case',
                                    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
   # fill the parser with arguments
   parser.add_argument('--directory', dest='directory', 
-                      type=str, default=os.getcwd(),
+                      type=str, 
+                      default=os.getcwd(),
                       help='directory of the OpenFOAM simulation')
   parser.add_argument('--mesh', dest='mesh_path', 
-                      type=str, default='{}/*.msh'.format(os.getcwd()),
+                      type=str, 
+                      default='{}/*.msh'.format(os.getcwd()),
                       help='path of the GMSH .msh file')
   parser.add_argument('--body-name', dest='body_name',
-                      type=str, default='body',
+                      type=str, 
+                      default='body',
                       help='name of the body patch used in OpenFOAM')
   print('done')
   return parser.parse_args()

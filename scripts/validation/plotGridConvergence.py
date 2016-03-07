@@ -28,10 +28,12 @@ def parse_command_line():
                       default=os.getcwd(),
                       help='directory containing the simulation folders')
   parser.add_argument('--software', dest='software',
-                      type=str, choices=['petibm', 'cuibm'],
+                      type=str, 
+                      choices=['petibm', 'cuibm'],
                       help='software used to compute the flows.')
   parser.add_argument('--sizes', dest='gridline_sizes',
-                      type=str, nargs='+', default=[],
+                      type=str, nargs='+', 
+                      default=[],
                       help='list of simulation sub-folders')
   parser.add_argument('--time-step', '-ts', dest='time_step', 
                       type=int,
@@ -42,11 +44,13 @@ def parse_command_line():
                       help='list of fields to consider '
                            '(x-velocity, y-velocity, and/or pressure)')
   parser.add_argument('--norms', dest='norms',
-                      type=str, nargs='+', choices=['L2', 'Linf'],
+                      type=str, nargs='+', 
+                      choices=['L2', 'Linf'],
                       default=['L2'],
                       help='norms used to compute the errors')
   parser.add_argument('--save-name', dest='save_name',
-                      type=str, default=None,
+                      type=str, 
+                      default=None,
                       help='name of the .png file to save')
   parser.add_argument('--no-show', dest='show', 
                       action='store_false',
@@ -68,10 +72,14 @@ def parse_command_line():
                       action='store_true',
                       help='plots the analytical fields')
   parser.add_argument('--bottom-left', '-bl', dest='bottom_left',
-                      type=float, nargs='+',
+                      type=float, nargs=2,
+                      default=None,
+                      metavar=('x', 'y'),
                       help='bottom-left corner of the domain')
   parser.add_argument('--top-right', '-tr', dest='top_right',
-                      type=float, nargs='+',
+                      type=float, nargs=2,
+                      default=None,
+                      metavar=('x', 'y'),
                       help='top-right corner of the domain')
   parser.set_defaults(show=True, last_three=False, binary=False)
   # parse given options file
@@ -132,12 +140,15 @@ def get_observed_orders_convergence(simulations, field_names,
     Contains the simulations.
   field_names: list of strings
     List of field names whose observed order of convergence will be computed.
-  last_three: boolean
-    Set 'True' to compute the orders using the three finest grid; default: False.
-  directory: string
-    Shared path of case directories; default: current directory.
-  save_name: string
-    Name of the .dat file to write into; default: None (does not write).
+  last_three: boolean, optional
+    Set 'True' to compute the orders using the three finest grid; 
+    default: False.
+  directory: string, optional
+    Shared path of case directories; 
+    default: current directory.
+  save_name: string, optional
+    Name of the .dat file to write into; 
+    default: None (does not write).
 
   Returns
   -------
@@ -182,15 +193,24 @@ def plot_grid_convergence(simulations, exact,
   ----------
   simulations: list of Simulation objects
     List of the cases.
-  field_names: list of strings
-    Names of the fields to include in the figure.
-  directory: string
+  exact: Solution object
+    The exact solution to compare with.
+  mask: 2-list of 1d arrays, optional
+    Grid used to project the solutions;
+    default: None.
+  field_names: list of strings, optional
+    Names of the fields to include in the figure;
+    default: [].
+  norms: list of strings, optional
+    Norms used to compute the errors;
+    default: [].
+  directory: string, optional
     Shared path of all cases; 
-    default: current directory.
-  save_name: string
+    default: <current directory>.
+  save_name: string, optional
     Name of the .png file to save; 
     default: None (does not save).
-  show: boolean
+  show: boolean, optional
     Set 'True' if you want to display the figure; 
     default: False. 
   """

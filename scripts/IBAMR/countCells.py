@@ -21,16 +21,22 @@ def parse_command_line():
                                    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
   # fill the parser with arguments
   parser.add_argument('--directory', dest='directory', 
-                      type=str, default=os.getcwd(),
+                      type=str, 
+                      default=os.getcwd(),
                       help='directory of the IBAMR simulation')
   parser.add_argument('--solution-folder', dest='solution_folder',
-                      type=str, default='numericalSolution',
+                      type=str, 
+                      default='numericalSolution',
                       help='name of folder containing the solution in time')
   parser.add_argument('--steps', dest='steps',
-                      nargs='+', type=int, default=(None, None, None),
-                      help='steps to plot (min, max, increment)')
+                      type=int, nargs=3, 
+                      default=(None, None, None),
+                      metavar=('start', 'end', 'increment'),
+                      help='steps to plot')
   parser.add_argument('--average', dest='average_limits', 
-                      type=float, nargs='+', default=[0.0, float('inf')],
+                      type=float, nargs=2, 
+                      default=[0.0, float('inf')],
+                      metavar=('time-start', 'time-end'),
                       help='temporal limits to consider to average forces')
   # parse given options file
   parser.add_argument('--options', 
@@ -49,8 +55,9 @@ def get_mean(times, n_cells, limits=[0.0, float('inf')]):
     Time values.
   n_cells: list of integers
     Number of cells in the mesh at each time value.
-  limits: list of floats
-    Time-limits used to compute the average; default: [0.0, +inf].
+  limits: list of floats, optional
+    Time-limits used to compute the average; 
+    default: [0.0, +inf].
 
   Returns
   -------
