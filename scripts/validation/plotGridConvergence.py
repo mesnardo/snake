@@ -47,7 +47,7 @@ def parse_command_line():
                       help='time-step at which the solution will be read')
   parser.add_argument('--fields', dest='field_names',
                       type=str, nargs='+',
-                      default=['x-velocity', 'y-velocity', 'pressure'],
+                      default=['pressure', 'x-velocity', 'y-velocity'],
                       help='list of fields to consider '
                            '(x-velocity, y-velocity, and/or pressure)')
   parser.add_argument('--norms', dest='norms',
@@ -127,6 +127,11 @@ def observed_order_convergence(field_name, coarse, medium, fine, ratio, grid):
        / numpy.log(ratio))
   print('\t{}: {}'.format(field_name, p))
   def get_GCI(solution_coarse, solution_fine, order, ratio, Fs=1.25):
+    tol = 1.0E-10
+    mask = numpy.logical_or(numpy.absolute(solution_coarse) < tol, 
+                            numpy.absolute(solution_fine) < tol)
+    solution_coarse[mask] = None
+    solution_fine[mask] = None
     relative_differences = numpy.absolute((solution_coarse-solution_fine)
                                           /solution_fine)
     return Fs*relative_differences/(ratio**order-1.0)*100.0
