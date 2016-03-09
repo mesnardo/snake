@@ -13,7 +13,7 @@ from library.OpenFOAM import GEOFile
 
 def parse_command_line():
   """Parses the command-line."""
-  print('-> parsing command-line... '),
+  print('[info] parsing the command-line ...'),
   # create the parser
   parser = argparse.ArgumentParser(description='Generates a .geo file',
                                    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -22,31 +22,41 @@ def parse_command_line():
                       type=str,
                       help='path of file with body coordinates')
   parser.add_argument('--body-name', dest='body_name', 
-                      type=str, default='body',
+                      type=str, 
+                      default='body',
                       help='name of the patch used in OpenFOAM')
   parser.add_argument('--save-name', dest='save_name', 
-                      type=str, default='mesh_info',
+                      type=str, 
+                      default='mesh_info',
                       help='name of the .geo file (without extension)')
   parser.add_argument('--save-dir', dest='save_dir', 
-                      type=str, default=os.getcwd(),
+                      type=str, 
+                      default=os.getcwd(),
                       help='directory where to save .geo file')
   parser.add_argument('--bottom-left', '-bl', dest='bottom_left', 
-                      type=float, nargs='+', default=[-20.0, -20.0],
+                      type=float, nargs=2, 
+                      default=[-20.0, -20.0],
+                      metavar=('x', 'y'),
                       help='coordinates of the bottom-left corner of the '
                            'computational domain')
   parser.add_argument('--top-right', '-tr', dest='top_right', 
-                      type=float, nargs='+', default=[20.0, 20.0],
+                      type=float, nargs=2, 
+                      default=[20.0, 20.0],
+                      metavar=('x', 'y'),
                       help='coordinates of the top-right corner of the '
                            'computational domain')
   parser.add_argument('--n-inlet', dest='n_inlet', 
-                      type=int, default=20,
+                      type=int, 
+                      default=20,
                       help='number of points on inlet boundary')
   parser.add_argument('--level', dest='level', 
-                      type=int, default=0,
+                      type=int, 
+                      default=0,
                       help='level of refinement on the body')
   parser.add_argument('--box', dest='boxes', 
-                      type=float, nargs='+',
-                      help='adds refinement boxes (x_bl, y_bl, x_tr, y_tr, level)')
+                      type=float, nargs=5,
+                      metavar=('x-start', 'y-start', 'x-end', 'y-end', 'level'),
+                      help='adds refinement boxes')
   print('done')
   return parser.parse_args()
 

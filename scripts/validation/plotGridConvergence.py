@@ -30,10 +30,12 @@ def parse_command_line():
                       default=os.getcwd(),
                       help='directory containing the simulation folders')
   parser.add_argument('--software', dest='software',
-                      type=str, choices=['petibm', 'cuibm'],
+                      type=str, 
+                      choices=['petibm', 'cuibm'],
                       help='software used to compute the flows.')
   parser.add_argument('--sizes', dest='gridline_sizes',
-                      type=str, nargs='+', default=[],
+                      type=str, nargs='+', 
+                      default=[],
                       help='list of simulation sub-folders')
   parser.add_argument('--mask', dest='mask',
                       type=str,
@@ -51,11 +53,13 @@ def parse_command_line():
                       help='list of fields to consider '
                            '(x-velocity, y-velocity, and/or pressure)')
   parser.add_argument('--norms', dest='norms',
-                      type=str, nargs='+', choices=['L2', 'Linf'],
+                      type=str, nargs='+', 
+                      choices=['L2', 'Linf'],
                       default=['L2'],
                       help='norms used to compute the errors')
   parser.add_argument('--save-name', dest='save_name',
-                      type=str, default=None,
+                      type=str, 
+                      default=None,
                       help='name of the .png file to save')
   parser.add_argument('--no-show', dest='show', 
                       action='store_false',
@@ -77,10 +81,14 @@ def parse_command_line():
                       action='store_true',
                       help='plots the analytical fields')
   parser.add_argument('--bottom-left', '-bl', dest='bottom_left',
-                      type=float, nargs='+',
+                      type=float, nargs=2,
+                      default=None,
+                      metavar=('x', 'y'),
                       help='bottom-left corner of the domain')
   parser.add_argument('--top-right', '-tr', dest='top_right',
-                      type=float, nargs='+',
+                      type=float, nargs=2,
+                      default=None,
+                      metavar=('x', 'y'),
                       help='top-right corner of the domain')
   parser.set_defaults(show=True, last_three=False, binary=False)
   # parse given options file
@@ -148,7 +156,6 @@ def get_observed_orders_convergence(simulations, field_names, mask,
       for field_name in field_names:
         outfile.write('{}: {}\n'.format(field_name, alpha[field_name]))
   return alpha
-
 
 
 def main():

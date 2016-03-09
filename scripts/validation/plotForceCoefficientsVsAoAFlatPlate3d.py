@@ -26,7 +26,8 @@ def parse_command_line():
                         formatter_class= argparse.ArgumentDefaultsHelpFormatter)
   # fill parser with arguments
   parser.add_argument('--software', dest='software',
-                      type=str, choices=['petibm'],
+                      type=str, 
+                      choices=['petibm'],
                       help='software used to generate solution')
   parser.add_argument('--directory', dest='directory',
                       type=str,
@@ -50,17 +51,20 @@ def parse_command_line():
                       default=None,
                       help='path of files containing Taira (2008) data')
   parser.add_argument('--limits', dest='plot_limits', 
-                      type=float, nargs='+', default=[None, None, None, None],
+                      type=float, nargs=4, 
+                      default=[None, None, None, None],
+                      metavar=('x-start', 'x-end', 'y-start', 'y-end'),
                       help='limits of the plot')
   parser.add_argument('--no-show', dest='show',
                       action='store_false',
                       help='does not display the figures')
   parser.add_argument('--save-names', dest='save_names',
                       type=str, nargs='+',
-                      default=[],
+                      default=None,
                       help='name of .png files to save')
   parser.add_argument('--save-directory', dest='save_directory',
-                      type=str, default=os.getcwd(),
+                      type=str, 
+                      default=os.getcwd(),
                       help='directory where to save the .png files')
   parser.set_defaults(show=True)
   # parse given options file
@@ -121,19 +125,19 @@ def plot_coefficients_vs_angles(simulations, validation,
     Contains info about all simulations to consider.
   validation: TairaEtAl2007FlatPlate object
     Contains experimental results reported by Taira et al. (2007).
-  coefficient: float
+  coefficient: float, optional
     Scale value to convert a force into a force coefficient;
     default: 1.0.
-  save_directory: string
+  save_directory: string, optional
     Directory where to create the `images` folder;
     default: current directory.
-  save_names: list of strings
+  save_names: list of strings, optional
     Name of the files to save;
     default: [] (does not save figures)
-  limits: list of floats
+  limits: list of floats, optional
     Limits of the plot (x-limits followed by y-limits);
     default: [].
-  show: boolean
+  show: boolean, optional
     Set `True` to display the figures;
     default: False.
   """

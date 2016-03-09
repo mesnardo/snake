@@ -25,13 +25,18 @@ def parse_command_line():
                       help='directory of the simulation')
   # arguments about grid
   parser.add_argument('--bottom-left', '-bl', dest='bottom_left', 
-                      type=float, nargs='+', default=[float('-inf'), float('-inf')],
+                      type=float, nargs=2, 
+                      default=[float('-inf'), float('-inf')],
+                      metavar=('x', 'y'),
                       help='coordinates of the bottom-left corner of the view')
   parser.add_argument('--top-right', '-tr', dest='top_right', 
-                      type=float, nargs='+', default=[float('inf'), float('inf')],
+                      type=float, nargs=2, 
+                      default=[float('inf'), float('inf')],
+                      metavar=('x', 'y'),
                       help='coordinates of the top-right corner of the view')
   parser.add_argument('--n', '-n', dest='n_cells',
-                      type=int, nargs='+',
+                      type=int, nargs=2,
+                      metavar=('nx', 'ny'),
                       help='number of cells in each direction')
   parser.add_argument('--periodic', dest='periodic_directions',
                       type=str, nargs='+', 

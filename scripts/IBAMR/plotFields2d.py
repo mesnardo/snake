@@ -15,44 +15,56 @@ import miscellaneous
 
 def parse_command_line():
   """Parses the command-line."""
-  print('[info] parsing the command-line ...')
+  print('[info] parsing the command-line ...'),
   # create the parser
   parser = argparse.ArgumentParser(description='Plots the vorticity field with VisIt',
                                    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
   # fill the parser with arguments
   parser.add_argument('--directory', dest='directory', 
-                      type=str, default=os.getcwd(),
+                      type=str, 
+                      default=os.getcwd(),
                       help='directory of the IBAMR simulation')
   parser.add_argument('--solution-folder', dest='solution_folder',
-                      type=str, default='numericalSolution',
+                      type=str, 
+                      default='numericalSolution',
                       help='name of folder containing the solution in time')
   parser.add_argument('--body-name', dest='body_name',
                       type=str,
                       help='name of the body file (without the .vertex extension)')
   parser.add_argument('--field', dest='field',
                       type=str,
-                      help='name of the field to plot'
-                           '(vorticity, pressure, velocity-magnitude, '
-                           'u-velocity, or v-velocity)')
+                      choices=['vorticity', 'pressure', 
+                               'u-velocity', 'v-velocity', 'velocity-magnitude'],
+                      help='name of the field to plot')
   parser.add_argument('--limits', dest='limits',
-                      nargs='+', type=float, default=(-1.0, 1.0),
-                      help='Range of the field to plot (min, max)')
+                      type=float, nargs=2, 
+                      default=(-1.0, 1.0),
+                      metavar=('min', 'max'),
+                      help='Range of the field to plot')
   parser.add_argument('--states', dest='states',
-                      nargs='+', type=int, default=[0, 2**10000, 1],
-                      help='steps to plot (min, max, increment)')
+                      type=int, nargs=3, 
+                      default=[0, 2**10000, 1],
+                      metavar=('min', 'max', 'increment'),
+                      help='steps to plot')
   parser.add_argument('--bottom-left', dest='bottom_left',
-                      nargs='+', type=float, default=(-2.0, -2.0),
-                      help='bottom-left corner of the rectangular view (x, y)')
+                      type=float, nargs=2, 
+                      default=(-2.0, -2.0),
+                      metavar=('x', 'y'),
+                      help='bottom-left corner of the rectangular view')
   parser.add_argument('--top-right', dest='top_right',
-                      nargs='+', type=float, default=(2.0, 2.0),
-                      help='top-right corner of the rectangular view (x, y)')
+                      type=float, nargs='+',
+                      default=(2.0, 2.0),
+                      metavar=('x', 'y'),
+                      help='top-right corner of the rectangular view')
   parser.add_argument('--width', dest='width',
-                      type=int, default=600,
+                      type=int, 
+                      default=600,
                       help='figure width in pixels')
   # parse given options file
   parser.add_argument('--options', 
                       type=open, action=miscellaneous.ReadOptionsFromFile,
                       help='path of the file with options to parse')
+  print('done')
   return parser.parse_args()
 
 

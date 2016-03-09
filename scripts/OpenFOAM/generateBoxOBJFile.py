@@ -20,22 +20,31 @@ def parse_command_line():
                                    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
   # fill the parser with arguments
   parser.add_argument('--bottom-left', '-bl', dest='bottom_left', 
-                      type=float, nargs='+', default=[-2.0, -2.0],
+                      type=float, nargs=2, 
+                      default=[-2.0, -2.0],
+                      metavar=('x', 'y'),
                       help='coordinates of the bottom-left corner of the box')
   parser.add_argument('--top-right', '-tr', dest='top_right', 
-                      type=float, nargs='+', default=[2.0, 2.0],
+                      type=float, nargs=2, 
+                      default=[2.0, 2.0],
+                      metavar=('x', 'y'),
                       help='coordinates of the top-right corner of the box')
   parser.add_argument('-z', dest='z', 
-                      type=float, default=0.0,
+                      type=float, 
+                      default=0.0,
                       help='z-coordinate of the 2d box')
   parser.add_argument('-n', dest='n', 
-                      type=int, nargs='+', default=[100, 100],
+                      type=int, nargs=2, 
+                      default=[100, 100],
+                      metavar=('nx', 'ny'),
                       help='number of points in the x- and y-directions')
   parser.add_argument('--name', dest='name', 
-                      type=str, default='box',
+                      type=str, 
+                      default='box',
                       help='name of the OBJ file (without the extension)')
   parser.add_argument('--save-directory', dest='save_directory', 
-                      type=str, default=os.getcwd(),
+                      type=str, 
+                      default=os.getcwd(),
                       help='directory where to save the .obj file')
   print('done')
   return parser.parse_args()

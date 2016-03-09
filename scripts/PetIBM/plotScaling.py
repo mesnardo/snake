@@ -12,37 +12,49 @@ import numpy
 import logSummaryReader
 
 
-def read_inputs():
+def parse_command_line():
+  """Parses the command-line and returns it as a namespace."""
+  print('[info] parsing the command-line ...'),
   parser = argparse.ArgumentParser(description='Plots the instantaneous forces',
                         formatter_class= argparse.ArgumentDefaultsHelpFormatter)
-  parser.add_argument('--series-dir', dest='series_directory', type=str, 
-                      nargs='+', default=os.getcwd(), 
+  parser.add_argument('--series-dir', dest='series_directory', 
+                      type=str, nargs='+', 
+                      default=os.getcwd(), 
                       help='directory of each series')
-  parser.add_argument('--descriptions', dest='descriptions', type=str, nargs='+',
+  parser.add_argument('--descriptions', dest='descriptions', 
+                      type=str, nargs='+',
                       default=['no-description'],
                       help='description of each series series')
-  parser.add_argument('--nprocs', dest='nprocs_list', type=int, nargs='+',
+  parser.add_argument('--nprocs', dest='nprocs_list', 
+                      type=int, nargs='+',
                       default=[1, 2, 4, 8, 16, 32, 64, 128],
                       help='list of number of processors')
-  parser.add_argument('--save', dest='save', action='store_true',
+  parser.add_argument('--save', dest='save', 
+                      action='store_true',
                       help='saves the plot as a .png file')
-  parser.add_argument('--save-dir', dest='save_directory', type=str, 
+  parser.add_argument('--save-dir', dest='save_directory', 
+                      type=str, 
                       default=os.getcwd(),
                       help='directory where to save .png file')
-  parser.add_argument('--save-name', dest='save_name', type=str, 
+  parser.add_argument('--save-name', dest='save_name', 
+                      type=str, 
                       default='wallTimeVsProcessCount', 
                       help='name of the .png file to save')
-  parser.add_argument('--average', dest='average', action='store_true',
+  parser.add_argument('--average', dest='average', 
+                      action='store_true',
                       help='averages the series')
-  parser.add_argument('--breakdown', dest='breakdown', action='store_true',
+  parser.add_argument('--breakdown', dest='breakdown', 
+                      action='store_true',
                       help='plots the breakdown of a series')
   parser.add_argument('--show', dest='show', action='store_true',
                       help='plots the wall-time versus the process count')
+  print('done')
   return parser.parse_args()
 
 
 def main():
-  parameters = read_inputs()
+  """Plots the wall-time versus the process count."""
+  parameters = parse_command_line()
   n_series = len(parameters.series_directory)
   if not (len(parameters.descriptions) == n_series):
     for i in xrange(n_series):

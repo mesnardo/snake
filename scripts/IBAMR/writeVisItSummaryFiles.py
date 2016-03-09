@@ -11,21 +11,24 @@ import argparse
 import numpy
 
 
-def read_inputs():
+def parse_command_line():
   """Parses the command-line."""
+  print('[info] parsing the command-line ...'),
   # create parser
   parser = argparse.ArgumentParser(description='Writes summary files for VisIt '
                                                'wit list of sub-directories '
                                                'to look into',
                                    formatter_class = argparse.ArgumentDefaultsHelpFormatter)
   # fill parser with arguments
-  parser.add_argument('--directory', dest='directory', type=str, 
+  parser.add_argument('--directory', dest='directory', 
+                      type=str, 
                       default=os.getcwd(),
                       help='directory where to save Visit summary files')
-  parser.add_argument('--time-steps', '-n', dest='time_steps', type=int, 
-                      nargs='+',
-                      help='stating and ending time-steps '
-                           'followed by time-step increment')
+  parser.add_argument('--time-steps', '-n', dest='time_steps', 
+                      type=int, nargs=3,
+                      metavar=('start', 'end', 'increment'),
+                      help='range of time-steps to consider')
+  print('done')
   return parser.parse_args()
 
 
@@ -34,7 +37,7 @@ def main():
   with list of sub-directories to look into.
   """
   # parse command-line
-  parameters = read_inputs()
+  parameters = parse_command_line()
 
   # list of SAMRAI files to VisIt
   dumps_visit = numpy.array(['visit_dump.{0:05}/summary.samrai'.format(n)

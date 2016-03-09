@@ -31,10 +31,12 @@ def parse_command_line():
                       type=float, nargs='+',
                       help='Reynolds number for each simulation to consider')
   parser.add_argument('--software', dest='software',
-                      type=str, choices=['cuibm', 'petibm'],
+                      type=str, 
+                      choices=['cuibm', 'petibm'],
                       help='software used to generate solution')
   parser.add_argument('--description', dest='description',
-                      type=str, default=None,
+                      type=str, 
+                      default=None,
                       help='quick description of the group of simulations')
   parser.add_argument('--validation-data', dest='validation_data_path',
                       type=str, 
@@ -43,16 +45,20 @@ def parse_command_line():
                                ''.format(os.environ['SCRIPTS'])),
                       help='path of the validation data file')
   parser.add_argument('--limits', dest='plot_limits', 
-                      type=float, nargs='+', default=[None, None, None, None],
+                      type=float, nargs=4, 
+                      default=[None, None, None, None],
+                      metavar=('x-start', 'x-end', 'y-start', 'y-end'),
                       help='limits of the plot')
   parser.add_argument('--no-show', dest='show',
                       action='store_false',
                       help='does not display the figures')
   parser.add_argument('--save-name', dest='save_name',
-                      type=str, default=None,
+                      type=str, 
+                      default=None,
                       help='name of .png file to save')
   parser.add_argument('--save-directory', dest='save_directory',
-                      type=str, default=os.getcwd(),
+                      type=str, 
+                      default=os.getcwd(),
                       help='directory where to save the .png file')
   parser.set_defaults(show=True)
   # parse given options file

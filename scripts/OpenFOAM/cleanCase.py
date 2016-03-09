@@ -9,23 +9,29 @@ import argparse
 import os
 
 
-def read_inputs():
+def parse_command_line():
   """Parses the command-line."""
-  print('-> parsing command-line... '),
+  print('[info] parsing the command-line ...'),
   # create the parser
   parser = argparse.ArgumentParser(description='Cleans an OpenFOAM '
                          'simulation folder',
             formatter_class=argparse.ArgumentDefaultsHelpFormatter)
   # fill the parser with arguments
-  parser.add_argument('--directory', dest='directory', type=str, default=os.getcwd(),
+  parser.add_argument('--directory', dest='directory', 
+                      type=str, 
+                      default=os.getcwd(),
                       help='directory of the OpenFOAM case')
-  parser.add_argument('--no-images', dest='images', action='store_false',
+  parser.add_argument('--no-images', dest='images', 
+                      action='store_false',
                       help='does not remove the images folder')
-  parser.add_argument('--no-processors', dest='processors', action='store_false',
+  parser.add_argument('--no-processors', dest='processors', 
+                      action='store_false',
                       help='does not remove processor folders')
-  parser.add_argument('--no-solutions', dest='solutions', action='store_false',
+  parser.add_argument('--no-solutions', dest='solutions', 
+                      action='store_false',
                       help='does not remove solution folders')
-  parser.add_argument('--no-logs', dest='logs', action='store_false',
+  parser.add_argument('--no-logs', dest='logs', 
+                      action='store_false',
                       help='does not remove log files')
   parser.add_argument('--no-post-processing', dest='post_processing', 
                       action='store_false',
@@ -39,7 +45,7 @@ def read_inputs():
 def main():
   """Cleans an OpenFOAM simulation case."""
   # parse the command-line
-  parameters = read_inputs()
+  parameters = parse_command_line()
 
   # store different paths into a dictionary if no flag
   parts = {}
