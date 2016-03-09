@@ -47,7 +47,9 @@ def plot_grid_convergence(simulations, exact,
                           mask=None,
                           field_names=None,
                           norms=None,
-                          directory=os.getcwd(), save_name=None, show=False):
+                          directory=os.getcwd()+'/images', 
+                          save_name=None, 
+                          show=False):
   """Plots the grid-convergence in a log-log figure.
 
   Parameters
@@ -200,6 +202,82 @@ def get_observed_order_convergence(coarse, medium, fine, ratio, grid, order=2):
   return p
 
 
+def plot_asymptotic_ranges(simulations, orders, mask, 
+                           directory=os.getcwd()+'/images'):
+  """Computes and plots the asymptotic range fields 
+  using the grid convergence index and given the observed orders of convergence.
+
+  References
+  ----------
+  [1] http://www.grc.nasa.gov/WWW/wind/valid/tutorial/spatconv.html
+
+  Parameters
+  ----------
+  simulations: 3-list of Simulation objects.
+    The three cases to use.
+  orders: dictionary of (string, float) items
+    Contains the observed order of convergence of each flow variable considered.
+  mask: Simulation  object
+    Case whose grids are used to restrict the other (finer) solutions.
+  directory: string, optional
+    Directory where to save the contours;
+    default: <current directory>/images.
+  """
+  field_names = orders.keys()
+  coarse, medium, fine = simulations
+  ratio = coarse.get_grid_spacing()/medium.get_grid_spacing()
+  for field_name in field_names:
+    attribute_name = field_name.replace('-', '_')
+    grid = [getattr(mask, attribute_name).x, getattr(mask, attribute_name).y]
+    field = get_asymptotic_range(getattr(coarse, attribute_name),
+                                 getattr(medium, attribute_name),
+                                 getattr(fine, attribute_name),
+                                 orders[field_name],
+                                 ratio,
+                                 grid)
+    field.plot_contour(field_range=(0.0, 2.0, 101),
+                       view=[coarse.grid[0][0], coarse.grid[1][0],
+                             coarse.grid[0][-1], coarse.grid[1][-1]],
+                       directory='{}/gci_{}_{}_{}'.format(directory,
+                                                          coarse.description,
+                                                          medium.description,
+                                                          fine.description))
+
+
+def get_asymptotic_range(coarse, medium, fine, order, ratio, grid):
+  """Computes the asymptotic range field using the grid convergence index.
+
+  The three solutions are in the asymptotic range if the field returned contains
+  values that are close to 1.0.
+
+  References
+  ----------
+  [1] http://www.grc.nasa.gov/WWW/wind/valid/tutorial/spatconv.html
+
+  Parameters
+  ----------
+  coarse, medium, fine: Field objects
+    Solutions on coarse, medium, and fine grids.
+  order: float
+    Observed order of convergence.
+  ratio: float
+    Grid refinement ratio between the two consecutive grids.
+  grid: 2-list of 1d arrays of floats
+    Nodal stations in each direction used to restrict the fields.
+
+  Returns
+  -------
+  asymptotic_range: Field object
+    The asymptotic range as a Field.
+  """
+  gci_23 = get_grid_convergence_index(coarse, medium, order, ratio, grid, Fs=1.25)
+  gci_12 = get_grid_convergence_index(medium, fine, order, ratio, grid, Fs=1.25)
+  return Field(x=grid[0], y=grid[1],
+               values=gci_23/(gci_12*ratio**p),
+               time_step=coarse.time_step,
+               label='asymptotic-range-'+coarse.label)
+
+
 def get_grid_convergence_index(coarse, fine, order, ratio, grid, Fs=1.25):
   """Computes the Grid Convergence Index using the solution obtained on two grids,
   coarse and fine, with a constant grid refinement ratio.
@@ -243,37 +321,3 @@ def get_grid_convergence_index(coarse, fine, order, ratio, grid, Fs=1.25):
                values=Fs*relative_differences/(ratio**order-1.0)*100.0,
                time_step=coarse.time_step,
                label='GCI-'+coarse.label)
-
-
-def get_asymptotic_range(coarse, medium, fine, order, ratio, grid):
-  """Computes the asymptotic range field using the grid convergence index.
-
-  The three solutions are in the asymptotic range if the field returned contains
-  values that are close to 1.0.
-
-  References
-  ----------
-  [1] http://www.grc.nasa.gov/WWW/wind/valid/tutorial/spatconv.html
-
-  Parameters
-  ----------
-  coarse, medium, fine: Field objects
-    Solutions on coarse, medium, and fine grids.
-  order: float
-    Observed order of convergence.
-  ratio: float
-    Grid refinement ratio between the two consecutive grids.
-  grid: 2-list of 1d arrays of floats
-    Nodal stations in each direction used to restrict the fields.
-
-  Returns
-  -------
-  asymptotic_range: Field object
-    The asymptotic range as a Field.
-  """
-  gci_23 = get_grid_convergence_index(coarse, medium, order, ratio, grid, Fs=1.25)
-  gci_12 = get_grid_convergence_index(medium, fine, order, ratio, grid, Fs=1.25)
-  return Field(x=grid[0], y=grid[1],
-               values=gci_23/(gci_12*ratio**p),
-               time_step=coarse.time_step,
-               label='asymptotic-range-'+coarse.label)

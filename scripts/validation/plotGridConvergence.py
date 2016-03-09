@@ -91,74 +91,16 @@ def parse_command_line():
   return parser.parse_args()
 
 
-def get_observed_orders_convergence(simulations, field_names, mask,
-                                    directory=os.getcwd(),
-                                    save_name=None):
-  """Computes the observed orders of convergence 
-  for the velocity components and pressure using the solution 
-  on three consecutive grids.
-
-  Parameters
-  ----------
-  simulations: list of Simulation objects
-    Contains the simulations.
-  field_names: list of strings
-    List of field names whose observed order of convergence will be computed.
-  mask: Simulation object
-    Simulation whose grids are used as a mask.
-  directory: string, optional
-    Shared path of case directories; default: current directory.
-  save_name: string, optional
-    Name of the .dat file to write into; default: None (does not write).
-
-  Returns
-  -------
-  alpha: dictionary of floats
-    Contains the observed order of convergence for each variable.
-  """
-  print('[info] computing observed orders of '
-        'convergence using the grids {} ...'.format([case.description for case in simulations]))
-  coarse, medium, fine = simulations
-  ratio = coarse.get_grid_spacing()/medium.get_grid_spacing()
-  alpha = {} # will contain observed order of convergence
-  for field_name in field_names:
-    # get grid (coarsest one) where solutions will be restricted
-    attribute_name = field_name.replace('-', '_')
-    grid = [getattr(mask, attribute_name).x, getattr(mask, attribute_name).y]
-    alpha[field_name], asymptotic = observed_order_convergence(field_name, 
-                                                               coarse, medium, fine, 
-                                                               ratio, grid)
-    asymptotic.plot_contour(field_range=(0.0, 2.0, 101), 
-                            view=[coarse.grid[0][0], coarse.grid[1][0],
-                                  coarse.grid[0][-1], coarse.grid[1][-1]],
-                            directory='{}/images/gci/{}_{}_{}'.format(directory,
-                                                                      coarse.description,
-                                                                      medium.description,
-                                                                      fine.description))
-  if save_name:
-    print('[info] writing orders into .dat file ...')
-    time_step = getattr(mask, attribute_name).time_step
-    file_path = '{}/{}_{}_{}_{}_{:0>7}.dat'.format(directory, 
-                                                   save_name, 
-                                                   coarse.description,
-                                                   medium.description,
-                                                   fine.description, 
-                                                   time_step)
-    with open(file_path, 'w') as outfile:
-      for field_name in field_names:
-        outfile.write('{}: {}\n'.format(field_name, alpha[field_name]))
-  return alpha
-
-
-
 def main():
-  """Computes the observed orders of convergence 
-  of the velocity components and the pressure using three solutions 
-  with consecutive grid-refinement.
-  Plots the grid convergence.
+  """Grid convergence study.
+  Computes the observed order of convergence using the solution on three 
+  consecutive grids with constant grid refinement.
+  Computes the Grid Convergence Index and plots the asymptotic ranges.
+  Plots the log-log error versus grid-spacing.
   """
   args = parse_command_line()
 
+  # read numerical solutions
   simulations = collections.OrderedDict()
   for size in args.gridline_sizes:
     simulations[size] = Simulation(directory='{}/{}'.format(args.directory, size),
@@ -174,28 +116,22 @@ def main():
                                             simulations[args.mask],
                                             directory=args.directory+'/data',
                                             save_name=args.save_name)
-    for field_name in alpha.iterkeys():
-      asymptotic_range = get_asym  
-    asymptotic.plot_contour(field_range=(0.0, 2.0, 101), 
-                            view=[coarse.grid[0][0], coarse.grid[1][0],
-                                  coarse.grid[0][-1], coarse.grid[1][-1]],
-                            directory='{}/images/gci/{}_{}_{}'.format(directory,
-                                                                      coarse.description,
-                                                                      medium.description,
-                                                                      fine.description))
-
+    plot_asymptotic_ranges([simulations[size] for size in sizes],
+                           alpha,
+                           simulations[args.mask],
+                           directory=args.directory+'/images')
 
   exact = get_exact_solution(simulations, *args.analytical_solution)
   if args.plot_analytical_solution:
     exact.plot_fields(args.time_step, 
                       view=args.bottom_left+args.top_right, 
-                      directory=args.directory)
+                      directory=args.directory+'/images')
   
   plot_grid_convergence(simulations, exact, 
                         mask=simulations[args.mask], 
                         field_names=args.field_names,
                         norms=args.norms,
-                        directory=args.directory,
+                        directory=args.directory+'/images',
                         save_name=args.save_name,
                         show=args.show)
 
