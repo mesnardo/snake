@@ -22,59 +22,74 @@ def parse_command_line():
                         formatter_class= argparse.ArgumentDefaultsHelpFormatter)
   # fill parser with arguments
   parser.add_argument('--software', dest='software',
-                      type=str, choices=['cuibm', 'petibm'],
+                      type=str, 
+                      choices=['cuibm', 'petibm'],
                       help='software used for the simulation')
   parser.add_argument('--directory', dest='directory', 
-                      type=str, default=os.getcwd(), 
+                      type=str, 
+                      default=os.getcwd(), 
                       help='directory of the simulation')
   # arguments about view
   parser.add_argument('--bottom-left', '-bl', dest='bottom_left', 
-                      type=float, nargs='+', default=[float('-inf'), float('-inf')],
+                      type=float, nargs=2, 
+                      default=[float('-inf'), float('-inf')],
+                      metavar=('x', 'y'),
                       help='coordinates of the bottom-left corner of the view')
   parser.add_argument('--top-right', '-tr', dest='top_right', 
-                      type=float, nargs='+', default=[float('inf'), float('inf')],
+                      type=float, nargs=2, 
+                      default=[float('inf'), float('inf')],
+                      metavar=('x', 'y'),
                       help='coordinates of the top-right corner of the view')
   # arguments about data to plot
   parser.add_argument('--field', dest='field_name',
-                      type=str, choices=['vorticity', 'x-velocity', 'y-velocity', 'pressure'],
+                      type=str, 
+                      choices=['vorticity', 'x-velocity', 'y-velocity', 'pressure'],
                       help='name of the field to plot')
   parser.add_argument('--no-filled-contour', dest='filled_contour',
                       action='store_false',
                       help='use flag to create a filled contour, '
                            'otherwise a simple contour is used')
   parser.add_argument('--range', dest='range',
-                      type=float, nargs='+', default=None,
-                      help='field range to plot (min, max, number of levels)')
+                      type=float, nargs=3, 
+                      default=None,
+                      metavar=('min', 'max', 'n-levels'),
+                      help='field range to plot')
   parser.add_argument('--periodic', dest='periodic_directions',
                       type=str, nargs='+', 
                       default=[],
-                      help='For PetIBM solutions: list of directions with '
+                      help='for PetIBM solutions: list of directions with '
                            'periodic boundary conditions')
   # arguments about the immersed-boundary
   parser.add_argument('--bodies', dest='body_paths', 
-                      nargs='+', type=str, default=[],
+                      type=str, nargs='+', 
+                      default=[],
                       help='path of each body file to add to plots')
   # arguments about time-steps
   parser.add_argument('--time-steps', '-t', dest='time_steps_range', 
-                      type=int, nargs='+', default=[],
-                      help='time-steps to plot (initial, final, increment)')
+                      type=int, nargs=3, 
+                      default=None,
+                      metavar=('initial', 'final', 'increment'),
+                      help='time-steps to plot')
   
   parser.add_argument('--subtract-simulation', dest='subtract_simulation',
-                      nargs='+', default=[],
-                      help='adds another simulation to subtract the field '
-                           '(software, directory, binary) '
-                           'to subtract fields.')
+                      type=str, nargs=2, 
+                      default=None,
+                      metavar=('software', 'directory'),
+                      help='adds another simulation to subtract the field')
 
   # arguments about figure
   parser.add_argument('--save-name', dest='save_name',
-                      type=str, default=None,
+                      type=str, 
+                      default=None,
                       help='prefix used to create the save directory '
                            'and used as a generic file name')
   parser.add_argument('--width', dest='width', 
-                      type=float, default=8.0,
+                      type=float, 
+                      default=8.0,
                       help='width of the figure (in inches)')
   parser.add_argument('--dpi', dest='dpi', 
-                      type=int, default=100,
+                      type=int, 
+                      default=100,
                       help='dots per inch (resolution of the figure)')
   # parse given options file
   parser.add_argument('--options', 

@@ -16,7 +16,7 @@ from library.simulation import Simulation
 
 def parse_command_line():
   """Parses the command-line."""
-  print('[info] parsing command-line ...'),
+  print('[info] parsing the command-line ...'),
   # create parser
   parser = argparse.ArgumentParser(description='Writes field into .vtk file',
                         formatter_class= argparse.ArgumentDefaultsHelpFormatter)
@@ -26,7 +26,8 @@ def parse_command_line():
                       default=os.getcwd(), 
                       help='directory of the simulation')
   parser.add_argument('--software', dest='software',
-                      type=str, choices=['cuibm', 'petibm'],
+                      type=str, 
+                      choices=['cuibm', 'petibm'],
                       help='Software used to generate numerical solution')
   parser.add_argument('--fields', dest='field_names', 
                       type=str, nargs='+', 
@@ -35,21 +36,25 @@ def parse_command_line():
   parser.add_argument('--bottom-left', '-bl', dest='bottom_left', 
                       type=float, nargs='+', 
                       default=[float('-inf'), float('-inf'), float('-inf')],
+                      metavar=('x', 'y', 'z'),
                       help='coordinates of the bottom-left corner')
   parser.add_argument('--top-right', '-tr', dest='top_right', 
                       type=float, nargs='+', 
                       default=[float('inf'), float('inf'), float('inf')],
+                      metavar=('x', 'y', 'z'),
                       help='coordinates of the top-right corner')
   parser.add_argument('--time-steps', '-ts', dest='time_steps', 
-                      type=int, nargs='+', 
-                      default=[],
-                      help='time-steps to convert (start, end, increment)')
+                      type=int, nargs=3, 
+                      default=None,
+                      metavar=('start', 'end', 'increment'),
+                      help='time-steps to convert')
   parser.add_argument('--stride', '-s', dest='stride', 
                       type=int, 
                       default=1,
                       help='stride at which vector are written')
   parser.add_argument('--periodic', dest='periodic_directions', 
-                      type=str, nargs='+', default=[], 
+                      type=str, nargs='+', 
+                      default=[], 
                       help='direction(s) (x and/or y and/or z) '
                            'with periodic boundary conditions')
   # parse given options file

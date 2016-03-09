@@ -25,25 +25,31 @@ def parse_command_line():
                         formatter_class= argparse.ArgumentDefaultsHelpFormatter)
   # fill parser with arguments
   parser.add_argument('--directory', dest='directory', 
-                      type=str, default=os.getcwd(),
+                      type=str, 
+                      default=os.getcwd(),
                       help='directory of the simulation')
   parser.add_argument('--software', dest='software',
-                      type=str, choices=['cuibm', 'petibm'],
+                      type=str, 
+                      choices=['cuibm', 'petibm'],
                       help='software used to generate solution')
   parser.add_argument('--description', dest='description',
-                      type=str, default=None,
+                      type=str, 
+                      default=None,
                       help='quick description of the simulation')
   parser.add_argument('--validation-data', dest='validation_data_path',
                       type=str,
                       help='path of the validation data file')
   parser.add_argument('--limits', dest='plot_limits', 
-                      type=float, nargs='+', default=[None, None, None, None],
+                      type=float, nargs=4, 
+                      default=[None, None, None, None],
+                      metavar=('x-start', 'x-end', 'y-start', 'y-end'),
                       help='limits of the plot')
   parser.add_argument('--no-show', dest='show',
                       action='store_false',
                       help='does not display the figures')
   parser.add_argument('--save-name', dest='save_name',
-                      type=str, default=None,
+                      type=str, 
+                      default=None,
                       help='shared saving file name')
   parser.set_defaults(show=True)
   # parse given options file
@@ -87,14 +93,18 @@ def plot_drag_coefficients(simulation, validation_data,
     Object containing the instantaneous forces.
   validation_data: instance of class KoumoutsakosLeonard1995
     Object containing the results from Koumoutsakos and Leonard (1995).
-  directory: string
-    Directory of the simulation; default: $PWD.
-  save_name: string
-    File name to save; default: None (not saving the figure).
-  limits: list of floats
-    x- and y-limits of the plot; default: None.
-  show: bool
-    Set to 'True' to display the figure; default: False.
+  directory: string, optional
+    Directory of the simulation; 
+    default: <current directory>.
+  save_name: string, optional
+    File name to save; 
+    default: None (not saving the figure).
+  limits: list of floats, optional
+    x- and y-limits of the plot; 
+    default: None.
+  show: boolean, optional
+    Set to 'True' to display the figure; 
+    default: False.
   """
   print('[info] plotting the drag coefficients ...'),
   images_directory = '{}/images'.format(directory)

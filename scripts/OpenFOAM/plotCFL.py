@@ -23,28 +23,35 @@ def parse_command_line():
                                    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
   # fill the parser with arguments
   parser.add_argument('--directory', dest='directory', 
-                      type=str, default=os.getcwd(),
+                      type=str, 
+                      default=os.getcwd(),
                       help='directory of the simulation')
   parser.add_argument('--path', dest='file_path', 
                       type=str,
                       help='path of the IcoFOAM logging file')
   parser.add_argument('--average', dest='average_limits', 
-                      type=float, nargs='+', default=[0.0, float('inf')],
+                      type=float, nargs=2, 
+                      default=[0.0, float('inf')],
+                      metavar=('start', 'end'),
                       help='time limits to compute averaged cfl')
   parser.add_argument('--no-show', dest='show', 
                       action='store_false',
                       help='does not display the figure')
   parser.add_argument('--save-name', dest='save_name', 
-                      type=str, default=None,
+                      type=str, 
+                      default=None,
                       help='name of the figure of save')
   parser.add_argument('--limits', dest='plot_limits', 
-                      type=float, nargs='+', default=[None, None, None, None],
+                      type=float, nargs=4, 
+                      default=[None, None, None, None],
+                      metavar=('x-start', 'x-end', 'y-start', 'y-end'),
                       help='limits of the plot')
   parser.add_argument('--extrema', dest='display_extrema', 
                       action='store_true',
                       help='displays the forces extrema')
   parser.add_argument('--order', dest='order', 
-                      type=int, default=5,
+                      type=int, 
+                      default=5,
                       help='number of side-points used for comparison to get extrema')
   # default options
   parser.set_defaults(show=True)
@@ -66,9 +73,9 @@ def read_maximum_cfl(file_path):
 
   Returns
   -------
-  time: numpy array of float
+  time: 1d array of floats
     Discrete time values.
-  cfl: numpy array of float
+  cfl: 1d array of floats
     Discrete maximum CFL values
   """
   print('[info] reading file {} ...'.format(file_path)),
@@ -88,14 +95,16 @@ def get_mean(time, array, limits=[0.0, float('inf')], output=False):
 
   Parameters
   ----------
-  time: numpy array of floats
+  time: 1d array of floats
     Discrete time values.
-  array: numpy array of floats
+  array: 1d array of floats
     Array to use to compute the mean value.
-  limits: list of floats
-    Time-limits to compute the mean value; default: [0.0, float('inf')].
-  output: bool
-    Set 'True' to display the time-averaged value; default: False.
+  limits: list of floats, optional
+    Time-limits to compute the mean value; 
+    default: [0.0, float('inf')].
+  output: boolean, optional
+    Set 'True' to display the time-averaged value; 
+    default: False.
 
   Returns
   -------
@@ -122,16 +131,17 @@ def get_extrema(array, order=5):
 
   Parameters
   ----------
-  array: numpy array
+  array: 1d array of floats
     Array on which to define the extrema.
-  order: integer
-    Number of neighboring points used to define an extremum; default: 5.
+  order: integer, optional
+    Number of neighboring points used to define an extremum; 
+    default: 5.
 
   Returns
   -------
-  minima: Numpy array of integers
+  minima: 1d array of integers
     Index of minima.
-  maxima: Numpy array of integers
+  maxima: 1d array of integers
     Index of maxima.
   """
   print('[info] computing extrema ...'),
@@ -153,22 +163,28 @@ def plot_cfl(time, cfl,
 
   Parameters
   ----------
-  time: numpy array of floats
+  time: 1d array of floats
     Discrete time values.
-  cfl: numpy array of floats
+  cfl: 1d array of floats
     Maximum CFL values.
-  display_extrema: bool
-    Set 'True' to emphasize the extrema of the curves; default: False.
-  order: int
-    Number of neighbors used on each side to define an extremum; default: 5.
-  limits: list of floats
-    Limits of the axes [xmin, xmax, ymin, ymax]; default: [0.0, +inf, 0.0, +inf].
-  directory: string
-    Directory of the simulation; default: $PWD.
-  save_name: string
-    Name of the .PNG file to save; default: None (does not save).
-  show: bool
-    Set 'True' to display the figure; default: False.
+  display_extrema: boolean, optional
+    Set 'True' to emphasize the extrema of the curves; 
+    default: False.
+  order: integer, optional
+    Number of neighbors used on each side to define an extremum; 
+    default: 5.
+  limits: list of floats, optional
+    Limits of the axes [xmin, xmax, ymin, ymax]; 
+    default: [0.0, +inf, 0.0, +inf].
+  directory: string, optional
+    Directory of the simulation; 
+    default: <current directory>.
+  save_name: string, optional
+    Name of the .PNG file to save; 
+    default: None (does not save).
+  show: boolean, optional
+    Set 'True' to display the figure; 
+    default: False.
   """
   print('[info] plotting cfl ...')
   pyplot.style.use('{}/styles/mesnardo.mplstyle'.format(os.environ['SCRIPTS']))

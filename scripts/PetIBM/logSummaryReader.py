@@ -15,7 +15,20 @@ pyplot.style.use('{}/styles/mesnardo.mplstyle'.format(os.environ['SCRIPTS']))
 
 
 class Series(object):
-  def __init__(self, directory, nprocs, description='no description'):
+  def __init__(self, directory, nprocs, 
+               description='no description'):
+    """Registers the series.
+
+    Parameters
+    ----------
+    directory: string
+      Directory of the series.
+    nprocs: list of integers
+      Number of processes used for each simulation in the series.
+    description: string, optional
+      Description of the series;
+      default: 'no description'.
+    """
     self.directory = directory
     self.nprocs = numpy.array(nprocs)
     self.description = description
@@ -36,12 +49,29 @@ class Series(object):
               for d in os.listdir(self.directory) if os.path.isdir(d)]
 
   def get_wall_times(self, event=None):
+    """Gets the wall-time of a given event for each simulation.
+
+    Parameters
+    ----------
+    event: string, optional
+      Name of the event;
+      default: None.
+    """
     if event:
       return numpy.array([run.log_summary.events[event].time for run in self.runs])
     else:
       return numpy.array([run.log_summary.wall_time for run in self.runs])
 
   def print_average_solvers_iterations(self, start=0, end=-1):
+    """Prints the average number of iterations of each solver 
+    between two time-steps.
+
+    Parameters
+    ----------
+    start, end: integers, optional
+      Starting and ending time-steps;
+      default: 0, -1 (last).
+    """
     print('Average number of iterations for each solver:')
     for i, run in enumerate(self.runs):
       n_ite_1 , n_ite_2 = run.get_average_solvers_iterations(start=start, end=end)
@@ -54,16 +84,21 @@ class Series(object):
     
     Parameters
     ----------
-    others_series: list(Series)
-      List of other series to plot.
-    event: str
-      Name of event to plot; default: None (wall-time of the simulation).
-    title: str
-      Title of the plot; default: None (no title).
-    save: str
-      Name of the .png file to be saved; default: None (does not save).
-    show: bool
-      Displays the figure is set to `True`; default: False.
+    others_series: list of Series objects, optional
+      List of other series to plot;
+      default: [].
+    event: string, optional
+      Name of event to plot; 
+      default: None (wall-time of the simulation).
+    title: string, optional
+      Title of the plot; 
+      default: None (no title).
+    save: string, optional
+      Name of the .png file to be saved; 
+      default: None (does not save).
+    show: boolean, optional
+      Displays the figure is set to `True`; 
+      default: False.
     """
     # set up figure
     fig, ax = pyplot.subplots(figsize=(8, 6))
@@ -97,19 +132,24 @@ class Series(object):
                                         'projectionStep', 'RHSPoisson', 
                                         'RHSVelocity'],
                      title=None, save=None, show=False):
-    """Plots the percentage of wall-time spent for each event in each run of a series.
+    """Plots the percentage of wall-time spent 
+    for each event in each run of a series.
 
     Parameters
     ----------
-    events_name: list
+    events_name: list of strings, optional
       List of name of events to display in the breakdown chart;
-      default: ['solvePoisson', 'solveVelocity', 'projectionStep', 'RHSPoisson', 'RHSVelocity'].
-    title: str
-      Title of the plot; default: None (no title).
-    save: str
-      Path of the .png to save; default: None (i.e. not saving).
-    show: bool
-      Displays the figure if set to 'True'; default: False.
+      default: ['solvePoisson', 'solveVelocity', 
+                'projectionStep', 'RHSPoisson', 'RHSVelocity'].
+    title: string, optional
+      Title of the plot; 
+      default: None (no title).
+    save: string, optional
+      Path of the .png to save; 
+      default: None (i.e. not saving).
+    show: boolean, optional
+      Displays the figure if set to 'True'; 
+      default: False.
     """
     fig, ax = pyplot.subplots(figsize=(8, 6))
     ax.yaxis.grid(zorder=0)
@@ -139,13 +179,44 @@ class Series(object):
 
 
 class GroupSeries(Series):
-  def __init__(self, directories, nprocs, descriptions=None, description='no description'):
+  def __init__(self, directories, nprocs, 
+              descriptions=None, description='no description'):
+    """Registers of group of Series.
+
+    Parameters
+    ----------
+    directories: list of strings
+      Directory of each series to consider.
+    nprocs: list of integers
+      Number of processes used for each simulation of a series.
+    descriptions: list of strings, optional
+      Description of each series;
+      default: None.
+    description: string, optional
+      Description of the group of series;
+      default: 'no description'.
+    """
     self.nprocs = numpy.array(nprocs)
     self.series_list = self.get_series(directories, descriptions)
     self.description = description
     # self.average_wall_times = self.get_wall_times()
 
-  def get_series(self, directories, descriptions):
+  def get_series(self, directories, descriptions=None):
+    """Creates each series.
+
+    Parameters
+    ----------
+    directories: list of strings
+      Directory of each series to create.
+    descriptions: list of strings, optional
+      Description of each series to create;
+      default: None.
+
+    Returns
+    -------
+    series_list: list of Series objects
+      The group of series to consider.
+    """
     series_list = []
     for i, directory in enumerate(directories):
       series_list.append(Series(directory, self.nprocs,
@@ -154,6 +225,20 @@ class GroupSeries(Series):
     return series_list
 
   def get_wall_times(self, event=None):
+    """Gets the wall-time of an event for each simulation in a series
+    averaged among a group of series.
+
+    Parameters
+    ----------
+    event: string, optional
+      Name of the event to consider;
+      default: None.
+
+    Returns
+    -------
+    wall_times: 1d array of floats
+      The averaged wall-time for each simulation.
+    """
     wall_times = numpy.zeros(len(self.nprocs))
     for series in self.series_list:
       wall_times += series.get_wall_times(event=event)
@@ -162,21 +247,48 @@ class GroupSeries(Series):
 
 class Run(object):
   def __init__(self, directory, description=None):
+    """Registers a simulation (a run).
+
+    Parameters
+    ----------
+    directory: string
+      Directory of the run.
+    description: string, optional
+      Description of the run;
+      default: None.
+    """
     self.directory = directory
     self.description = description
     self.log_summary = LogSummary(self.get_log_summary_path())
 
   def get_log_summary_path(self):
+    """Returns the path of the the file with a PETSc summary of the run."""
     return ['{}/{}'.format(self.directory, name) 
             for name in os.listdir(self.directory) if '.out' in name][0]
 
   def get_wall_time(self):
+    """Returns the wall-time of the run."""
     return self.log_summary.get_wall_time()
 
   def get_nprocs(self):
+    """Returns the number of processes used for the run."""
     return self.log_summary.get_nprocs()
 
   def get_average_solvers_iterations(self, start=0, end=-1):
+    """Gets the number of iterations performed for each solver 
+    between two time-steps.
+
+    Parameters
+    ----------
+    start, end: integers, optional
+      Starting and ending time-steps to consider;
+      default: 0, -1 (last).
+
+    Returns
+    -------
+    data: 2-list of floats
+      Averaged number of iterations for each solver.
+    """
     with open('{}/iterationCounts.txt'.format(self.directory), 'r') as infile:
       data = numpy.loadtxt(infile, dtype=int)
     return data[start:end, 1].mean(), data[start:end, 2].mean()
@@ -191,7 +303,7 @@ class LogSummary(object):
     
     Parameters
     ----------
-    file_path: str
+    file_path: string
       Path of the the logging file.
     """
     self.file_path = file_path
@@ -252,7 +364,7 @@ class Phase(object):
     
     Parameters
     ----------
-    info: list(str)
+    info: list of strings
         Data related to the phase.
     """
     self.count = int(info[0])
@@ -269,7 +381,7 @@ class Event(object):
     
     Parameters
     ----------
-    info: list(str)
+    info: list of strings
         Data about the general info of the event.
     """
     self.index = int(info[0])
@@ -284,7 +396,7 @@ class Event(object):
     
     Parameters
     ----------
-    info: list(str)
+    info: list of strings
         Data about all phases that occur during the event.
     """
     self.phases = collections.OrderedDict()
@@ -308,20 +420,24 @@ def plot_phases_event(logs,
   
   Parameters
   ----------
-  logs: list(LogSummary)
+  logs: list of LogSummary objects
       List of parsed logging file.
-  event_name: str
+  event_name: string
       Name of the event to plot.
-  variable_name: str
+  variable_name: string
       Name of the variable of the phase to consider.
-  phase_names: list(str)
-      List of phase names to consider; default [] (all phases).
-  xlabel: str
-      x-label; default: 'process count'.
-  ylabel: str
-      y-label; default: 'time (s)'.
-  save: str
-      name of the .png file to be save; default: None (does not save).
+  phase_names: list of strings, optional
+      List of phase names to consider; 
+      default [] (all phases).
+  xlabel: string, optional
+      x-label; 
+      default: 'process count'.
+  ylabel: string, optional
+      y-label; 
+      default: 'time (s)'.
+  save: string, optional
+      name of the .png file to be save; 
+      default: None (does not save).
   """
   fig, ax = pyplot.subplots(figsize=(8, 6))
   ax.yaxis.grid(zorder=0)
@@ -363,21 +479,25 @@ def plot_phases_event_average(series_list,
   
   Parameters
   ----------
-  series_list: list(Series)
+  series_list: list of Series objects
       List of of series, 
       each element of a series being a parsed log file.
-  event_name: str
+  event_name: string
       Name of the event to plot.
-  variable_name: str
+  variable_name: string
       Name of the variable of the phase to consider.
-  phase_names: list(str)
-      List of phase names to consider; default [] (all phases).
-  xlabel: str
-      x-label; default: 'process count'.
-  ylabel: str
-      y-label; default: 'time (s)'.
-  save: str
-      name of the .png file to be save; default: None (does not save).
+  phase_names: list of strings, optional
+      List of phase names to consider; 
+      default [] (all phases).
+  xlabel: string, optional
+      x-label; 
+      default: 'process count'.
+  ylabel: string, optional
+      y-label; 
+      default: 'time (s)'.
+  save: string, optional
+      name of the .png file to be save; 
+      default: None (does not save).
   """
   # grab info common to all series
   series_model = series_list[0]
@@ -415,5 +535,3 @@ def plot_phases_event_average(series_list,
                 bbox_to_anchor=(1.0, 1.0), frameon=False)
   if save:
     pyplot.savefig('./images/{}.png'.format(save))
-
-

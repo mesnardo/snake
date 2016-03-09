@@ -21,10 +21,12 @@ def parse_command_line():
   # fill parser with arguments
   simulation_info = parser.add_argument_group('simulation info')
   simulation_info.add_argument('--directory', dest='directory', 
-                      type=str, default=os.getcwd(), 
+                      type=str, 
+                      default=os.getcwd(), 
                       help='directory of the simulation')
   simulation_info.add_argument('--description', dest='description',
-                      type=str, default=None,
+                      type=str, 
+                      default=None,
                       help='quick description of the simulation')
   simulation_info.add_argument('--software', '--type', dest='software',
                       type=str, 
@@ -34,56 +36,67 @@ def parse_command_line():
                       action='store_true',
                       help='flag to plot the force coefficients, not the forces')
   simulation_info.add_argument('--coefficient', dest='coefficient',
-                      type=float, default=1.0,
+                      type=float, 
+                      default=1.0,
                       help='force to force coefficient converter')
 
   parser.add_argument('--add-simulation', dest='others',
-                      action='append', nargs='+', default=[],
-                      help='adds another simulation '
-                           '(software, directory, description, coefficient) '
-                           'for comparison.')
+                      action='append', nargs=4, 
+                      default=[],
+                      metavar=('software', 'directory', 'description', 'coefficient'),
+                      help='adds another simulation for comparison.')
 
   stats_info = parser.add_argument_group('statistics info')
   stats_info.add_argument('--average', dest='average_limits', 
-                      type=float, nargs='+', default=[0.0, float('inf')],
-                      help='temporal limits to consider to average forces')
+                          type=float, nargs=2, 
+                          default=[0.0, float('inf')],
+                          metavar=('start', 'end'),
+                          help='temporal limits to consider to average forces')
   stats_info.add_argument('--average-last', dest='last_period', 
-                      action='store_true',
-                      help='averages forces over the last period')
+                          action='store_true',
+                          help='averages forces over the last period')
   stats_info.add_argument('--strouhal', dest='strouhal',
-                      type=float, nargs='+', default=[0, float('inf')], 
-                      help='averages the Strouhal number over a given number of '
-                           'last oscillations based on the lift curve '
-                           'ending at a given time')
+                          type=float, nargs=2, 
+                          default=[0, float('inf')], 
+                          metavar=('n', 'end'),
+                          help='averages the Strouhal number '
+                               'over a given number of oscillations '
+                               'based on the lift curve '
+                               'ending at a given time')
   stats_info.add_argument('--order', dest='order', 
-                      type=int, default=5,
-                      help='number of side-points used for comparison to get extrema')
+                          type=int, 
+                          default=5,
+                          help='number of side-points used for comparison '
+                               'to get extrema')
 
   plot_info = parser.add_argument_group('plot info')
   plot_info.add_argument('--no-show', dest='show', 
-                      action='store_false',
-                      help='does not display the figure')
+                         action='store_false',
+                         help='does not display the figure')
   plot_info.add_argument('--no-save', dest='save',
                          action='store_false',
                          help='does not save the figure')
   plot_info.add_argument('--save-name', dest='save_name', 
-                      type=str, default=None,
-                      help='name of the figure of save')
+                         type=str, 
+                         default=None,
+                         help='name of the figure of save')
   plot_info.add_argument('--limits', dest='plot_limits', 
-                      type=float, nargs='+', default=[None, None, None, None],
-                      help='limits of the plot')
+                         type=float, nargs=4, 
+                         default=[None, None, None, None],
+                         metavar=('x-start', 'x-end', 'y-start', 'y-end'),
+                         help='limits of the plot')
   plot_info.add_argument('--no-drag', dest='display_drag', 
-                      action='store_false',
-                      help='does not display the force in the x-direction')
+                         action='store_false',
+                         help='does not display the force in the x-direction')
   plot_info.add_argument('--no-lift', dest='display_lift', 
-                      action='store_false',
-                      help='does not display the force in the y-direction')
+                         action='store_false',
+                         help='does not display the force in the y-direction')
   plot_info.add_argument('--extrema', dest='display_extrema', 
-                      action='store_true',
-                      help='displays the forces extrema')
+                         action='store_true',
+                         help='displays the forces extrema')
   plot_info.add_argument('--guides', dest='display_guides', 
-                      action='store_true',
-                      help='displays guides to check the convergence')
+                         action='store_true',
+                         help='displays guides to check the convergence')
   plot_info.add_argument('--fill-between', dest='fill_between',
                          action='store_true',
                          help='fills between lines defined by extrema')
