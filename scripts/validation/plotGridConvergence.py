@@ -14,6 +14,7 @@ pyplot.style.use('{}/styles/mesnardo.mplstyle'.format(os.environ['SCRIPTS']))
 
 sys.path.append(os.environ['SCRIPTS'])
 from library import miscellaneous
+from library import convergence
 from library.simulation import Simulation
 from library.field import Field
 
@@ -119,29 +120,28 @@ def main():
                                   periodic_directions=args.periodic_directions)
 
   for sizes in args.observed_order:
-    alpha = get_observed_orders_convergence([simulations[size] for size in sizes], 
+    alpha = convergence.get_observed_orders([simulations[size] for size in sizes], 
                                             args.field_names, 
                                             simulations[args.mask],
-                                            directory=args.directory+'/data',
-                                            save_name=args.save_name)
-    plot_asymptotic_ranges([simulations[size] for size in sizes],
-                           alpha,
-                           simulations[args.mask],
-                           directory=args.directory+'/images')
+                                            directory=args.directory+'/data')
+    convergence.plot_asymptotic_ranges([simulations[size] for size in sizes],
+                                       alpha,
+                                       simulations[args.mask],
+                                       directory=args.directory+'/images')
 
-  exact = get_exact_solution(simulations, *args.analytical_solution)
+  exact = convergence.get_exact_solution(simulations, *args.analytical_solution)
   if args.plot_analytical_solution:
     exact.plot_fields(args.time_step, 
                       view=args.bottom_left+args.top_right, 
                       directory=args.directory+'/images')
   
-  plot_grid_convergence(simulations, exact, 
-                        mask=simulations[args.mask], 
-                        field_names=args.field_names,
-                        norms=args.norms,
-                        directory=args.directory+'/images',
-                        save_name=args.save_name,
-                        show=args.show)
+  convergence.plot_grid_convergence(simulations.values(), exact, 
+                                    mask=simulations[args.mask], 
+                                    field_names=args.field_names,
+                                    norms=args.norms,
+                                    directory=args.directory+'/images',
+                                    save_name=args.save_name,
+                                    show=args.show)
 
 
 if __name__ == '__main__':

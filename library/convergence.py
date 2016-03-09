@@ -1,11 +1,12 @@
 # convergence.py
 # author: Olivier Mesnard (mesnardo@gwu.edu)
-# description: Functions related to convergence studies.
+# description: Functions related to a convergence study.
 
 
 import os
 
 import numpy
+from matplotlib import pyplot
 
 from field import Field
 
@@ -110,9 +111,9 @@ def plot_grid_convergence(simulations, exact,
     pyplot.show()
 
 
-def get_observed_orders_convergence(simulations, field_names, mask,
-                                    directory=os.getcwd(),
-                                    save_name=None):
+def get_observed_orders(simulations, field_names, mask,
+                        directory=os.getcwd(),
+                        save_name='observedOrders'):
   """Computes the observed orders of convergence using the solution on three grids
   with constant grid refinement ratio.
 
@@ -128,8 +129,8 @@ def get_observed_orders_convergence(simulations, field_names, mask,
     Shared path of case directories; 
     default: current directory.
   save_name: string, optional
-    Name of the .dat file to write into; 
-    default: None (does not write).
+    Prefix of the name of the .dat files to save; 
+    default: 'observedOrders'.
 
   Returns
   -------
@@ -145,11 +146,12 @@ def get_observed_orders_convergence(simulations, field_names, mask,
   for field_name in field_names:
     attribute_name = field_name.replace('-', '_')
     grid = [getattr(mask, attribute_name).x, getattr(mask, attribute_name).y]
-    alpha[field_name] = get_observed_order_convergence(getattr(coarse, attribute_name), 
-                                                       getattr(medium, attribute_name),
-                                                       getattr(fine, attribute_name),
-                                                       ratio,
-                                                       grid)
+    alpha[field_name] = get_observed_order(getattr(coarse, attribute_name), 
+                                           getattr(medium, attribute_name),
+                                           getattr(fine, attribute_name),
+                                           ratio,
+                                           grid)
+    print('\t{}: {}'.format(field_name, alpha[field_name]))
   if save_name:
     print('[info] writing orders into .dat file ...')
     time_step = getattr(mask, attribute_name).time_step
@@ -168,7 +170,7 @@ def get_observed_orders_convergence(simulations, field_names, mask,
   return alpha
 
 
-def get_observed_order_convergence(coarse, medium, fine, ratio, grid, order=2):
+def get_observed_order(coarse, medium, fine, ratio, grid, order=None):
   """Computes the observed order of convergence
   using the solution on three consecutive grids with constant refinement ratio.
 
@@ -182,7 +184,7 @@ def get_observed_order_convergence(coarse, medium, fine, ratio, grid, order=2):
     Nodal stations in each direction used to restrict a solution.
   order: non-zero integer, inf, -inf, 'fro', 'nuc', optional
     Order of the norm;
-    default: 2 (L2-norm).
+    default: None (L2-norm).
 
   Returns
   -------
@@ -273,7 +275,7 @@ def get_asymptotic_range(coarse, medium, fine, order, ratio, grid):
   gci_23 = get_grid_convergence_index(coarse, medium, order, ratio, grid, Fs=1.25)
   gci_12 = get_grid_convergence_index(medium, fine, order, ratio, grid, Fs=1.25)
   return Field(x=grid[0], y=grid[1],
-               values=gci_23/(gci_12*ratio**p),
+               values=gci_23.values/(gci_12.values*ratio**order),
                time_step=coarse.time_step,
                label='asymptotic-range-'+coarse.label)
 
@@ -311,12 +313,12 @@ def get_grid_convergence_index(coarse, fine, order, ratio, grid, Fs=1.25):
   coarse = coarse.restriction(grid)
   fine = fine.restriction(grid)
   # remove small field values to avoid large estimations in the relative difference
-  tolerance = 1.0E-10
-  mask = numpy.logical_or(numpy.absolute(coarse) < tolerance, 
-                          numpy.absolute(fine) < tolerance)
-  coarse[mask], fine[mask] = None, None
+  tolerance = 1.0E-06
+  mask = numpy.logical_or(numpy.absolute(coarse.values) < tolerance, 
+                          numpy.absolute(fine.values) < tolerance)
+  coarse.values[mask], fine.values[mask] = None, None
   # compute relative differences
-  relative_differences = numpy.absolute((coarse-fine)/fine)
+  relative_differences = numpy.absolute((coarse.values-fine.values)/fine.values)
   return Field(x=grid[0], y=grid[1],
                values=Fs*relative_differences/(ratio**order-1.0)*100.0,
                time_step=coarse.time_step,
