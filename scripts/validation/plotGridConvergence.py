@@ -91,58 +91,6 @@ def parse_command_line():
   return parser.parse_args()
 
 
-def observed_order_convergence(field_name, coarse, medium, fine, ratio, grid):
-  """Computes the observed order of convergence  (L2-norm)
-  using the solution on three consecutive grids with constant refinement ratio.
-
-  Parameters
-  ----------
-  field_name: string
-    Name of the field.
-  coarse, medium, fine: Field objects
-    Solutions on three consecutive grids restricted on the coarsest grid.
-  ratio: float
-    Grid-refinement ratio.
-  grid: list of numpy arrays of floats
-    Nodal stations in each direction used to restrict a solution.
-
-  Returns
-  -------
-  p: float
-    The observed order of convergence.
-  asymptotic: Field object
-    Two-dimensional field with point-by-point asymptotic range value.
-  """
-  # get the attribute name as a string
-  field_attribute_name = field_name.replace('-', '_')
-  # get restricted field from coarse solution
-  coarse_field = getattr(coarse, field_attribute_name).restriction(grid)
-  # get restricted field from medium solution
-  medium_field = getattr(medium, field_attribute_name).restriction(grid)
-  # get restricted field from fine solution
-  fine_field = getattr(fine, field_attribute_name).restriction(grid)
-  # observed order using the L2-norm
-  p = (numpy.log(numpy.linalg.norm(medium_field.values - coarse_field.values) 
-                 / numpy.linalg.norm(fine_field.values - medium_field.values))
-       / numpy.log(ratio))
-  print('\t{}: {}'.format(field_name, p))
-  def get_GCI(solution_coarse, solution_fine, order, ratio, Fs=1.25):
-    tol = 1.0E-10
-    mask = numpy.logical_or(numpy.absolute(solution_coarse) < tol, 
-                            numpy.absolute(solution_fine) < tol)
-    solution_coarse[mask] = None
-    solution_fine[mask] = None
-    relative_differences = numpy.absolute((solution_coarse-solution_fine)
-                                          /solution_fine)
-    return Fs*relative_differences/(ratio**order-1.0)*100.0
-  asymptotic = Field(x=grid[0], y=grid[1], 
-                     values=(get_GCI(coarse_field.values, medium_field.values, p, ratio)
-                            /(get_GCI(medium_field.values, fine_field.values, p, ratio)*ratio**p)),
-                     time_step=coarse_field.time_step,
-                     label=field_name+'-gci')
-  return p, asymptotic
-
-
 def get_observed_orders_convergence(simulations, field_names, mask,
                                     directory=os.getcwd(),
                                     save_name=None):
@@ -202,97 +150,6 @@ def get_observed_orders_convergence(simulations, field_names, mask,
   return alpha
 
 
-def plot_grid_convergence(simulations, exact,
-                          mask=None,
-                          field_names=[],
-                          norms=[],
-                          directory=os.getcwd(), save_name=None, show=False):
-  """Plots the grid-convergence in a log-log figure.
-
-  Parameters
-  ----------
-  simulations: list of Simulation objects
-    List of the cases.
-  field_names: list of strings
-    Names of the fields to include in the figure.
-  directory: string
-    Shared path of all cases; 
-    default: current directory.
-  save_name: string
-    Name of the .png file to save; 
-    default: None (does not save).
-  show: boolean
-    Set 'True' if you want to display the figure; 
-    default: False. 
-  """
-  print('[info] plotting the grid convergence ...')
-  fig, ax = pyplot.subplots(figsize=(6, 6))
-  ax.grid(True, zorder=0)
-  ax.set_xlabel('grid-spacing')
-  ax.set_ylabel('errors')
-  all_grid_spacings, all_errors = [], []
-  norm_labels = {'L2': '$L_2$', 'Linf': '$L_\infty$'}
-  for field_name in field_names:
-    for norm in norms:
-      grid_spacings = [case.get_grid_spacing() for case in simulations.itervalues()]
-      errors = [case.get_error(exact, field_name, 
-                               mask=mask, norm=norm) for case in simulations.itervalues()]  
-      ax.plot(grid_spacings, errors,
-              label='{} - {}-norm'.format(field_name, norm_labels[norm]), 
-              marker='o', zorder=10)
-      all_grid_spacings += grid_spacings
-      all_errors += errors
-  ax.legend()
-  ax.set_xlim(0.1*min(all_grid_spacings), 10.0*max(all_grid_spacings))
-  pyplot.xscale('log')
-  pyplot.yscale('log')
-  ax.axis('equal')
-  # save and display
-  if save_name:
-    print('[info] saving figure ...')
-    images_directory = '{}/images'.format(directory)
-    if not os.path.isdir(images_directory):
-      print('[info] creating images directory: {} ...'.format(images_directory))
-      os.makedirs(images_directory)
-    time_step = getattr(simulations[simulations.keys()[0]], 
-                        field_names[0].replace('-', '_')).time_step
-    pyplot.savefig('{}/{}{:0>7}.png'.format(images_directory, save_name, time_step))
-  if show:
-    print('[info] displaying figure ...')
-    pyplot.show()
-
-
-def get_exact_solution(simulations, *arguments):
-  """Get the exact solution on the finest grid available.
-  If no analytical solution is available, the solution on the finest grid is 
-  considered to be exact.
-
-  Parameters
-  ----------
-  simulations: list of Simulation objects
-    Solutions on grids with constant refinement ratio.
-  arguments:
-    Arguments for the analytical plug-in.
-
-  Returns
-  -------
-  exact: SolutionClass object
-    Contains the exact solution.
-  """
-  finest = simulations.keys()[-1]
-  if arguments:
-    from library.solutions.dispatcher import dispatcher
-    SolutionClass = dispatcher[arguments[0]]
-    # compute analytical solution on finest grid
-    exact = SolutionClass(simulations[finest].grid[0],
-                          simulations[finest].grid[1],
-                          *arguments[1:])
-  else:
-    # assume finest grid contains exact solution if no analytical solution
-    exact = simulations[finest]
-    del simulations[finest]
-  return exact
-
 
 def main():
   """Computes the observed orders of convergence 
@@ -312,10 +169,21 @@ def main():
                                   periodic_directions=args.periodic_directions)
 
   for sizes in args.observed_order:
-    get_observed_orders_convergence([simulations[size] for size in sizes], 
-                                    args.field_names, simulations[args.mask],
-                                    directory=args.directory,
-                                    save_name=args.save_name)
+    alpha = get_observed_orders_convergence([simulations[size] for size in sizes], 
+                                            args.field_names, 
+                                            simulations[args.mask],
+                                            directory=args.directory+'/data',
+                                            save_name=args.save_name)
+    for field_name in alpha.iterkeys():
+      asymptotic_range = get_asym  
+    asymptotic.plot_contour(field_range=(0.0, 2.0, 101), 
+                            view=[coarse.grid[0][0], coarse.grid[1][0],
+                                  coarse.grid[0][-1], coarse.grid[1][-1]],
+                            directory='{}/images/gci/{}_{}_{}'.format(directory,
+                                                                      coarse.description,
+                                                                      medium.description,
+                                                                      fine.description))
+
 
   exact = get_exact_solution(simulations, *args.analytical_solution)
   if args.plot_analytical_solution:
