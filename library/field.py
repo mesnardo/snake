@@ -151,6 +151,7 @@ class Field(object):
     # create filled contour
     if field_range:
       levels = numpy.linspace(*field_range)
+      print('[info] min={}, max={}'.format(self.values.min(), self.values.max()))
       colorbar_ticks = numpy.linspace(field_range[0], field_range[1], 5)
       colorbar_format = '%.01f'
     else:
