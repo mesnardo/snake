@@ -42,6 +42,7 @@ figure.figsize : 6, 6
 figure.facecolor : white
 figure.edgecolor : black
 figure.dpi : 100
+figure.autolayout : True
 
 legend.fancybox : True
 legend.frameon : True

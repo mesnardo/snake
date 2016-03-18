@@ -510,19 +510,19 @@ class BarbaGroupSimulation(object):
     pyplot.style.use('{}/styles/mesnardo.mplstyle'.format(os.environ['SCRIPTS']))
     software_description = {'cuibm': 'cuIBM', 'petibm': 'PetIBM'}
     kwargs_data = {'label': software_description[self.software],
-                   'color': '#336699', 'linestyle': '-', 'linewidth': 2,
+                   'color': '#336699', 'linestyle': '-', 'linewidth': 3,
                    'zorder': 10}
     kwargs_validation_data = {'label': 'Ghia et al. (1982)',
                               'color': '#993333', 'linewidth': 0,
                               'markeredgewidth': 2, 'markeredgecolor': '#993333',
                               'markerfacecolor': 'none',
-                              'marker': 'o', 'markersize': 4,
+                              'marker': 'o', 'markersize': 8,
                               'zorder': 10}
     print('[info] plotting the x-velocity along vertical centerline ...'),
     fig, ax = pyplot.subplots(figsize=(6, 6))
     ax.grid(True, zorder=0)
-    ax.set_xlabel('y-coordinate')
-    ax.set_ylabel('x-velocity along vertical centerline')
+    ax.set_xlabel('y-coordinate', fontsize=16)
+    ax.set_ylabel('x-velocity along vertical centerline', fontsize=16)
     nx, ny = self.grid[0].size-1, self.grid[1].size-1
     u_centerline = (self.x_velocity.values[:, nx/2] if nx%2 == 0 
                     else 0.5*(self.x_velocity.values[:, nx/2-1]
@@ -531,7 +531,7 @@ class BarbaGroupSimulation(object):
     ax.plot(validation_data['x-velocity'].y, validation_data['x-velocity'].values, 
             **kwargs_validation_data)
     ax.axis([0.0, 1.0, -0.75, 1.25])
-    ax.legend()
+    ax.legend(prop={'size': 16})
     pyplot.savefig('{}/xVelocityCenterline{:0>7}.png'.format(images_directory, 
                                                              self.x_velocity.time_step))
     data_path = '{}/xVelocityCenterline{:0>7}.dat'.format(images_directory,
@@ -547,8 +547,8 @@ class BarbaGroupSimulation(object):
     print('[info] plotting the y-velocity along horizontal centerline ...'),
     fig, ax = pyplot.subplots(figsize=(6, 6))
     ax.grid(True, zorder=0)
-    ax.set_xlabel('x-coordinate')
-    ax.set_ylabel('y-velocity along horizontal centerline')
+    ax.set_xlabel('x-coordinate', fontsize=16)
+    ax.set_ylabel('y-velocity along horizontal centerline', fontsize=16)
     v_centerline = (self.y_velocity.values[ny/2, :] if ny%2 == 0 
                     else 0.5*(self.y_velocity.values[ny/2-1, :]
                               +self.y_velocity.values[ny/2+1, :]))
@@ -556,7 +556,7 @@ class BarbaGroupSimulation(object):
     ax.plot(validation_data['y-velocity'].x, validation_data['y-velocity'].values, 
             **kwargs_validation_data)
     ax.axis([0.0, 1.0, -0.75, 1.25])
-    ax.legend()
+    ax.legend(prop={'size': 16})
     pyplot.savefig('{}/yVelocityCenterline{:0>7}.png'.format(images_directory, 
                                                              self.y_velocity.time_step))
     data_path = '{}/yVelocityCenterline{:0>7}.dat'.format(images_directory,
