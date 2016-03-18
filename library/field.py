@@ -72,7 +72,7 @@ class Field(object):
                  time_step=self.time_step,
                  label=self.label+'-restricted')
 
-  def get_difference(self, exact, mask=None, norm='L2'):
+  def get_difference(self, exact, mask, norm='L2'):
     """Returns the difference between two fields in a given norm.
 
     Parameters
