@@ -108,32 +108,30 @@ class DecayingVortices(object):
 
   def plot_fields(self, time_step, 
                   view=[float('-inf'), float('-inf'), float('inf'), float('inf')], 
-                  directory=os.getcwd()):
+                  directory=os.getcwd()+'/images',
+                  save_name='analytical'):
     """Plots the velocity and pressure fields.
 
     Parameters
     ----------
     time_step: integer
       Index used to as a suffix for the file names.
-    view: list of floats
+    view: 4-list of floats, optional
       Bottom-left and top-right coordinates of the view to plot;
       default: entire domain.
-    directory: string
+    directory: string, optional
       Directory where to save the images;
-      default: current directory.
+      default: <current directory>/images.
+    save_name: string, optional
+      Prefix of the folder name that will contain the .png files;
+      default: 'analytical'.
     """
     self.x_velocity.time_step = time_step
     self.y_velocity.time_step = time_step
     self.pressure.time_step = time_step
-    self.x_velocity.plot_contour(directory='{}/images'.format(directory),
-                                 view=view,
-                                 save_name='analytical')
-    self.y_velocity.plot_contour(directory='{}/images'.format(directory),
-                                 view=view,
-                                 save_name='analytical')
-    self.pressure.plot_contour(directory='{}/images'.format(directory),
-                               view=view,
-                               save_name='analytical')
+    self.x_velocity.plot_contour(directory=directory, view=view, save_name=save_name)
+    self.y_velocity.plot_contour(directory=directory, view=view, save_name=save_name)
+    self.pressure.plot_contour(directory=directory, view=view, save_name=save_name)
 
   def write_fields_petsc_format(self, x, y, time, Re, amplitude,
                                 periodic_directions=None, 

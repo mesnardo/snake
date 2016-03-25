@@ -26,7 +26,8 @@ def parse_command_line():
                         formatter_class= argparse.ArgumentDefaultsHelpFormatter)
   # fill parser with arguments
   parser.add_argument('--software', dest='software',
-                      type=str, choices=['petibm'],
+                      type=str, 
+                      choices=['petibm'],
                       help='software used to generate solution')
   parser.add_argument('--directory', dest='directory',
                       type=str,
@@ -50,17 +51,20 @@ def parse_command_line():
                       default=None,
                       help='path of files containing Taira (2008) data')
   parser.add_argument('--limits', dest='plot_limits', 
-                      type=float, nargs='+', default=[None, None, None, None],
+                      type=float, nargs=4, 
+                      default=[None, None, None, None],
+                      metavar=('x-start', 'x-end', 'y-start', 'y-end'),
                       help='limits of the plot')
   parser.add_argument('--no-show', dest='show',
                       action='store_false',
                       help='does not display the figures')
   parser.add_argument('--save-names', dest='save_names',
                       type=str, nargs='+',
-                      default=[],
+                      default=None,
                       help='name of .png files to save')
   parser.add_argument('--save-directory', dest='save_directory',
-                      type=str, default=os.getcwd(),
+                      type=str, 
+                      default=os.getcwd(),
                       help='directory where to save the .png files')
   parser.set_defaults(show=True)
   # parse given options file
@@ -121,19 +125,19 @@ def plot_coefficients_vs_angles(simulations, validation,
     Contains info about all simulations to consider.
   validation: TairaEtAl2007FlatPlate object
     Contains experimental results reported by Taira et al. (2007).
-  coefficient: float
+  coefficient: float, optional
     Scale value to convert a force into a force coefficient;
     default: 1.0.
-  save_directory: string
+  save_directory: string, optional
     Directory where to create the `images` folder;
     default: current directory.
-  save_names: list of strings
+  save_names: list of strings, optional
     Name of the files to save;
     default: [] (does not save figures)
-  limits: list of floats
+  limits: list of floats, optional
     Limits of the plot (x-limits followed by y-limits);
     default: [].
-  show: boolean
+  show: boolean, optional
     Set `True` to display the figures;
     default: False.
   """
@@ -150,12 +154,12 @@ def plot_coefficients_vs_angles(simulations, validation,
   color_cycle = ax._get_lines.prop_cycler
   markers = iter(['o', '^', 'v'])
   ax.grid(True)
-  ax.set_xlabel('angle of attack (deg)')
-  ax.set_ylabel('drag coefficient')
+  ax.set_xlabel('angle of attack (deg)', fontsize=18)
+  ax.set_ylabel('drag coefficient', fontsize=18)
   # experimental data
   ax.scatter(validation.cd[0], validation.cd[1], 
-             label='Experimental (Taira et al., 2007)',
-             marker='s', s=20, 
+             label='Taira et al. (2007)',
+             marker='s', s=40, 
              facecolors='none', edgecolors='#1B9E77', 
              zorder=3)
   # numerical data
@@ -163,12 +167,12 @@ def plot_coefficients_vs_angles(simulations, validation,
     ax.scatter([simulation.angle for simulation in series],
                [coefficient*simulation.force_x.values[-1] for simulation in series],
                label='{} - {}'.format(software_labels[series[0].software], description),
-               marker=next(markers), s=60,
+               marker=next(markers), s=80,
                facecolors='none', 
                edgecolors=next(color_cycle)['color'],
                linewidth=1.5,
                zorder=4)
-  ax.legend(loc='upper left')
+  ax.legend(loc='upper left', prop={'size': 18})
   ax.axis(limits)
   if save_names:
     pyplot.savefig('{}/{}'.format(images_directory, save_names[0]))
@@ -179,25 +183,25 @@ def plot_coefficients_vs_angles(simulations, validation,
   color_cycle = ax._get_lines.prop_cycler
   markers = iter(['o', '^', 'v'])
   ax.grid(True)
-  ax.set_xlabel('angle of attack (deg)')
-  ax.set_ylabel('lift coefficient')
+  ax.set_xlabel('angle of attack (deg)', fontsize=18)
+  ax.set_ylabel('lift coefficient', fontsize=18)
   # experimental data
   ax.scatter(validation.cl[0], validation.cl[1], 
-             label='Experimental (Taira et al., 2007)',
-             marker='s', s=20, 
+             label='Taira et al. (2007)',
+             marker='s', s=40, 
              facecolors='none', edgecolors='#1B9E77', 
              zorder=3)
   # numerical data
   for description, series in simulations.iteritems():
     ax.scatter([simulation.angle for simulation in series],
                [coefficient*simulation.force_y.values[-1] for simulation in series],
-               label='{} - {}'.format(series[0].software, description),
-               marker=next(markers), s=60,
+               label='{} - {}'.format(software_labels[series[0].software], description),
+               marker=next(markers), s=80,
                facecolors='none', 
                edgecolors=next(color_cycle)['color'],
                linewidth=1.5,
                zorder=4)
-  ax.legend(loc='upper left')
+  ax.legend(loc='upper left', prop={'size': 18})
   ax.axis(limits)
   if save_names:
     pyplot.savefig('{}/{}'.format(images_directory, save_names[1]))
@@ -217,8 +221,8 @@ def main():
   simulations = collections.OrderedDict()
   for description, series in zip(args.descriptions, args.series):
     series_directory = os.path.join(args.directory, series)
-    subfolders = [folder for folder in os.listdir(series_directory) 
-                         if os.path.isdir(os.path.join(series_directory, folder))]
+    subfolders = sorted([folder for folder in os.listdir(series_directory) 
+                         if os.path.isdir(os.path.join(series_directory, folder))])
     simulations[description] = []
     for i, subfolder in enumerate(subfolders):
       simulation_directory = os.path.join(series_directory, subfolder)

@@ -51,6 +51,8 @@ def main():
   args = parse_command_line()
 
   for directory in args.directories:
+    if not os.path.isdir(directory):
+      continue
     # get different paths to delete
     paths = {}
     if args.images:

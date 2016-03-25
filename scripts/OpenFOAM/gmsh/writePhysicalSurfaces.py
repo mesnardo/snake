@@ -1,5 +1,3 @@
-#!/usr/bin/python
-
 # file: writePhysicalSurfaces.py
 # author: Olivier Mesnard (mesnardo@gwu.edu)
 # brief: Writes physical surfaces into .geo file.
@@ -12,7 +10,7 @@ import numpy
 
 def parse_command_line():
   """Parses the command-line."""
-  print('-> parsing command-line... '),
+  print('[info] parsing the command-line ...'),
   # create parser
   parser = argparse.ArgumentParser(description='Write physical surfaces '
                                                'into .geo file',

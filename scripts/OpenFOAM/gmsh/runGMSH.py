@@ -1,5 +1,3 @@
-#!/usr/bin/python
-
 # file: runGMSH.py
 # author: Olivier Mesnard (mesnardo@gwu.edu)
 # brief: Runs GMSH to generate 2D extruded mesh.
@@ -11,13 +9,16 @@ import os
 
 def parse_command_line():
   """Parses the command-line."""
+  print('[info] parsing the command-line ...'),
   # create parser
   parser = argparse.ArgumentParser(description='Runs GMSH to generate '
                                                'a 2D extruded mesh',
                                    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
   # fill parser with arguments
-  parser.add_argument('--geo', dest='geo_path', type=str,
+  parser.add_argument('--geo', dest='geo_path', 
+                      type=str,
                       help='path of the .geo file')
+  print('done')
   return parser.parse_args()
 
 

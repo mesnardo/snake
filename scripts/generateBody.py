@@ -14,71 +14,107 @@ from library import miscellaneous
 
 def parse_command_line():
   """Parses the command-line."""
-  print('[info] parsing command-line ...'),
+  print('[info] parsing the command-line ...'),
   # create parser
   parser = argparse.ArgumentParser(description='Geometry discretization',
                         formatter_class= argparse.ArgumentDefaultsHelpFormatter)
   # fill parser with arguments
   # geometry arguments
-  parser.add_argument('--type', dest='body_type', type=str,
-                      help='type of body '
-                           '(file, circle, line, rectangle, sphere)')
-  parser.add_argument('--file', '-f', dest='file_path', type=str,
+  parser.add_argument('--type', dest='body_type', 
+                      type=str,
+                      choices=['file', 'circle', 'line', 'rectangle', 'sphere'],
+                      help='type of body')
+  parser.add_argument('--file', '-f', dest='file_path', 
+                      type=str,
                       help='path of the coordinates file')
-  parser.add_argument('--circle', dest='circle', type=float, nargs='+',
+  parser.add_argument('--circle', dest='circle', 
+                      type=float, nargs=3,
                       default=[0.5, 0.0, 0.0],
+                      metavar=('radius', 'x-center', 'y-center'),
                       help='radius and center-coordinates of the circle')
-  parser.add_argument('--line', '-l', dest='line', type=float, nargs='+',
+  parser.add_argument('--line', '-l', dest='line', 
+                      type=float, nargs=3,
                       default=[1.0, 0.0, 0.0],
+                      metavar=('length', 'x-start', 'y-start'),
                       help='length and starting-point of the line')
-  parser.add_argument('--rectangle', dest='rectangle', type=float, nargs='+',
+  parser.add_argument('--rectangle', dest='rectangle', 
+                      type=float, nargs=4,
                       default=[0.0, 0.0, 1.0, 1.0],
+                      metavar=('x-start', 'y-start', 'x-end', 'y-end'),
                       help='bottom-left and top-right coordinates')
-  parser.add_argument('--sphere', dest='sphere', type=float, nargs='+',
+  parser.add_argument('--sphere', dest='sphere', 
+                      type=float, nargs=4,
                       default=[0.5, 0.0, 0.0, 0.0],
+                      metavar=('radius', 'x-center', 'y-center', 'z-center'),
                       help='radius and center-coordinates of the sphere')
   # discretization arguments
-  parser.add_argument('--n', '-n', dest='n', type=int, default=None,
+  parser.add_argument('--n', '-n', dest='n', 
+                      type=int, 
+                      default=None,
                       help='number of divisions')
-  parser.add_argument('--ds', '-ds', dest='ds', type=float, default=None,
+  parser.add_argument('--ds', '-ds', dest='ds', 
+                      type=float, 
+                      default=None,
                       help='target segment-length')
   # geometry modification arguments
-  parser.add_argument('--rotation', '-r', dest='rotation', type=float, 
-                      nargs='+', default=None,
+  parser.add_argument('--rotation', '-r', dest='rotation', 
+                      type=float, nargs='+', 
+                      default=None,
+                      metavar=('x', 'y', 'z')
                       help='center of rotation')
-  parser.add_argument('--roll', dest='roll', type=float, default=0.0,
+  parser.add_argument('--roll', dest='roll', 
+                      type=float, 
+                      default=0.0,
                       help='roll angle')
-  parser.add_argument('--yaw', dest='yaw', type=float, default=0.0,
+  parser.add_argument('--yaw', dest='yaw', 
+                      type=float, 
+                      default=0.0,
                       help='yaw angle')
-  parser.add_argument('--pitch', dest='pitch', type=float, default=0.0,
+  parser.add_argument('--pitch', dest='pitch', 
+                      type=float, 
+                      default=0.0,
                       help='pitch angle')
-  parser.add_argument('--mode', dest='mode', type=str, default='deg',
-                      help='angles in degrees(deg) or radians (rad)')
-  parser.add_argument('--translation', '-t', dest='translation', type=float,
-                      nargs='+', default=[0.0, 0.0, 0.0],
-                      help='displacement in the x-, y- and z- directions')
-  parser.add_argument('--scale', '-s', dest='scale', type=float, default=1.0,
+  parser.add_argument('--mode', dest='mode', 
+                      type=str, 
+                      choices=['deg', 'rad'], default='deg',
+                      help='angles in degrees or radians')
+  parser.add_argument('--translation', '-t', dest='translation', 
+                      type=float, nargs='+', 
+                      default=[0.0, 0.0, 0.0],
+                      metavar=('x-disp', 'y-disp', 'z-disp'),
+                      help='displacement in each directions')
+  parser.add_argument('--scale', '-s', dest='scale', 
+                      type=float, 
+                      default=1.0,
                       help='scaling factor for 2D geometry')
-  parser.add_argument('--extrusion', '-e', dest='extrusion', type=float, 
-                      nargs='+',
+  parser.add_argument('--extrusion', '-e', dest='extrusion', 
+                      type=float, nargs=2,
+                      metavar=('start', 'end'),
                       help='limits of the cylinder in the third direction')
-  parser.add_argument('--force', dest='force', action='store_true',
+  parser.add_argument('--force', dest='force', 
+                      action='store_true',
                       help='forces the limits of extrusion')
   parser.add_argument('--inside', dest='keep_inside',
                       action='store_true',
                       help='keep points inside boundary')
   # output arguments
-  parser.add_argument('--save-name', dest='save_name', type=str, 
+  parser.add_argument('--save-name', dest='save_name', 
+                      type=str, 
                       default='new_body', 
                       help='name of the new body file')
-  parser.add_argument('--extension', dest='extension', type=str, default='body',
+  parser.add_argument('--extension', dest='extension', 
+                      type=str, 
+                      default='body',
                       help='extension of the output file')
-  parser.add_argument('--save-dir', dest='save_directory', type=str, 
+  parser.add_argument('--save-dir', dest='save_directory', 
+                      type=str, 
                       default=os.getcwd(),
                       help='directory where body file will be saved')
-  parser.add_argument('--no-save', dest='save', action='store_false',
+  parser.add_argument('--no-save', dest='save', 
+                      action='store_false',
                       help='does not save the geometry into a file')
-  parser.add_argument('--show', dest='show', action='store_true',
+  parser.add_argument('--show', dest='show', 
+                      action='store_true',
                       help='displays the geometry')
   parser.set_defaults(save=True)
   # parse given options file

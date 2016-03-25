@@ -303,15 +303,16 @@ class BarbaGroupSimulation(object):
   def __init__(self):
     pass
 
-  def get_time_steps(self, time_steps_range=[]):
+  def get_time_steps(self, time_steps_range=None):
     """Returns a list of the time-steps to post-process.
 
     Parameters
     ----------
-    time_steps_range: list(int)
-      Initial, final and stride of the time-steps to consider.
+    time_steps_range: 3-list of integers, optional
+      Initial, final and stride of the time-steps to consider;
+      default: None (all saved time-steps).
     """
-    if len(time_steps_range) == 3:
+    if time_steps_range:
       return range(time_steps_range[0],
                    time_steps_range[1]+1,
                    time_steps_range[2])

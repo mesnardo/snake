@@ -72,7 +72,7 @@ class Field(object):
                  time_step=self.time_step,
                  label=self.label+'-restricted')
 
-  def get_difference(self, exact, mask=None, norm='L2'):
+  def get_difference(self, exact, mask, norm='L2'):
     """Returns the difference between two fields in a given norm.
 
     Parameters
@@ -151,6 +151,7 @@ class Field(object):
     # create filled contour
     if field_range:
       levels = numpy.linspace(*field_range)
+      print('[info] min={}, max={}'.format(self.values.min(), self.values.max()))
       colorbar_ticks = numpy.linspace(field_range[0], field_range[1], 5)
       colorbar_format = '%.01f'
     else:

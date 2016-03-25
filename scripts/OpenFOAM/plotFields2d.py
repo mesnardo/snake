@@ -22,7 +22,8 @@ def parse_command_line():
                                    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
   # fill the parser with arguments
   parser.add_argument('--directory', dest='directory', 
-                      type=str, default=os.getcwd(),
+                      type=str, 
+                      default=os.getcwd(),
                       help='directory of the OpenFOAM simulation')
   parser.add_argument('--vorticity', dest='plot_vorticity',
                       action='store_true',
@@ -37,23 +38,33 @@ def parse_command_line():
                       action='store_true',
                       help='plots the v-velocity field')
   parser.add_argument('--limits', dest='limits',
-                      nargs='+', type=float, default=[-1.0, 1.0],
-                      help='Range to plot (min, max)')
+                      nargs=2, type=float, 
+                      default=[-1.0, 1.0],
+                      metavar=('min', 'max'),
+                      help='Range to plot')
   parser.add_argument('--times', dest='times',
-                      nargs='+', type=float, default=[None, None, None],
-                      help='Range of times to plot (min, max, increment)')
+                      nargs=3, type=float, 
+                      default=[None, None, None],
+                      metavar=('start', 'end', 'increment'),
+                      help='Range of times to plot')
   parser.add_argument('--bottom-left', dest='bottom_left',
-                      nargs='+', type=float, default=[-2.0, -2.0],
+                      nargs=2, type=float, 
+                      default=[-2.0, -2.0],
+                      metavar=('x', 'y'),
                       help='bottom-left corner of the rectangular view (x, y)')
   parser.add_argument('--top-right', dest='top_right',
-                      nargs='+', type=float, default=[2.0, 2.0],
+                      nargs=2, type=float, 
+                      default=[2.0, 2.0],
+                      metavar=('x', 'y'),
                       help='top-right corner of the rectangular view (x, y)')
   parser.add_argument('--width', dest='width',
-                      type=int, default=600,
+                      type=int, 
+                      default=600,
                       help='figure width in pixels')
   parser.add_argument('--coeff', dest='coeff', 
-                      type=float, default=1.0,
-                      help='coefficient to adjust the view')
+                      type=float, 
+                      default=1.0,
+                      help='DEPRECATED -- coefficient to adjust the view')
   # parse given options file
   parser.add_argument('--options', 
                       type=open, action=miscellaneous.ReadOptionsFromFile,

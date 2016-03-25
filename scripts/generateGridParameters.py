@@ -15,6 +15,7 @@ from library import miscellaneous
 
 def parse_command_line():
   """Parses the command-line with module argparse."""
+  print('[info] parsing the command-line ...'),
   # create parser
   parser = argparse.ArgumentParser(description='Generates cartesianMesh.yaml '
                                                'file for a uniform region '
@@ -22,43 +23,52 @@ def parse_command_line():
                                    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
   # fill parser with arguments
   parser.add_argument('--directory', dest='directory',
-                      type=str, default=os.getcwd(),
+                      type=str, 
+                      default=os.getcwd(),
                       help='directory of the simulation')
   parser.add_argument('--bottom-left', '-bl', dest='bottom_left',
                       type=float, nargs='+',
+                      metavar=('x', 'y', 'z'),
                       help='position of the bottom-left corner of the domain')
   parser.add_argument('--top-right', '-tr', dest='top_right',
                       type=float, nargs='+',
+                      metavar=('x', 'y', 'z'),
                       help='position of the top-right corner of the domain')
   parser.add_argument('--bottom-left-uniform', '-blu', dest='bottom_left_uniform',
                       type=float, nargs='+',
+                      metavar=('x', 'y', 'z'),
                       help='position of the bottom-left corner of the uniform region')
   parser.add_argument('--top-right-uniform', '-tru', dest='top_right_uniform',
                       type=float, nargs='+',
+                      metavar=('x', 'y', 'z'),
                       help='position of the top-right corner of the uniform region')
   parser.add_argument('--ds', '-ds', dest='ds',
                       type=float, nargs='+',
+                      metavar=('dx', 'dy', 'dz'),
                       help='cell-widths in the uniform region')
   parser.add_argument('--aspect-ratio', '-ar', dest='aspect_ratio',
                       type=float, nargs='+',
+                      metavar=('ratio-x', 'ratio-y', 'ratio-z'),
                       help='aspect-ratio between the width of the external '
                            'boundary cells (start and end) '
-                           ' and the cell-width in the uniform region '
+                           'and the cell-width in the uniform region '
                            'in each direction between ')
 
-  parser.add_argument('--precision', dest='precision', type=int, default=2,
+  parser.add_argument('--precision', dest='precision', 
+                      type=int, 
+                      default=2,
                       help='precision of the aspect ratio computed')
   parser.add_argument('--save-name', dest='save_name',
                       type=str,
                       default='cartesianMesh.yaml',
                       help='name of the file to create')
 
-
   # parse given options file
   parser.add_argument('--options', 
                       type=open, action=miscellaneous.ReadOptionsFromFile,
                       help='path of the file with options to parse')
   # parse command-line
+  print('done')
   return parser.parse_args()
 
 
@@ -74,9 +84,10 @@ class CartesianMesh(object):
     ----------
     name: string
       Name of the direction ('x', 'y', or 'z').
-    regions: list of instances of the classes UniformGridLine or StretchedGridLine
+    regions: list of UniformGridLine or/and StretchedGridLine instances, optional
       List containing information about the regions 
-      that forms the grid-line along a direction; default: [].
+      that forms the grid-line along a direction; 
+      default: [].
     """
     self.directions.append({'name': name, 'regions': regions})
 
@@ -85,8 +96,9 @@ class CartesianMesh(object):
 
     Parameters
     ----------
-    path: string
-      Path of the file to write; default: <current directory>/cartesianMesh.yaml.
+    path: string, optional
+      Path of the file to write; 
+      default: <current directory>/cartesianMesh.yaml.
     """
     print('[info] writing {} ...'.format(path)),
     with open(path, 'w') as outfile:
