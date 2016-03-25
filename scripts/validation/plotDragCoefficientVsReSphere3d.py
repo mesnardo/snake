@@ -117,12 +117,12 @@ def plot_drag_coefficient(simulations,
                         'color': '#993333', 'linewidth': 0,
                         'markeredgewidth': 2, 'markeredgecolor': '#993333',
                         'markerfacecolor': 'none',
-                        'marker': 'o', 'markersize': 4,
+                        'marker': 'o', 'markersize': 8,
                         'zorder': 10}
   fig, ax = pyplot.subplots(figsize=(8, 6))
   ax.grid(True, zorder=0)
-  ax.set_xlabel('Reynolds number')
-  ax.set_ylabel('drag coefficient')
+  ax.set_xlabel('Reynolds number', fontsize=16)
+  ax.set_ylabel('drag coefficient', fontsize=16)
   ax.plot([simu.re for simu in simulations], 
           [1.0/(numpy.pi*0.5**2)*simu.force_x.values[-1] for simu in simulations], 
           **kwargs_data)
@@ -131,7 +131,7 @@ def plot_drag_coefficient(simulations,
             validation.cd, 
             **kwargs_validation)
   ax.axis(limits)
-  ax.legend()
+  ax.legend(prop={'size': 16})
   if save_name:
     pyplot.savefig('{}/{}.png'.format(images_directory, save_name))
   if show:
