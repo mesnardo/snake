@@ -88,7 +88,8 @@ def get_validation_data(path, Re):
                                dtype=float, 
                                usecols=(0, cols[Re]['u'], 6, cols[Re]['v']),
                                unpack=True)
-  return Field(y=y, values=u), Field(x=x, values=v)
+  return ( Field(y=y, values=u, label='x-velocity'), 
+           Field(x=x, values=v, label='y-velocity') )
 
 
 def main():
@@ -111,9 +112,34 @@ def main():
   # read validation data from Ghia et al. (1982)
   u, v = get_validation_data(args.validation_data_path, args.Re)
 
-  simulation.plot_centerline_velocities(validation_data={'x-velocity': u, 
-                                                         'y-velocity': v},
-                                        show=args.show)
+  software_name = {'petibm': 'PetIBM', 'cuibm': 'cuIBM'}
+  plot_settings = {'label': software_name[args.software],
+                   'color': '#336699', 'linestyle': '-', 'linewidth': 3,
+                   'zorder': 10}
+  validation_plot_settings = {'label': 'Ghia et al. (1982)',
+                              'color': '#993333', 'linewidth': 0,
+                              'markeredgewidth': 2, 'markeredgecolor': '#993333',
+                              'markerfacecolor': 'none',
+                              'marker': 'o', 'markersize': 8,
+                              'zorder': 10}
+
+  save_directory = '{}/images'.format(simulation.directory)
+  if not os.path.isdir(save_directory):
+    os.makedirs(save_directory)
+  simulation.x_velocity.plot_vertical_gridline_values(0.5,
+                              plot_settings=plot_settings,
+                              plot_limits=[0.0, 1.0, -0.75, 1.25],
+                              save_directory=save_directory,
+                              show=args.show,
+                              validation_data=(u.y, u.values),
+                              validation_plot_settings=validation_plot_settings)
+  simulation.y_velocity.plot_horizontal_gridline_values(0.5,
+                              plot_settings=plot_settings,
+                              plot_limits=[0.0, 1.0, -0.75, 1.25],
+                              save_directory=save_directory,
+                              show=args.show,
+                              validation_data=(v.x, v.values),
+                              validation_plot_settings=validation_plot_settings)
 
 
 if __name__ == '__main__':

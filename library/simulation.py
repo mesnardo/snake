@@ -385,7 +385,10 @@ class BarbaGroupSimulation(object):
       choices: 'pressure', 'vorticity', 'x-velocity', 'y-velocity'.
     """
     field_name = field_name.replace('-', '_')
-    getattr(self, field_name).subtract(getattr(other, field_name))
+    subtracted_field = getattr(self, field_name).subtract(getattr(other, field_name))
+    field_name = subtracted_field.label.replace('-', '_')
+    print(field_name)
+    setattr(self, field_name, subtracted_field)
 
   def get_error(self, exact, field_name, mask=None, norm=None):
     """Returns the difference between a field and an exact solution.
@@ -488,87 +491,62 @@ class BarbaGroupSimulation(object):
                                                              width=width,
                                                              dpi=dpi)
 
-  def plot_centerline_velocities(self,
-                                 validation_data={},
-                                 show=False):
-    """Plots the x-velocity along the vertical centerline 
-    and the y-velocity along the horizontal centerline.
+  def plot_gridline_values(self, field_name, 
+                           x=[], y=[], 
+                           boundaries=(None, None),
+                           limits=(None, None, None, None),
+                           save_directory=None, show=False,
+                           **kwargs):
+    """Plots the field values along either a set of vertical gridlines or a set
+    of horizontal gridlines.
 
     Parameters
     ----------
-    validation_data: dictionary of Field objects
-      x-velocity along the vertical centerline 
-      and the y-velocity along the horizontal centerline
-      from Ghia et al. (1982);
-      default: empty dictionary.
-    show: boolean
-      Set 'True' if you want to display the figures; default: False.
+    field_name: string
+      Name of the field to plot.
+    x: list of floats, optional
+      List of vertical gridlines defined by their x-position;
+      default: [].
+    y: list of floats, optional
+      List of horizontal gridlines defined by their y-position;
+      default: [].
+    boundaries: 2-tuple of floats, optional
+      Gridline boundaries;
+      default: (None, None).
+    limits: 4-tuple of floats, optional
+      Limits of the plot (x-start, x-end, y-start, y-end);
+      default: (None, None, None, None).
+    save_directory: string, optional
+      Directory where to save the figures;
+      default: None (does not save).
+    show: boolean, optional
+      Set 'True' if you want to display the figures;
+      default: False.
+    **kwargs: dictionary of (string, dictionary) items, optional
+      Plot settings.
     """
-    images_directory = '{}/images'.format(self.directory)
-    if not os.path.isdir(images_directory):
-      os.makedirs(images_directory)
-    pyplot.style.use('{}/styles/mesnardo.mplstyle'.format(os.environ['SCRIPTS']))
-    software_description = {'cuibm': 'cuIBM', 'petibm': 'PetIBM'}
-    kwargs_data = {'label': software_description[self.software],
-                   'color': '#336699', 'linestyle': '-', 'linewidth': 3,
-                   'zorder': 10}
-    kwargs_validation_data = {'label': 'Ghia et al. (1982)',
-                              'color': '#993333', 'linewidth': 0,
-                              'markeredgewidth': 2, 'markeredgecolor': '#993333',
-                              'markerfacecolor': 'none',
-                              'marker': 'o', 'markersize': 8,
-                              'zorder': 10}
-    print('[info] plotting the x-velocity along vertical centerline ...'),
-    fig, ax = pyplot.subplots(figsize=(6, 6))
-    ax.grid(True, zorder=0)
-    ax.set_xlabel('y-coordinate', fontsize=16)
-    ax.set_ylabel('x-velocity along vertical centerline', fontsize=16)
-    nx, ny = self.grid[0].size-1, self.grid[1].size-1
-    u_centerline = (self.x_velocity.values[:, nx/2] if nx%2 == 0 
-                    else 0.5*(self.x_velocity.values[:, nx/2-1]
-                              +self.x_velocity.values[:, nx/2+1]))
-    ax.plot(self.x_velocity.y, u_centerline, **kwargs_data)
-    ax.plot(validation_data['x-velocity'].y, validation_data['x-velocity'].values, 
-            **kwargs_validation_data)
-    ax.axis([0.0, 1.0, -0.75, 1.25])
-    ax.legend(prop={'size': 16})
-    pyplot.savefig('{}/xVelocityCenterline{:0>7}.png'.format(images_directory, 
-                                                             self.x_velocity.time_step))
-    data_path = '{}/xVelocityCenterline{:0>7}.dat'.format(images_directory,
-                                                          self.x_velocity.time_step)
-    with open(data_path, 'w') as outfile:
-      numpy.savetxt(outfile, numpy.c_[self.x_velocity.y, u_centerline], 
-                    fmt='%.6f', 
-                    delimiter='\t',
-                    header='x-velocity along vertical centerline')
-    if show:
-      pyplot.show()
-    print('done')
-    print('[info] plotting the y-velocity along horizontal centerline ...'),
-    fig, ax = pyplot.subplots(figsize=(6, 6))
-    ax.grid(True, zorder=0)
-    ax.set_xlabel('x-coordinate', fontsize=16)
-    ax.set_ylabel('y-velocity along horizontal centerline', fontsize=16)
-    v_centerline = (self.y_velocity.values[ny/2, :] if ny%2 == 0 
-                    else 0.5*(self.y_velocity.values[ny/2-1, :]
-                              +self.y_velocity.values[ny/2+1, :]))
-    ax.plot(self.y_velocity.x, v_centerline, **kwargs_data)
-    ax.plot(validation_data['y-velocity'].x, validation_data['y-velocity'].values, 
-            **kwargs_validation_data)
-    ax.axis([0.0, 1.0, -0.75, 1.25])
-    ax.legend(prop={'size': 16})
-    pyplot.savefig('{}/yVelocityCenterline{:0>7}.png'.format(images_directory, 
-                                                             self.y_velocity.time_step))
-    data_path = '{}/yVelocityCenterline{:0>7}.dat'.format(images_directory,
-                                                          self.y_velocity.time_step)
-    with open(data_path, 'w') as outfile:
-      numpy.savetxt(outfile, numpy.c_[self.y_velocity.x, v_centerline], 
-                    fmt='%.6f', 
-                    delimiter='\t',
-                    header='y-velocity along vertical centerline')
-    if show:
-      pyplot.show()
-    print('done')
+    if not isinstance(x, (list, tuple)):
+      x = [x]
+    if not isinstance(y, (list, tuple)):
+      y = [y]
+    if not (x or y):
+      print('[error] provide either x or y keyword arguments')
+      return
+    attribute = field_name.replace('-', '_')
+    if x:
+      getattr(self, attribute).plot_vertical_gridline_values(x=x, 
+                                                  boundaries=boundaries,
+                                                  limits=limits,
+                                                  save_directory=save_directory,
+                                                  show=show,
+                                                  **kwargs)
+    if y:
+      getattr(self, attribute).plot_horizontal_gridline_values(y=y, 
+                                                  boundaries=boundaries,
+                                                  limits=limits,
+                                                  save_directory=save_directory,
+                                                  show=show,
+                                                  **kwargs)
 
   def get_velocity_cell_centers(self):
     """Interpolates the staggered velocity field to the cell-centers of the mesh."""

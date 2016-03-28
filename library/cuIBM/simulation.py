@@ -99,7 +99,7 @@ class CuIBMSimulation(Simulation, BarbaGroupSimulation):
                             time_step=time_step, label='x-velocity')
     self.y_velocity = Field(x=0.5*(x[:-1]+x[1:]), y=y[1:-1], 
                             values=v.reshape(ny-1, nx), 
-                            time_step=time_step, label='v-velocity')
+                            time_step=time_step, label='y-velocity')
     print('done')
 
   def read_pressure(self, time_step):

@@ -44,8 +44,9 @@ class Field(object):
     assert numpy.allclose(self.x, other.x, atol=1.0E-04)
     assert numpy.allclose(self.y, other.y, atol=1.0E-04)
     assert self.values.shape == other.values.shape
-    self.values -= other.values
-    self.label += '-subtracted'
+    return Field(x=self.x, y=self.y, time_step=self.time_step,
+                 values=self.values-other.values,
+                 label=self.label+'-subtracted')
 
   def restriction(self, grid):
     """Restriction of the field solution onto a coarser grid.
@@ -97,6 +98,230 @@ class Field(object):
     exact_restricted = exact.restriction(grid)
     return numpy.linalg.norm(field_restricted.values-exact_restricted.values, 
                              ord=norms[norm])
+
+  def get_gridline_values(self, x=None, y=None):
+    """Returns the field values along either a vertical or an horizontal
+    gridline.
+
+    The vertical gridline is defined by its x-position.
+    The horizontal gridline is defined by its y-position.
+
+    Parameters
+    ----------
+    x: float, optional
+      x-position of the vertical gridline;
+      default: None.
+    y: float, optional
+      y-position of the horizontal gridline;
+      default: None.
+
+    Returns
+    -------
+    array: 1d array of floats
+      The field values along the gridline.
+    """
+    if (x and y) or not (x or y):
+      print('[error] use either x or y keyword arguments '
+            'to define the gridline position')
+      return
+    elif x:
+      return get_vertical_gridline_values(x)
+    elif y:
+      return get_horizontal_gridline_values(y)
+
+  def get_vertical_gridline_values(self, x):
+    """Returns field values along a vertical gridline defined by its x-position.
+
+    If the x-position of the gridline does not match any gridline 
+    of the Cartesian grid, we interpolate the values.
+
+    Parameters
+    ----------
+    x: float
+      x-position of the vertical gridline.
+
+    Returns
+    -------
+    u: 1d array of floats
+      The (interpolated) field values along the vertical gridline.
+    """
+    indices = numpy.where(numpy.abs(self.x-x) <= 1.0E-06)[0]
+    if indices.size == 0:
+      i = numpy.where(self.x > x)[0][0]
+      return ( (abs(self.x[i]-x)*self.values[:, i-1]
+               +abs(self.x[i-1]-x)*self.values[:, i])
+              /abs(self.x[i]-self.x[i-1]) )
+    else:
+      i = indices[0]
+      return self.values[:, i]
+
+  def get_horizontal_gridline_values(self, y):
+    """Returns field values along an horizontal gridline defined by its y-position.
+
+    If the y-position of the gridline does not match any gridline 
+    of the Cartesian grid, we interpolate the values.
+
+    Parameters
+    ----------
+    y: float
+      y-position of the horizontal gridline.
+
+    Returns
+    -------
+    u: 1d array of floats
+      The (interpolated) field values along the horizontal gridline.
+    """
+    indices = numpy.where(numpy.abs(self.y-y) <= 1.0E-06)[0]
+    if indices.size == 0:
+      j = numpy.where(self.y > y)[0][0]
+      return ( (abs(self.y[j]-y)*self.values[j-1, :]
+               +abs(self.y[j-1]-y)*self.values[j, :])
+              /abs(self.y[j]-self.y[j-1]) )
+    else:
+      j = indices[0]
+      return self.values[j, :]
+
+  def plot_vertical_gridline_values(self, x,
+                                    boundaries=(None, None),
+                                    plot_settings={},
+                                    plot_limits=(None, None, None, None),
+                                    save_directory=None,
+                                    show=False,
+                                    validation_data=None,
+                                    validation_plot_settings={}):
+    """Plots the field values along a group of vertical gridlines.
+
+    Parameters
+    ----------
+    x: list of floats
+      Group of vertical gridlines defined by their x-position.
+    boundaries: 2-tuple of floats, optional
+      Gridline limits to consider;
+      default: (None, None) (the entire gridline)
+    plot_settings: dictionary of (string, object) items, optional
+      Contains optional arguments to call pyplot.plot function 
+      for the gridline data;
+      default: empty dictionary.
+    plot_limits: 4-tuple of floats, optional
+      Limits of the plot (x-start, x-end, y-start, y-end);
+      default: (None, None, None, None)
+    save_directory: string, optional
+      Directory where to save the figure;
+      default: None (does not save).
+    show: boolean, optional
+      Set 'True' if you want to display the figure;
+      default: False.
+    validation_data: 2-tuple of 1d arrays of floats, optional
+      Validation data to add to the figure (1st array contains the y-stations,
+      2nd array contains the values at the stations);
+      default: None.
+    validation_plot_settings: dictionary of (string, object) items, optional
+      Contains optional arguments to call pyplot.plot function 
+      for the validation data;
+      default: empty dictionary.
+    """
+    print('[info] plotting field values along vertical gridline(s) ...'),
+    fig, ax = pyplot.subplots(figsize=(6, 6))
+    ax.grid(True, zorder=0)
+    ax.set_xlabel('y-coordinate', fontsize=16)
+    ax.set_ylabel('{} along vertical gridline'.format(self.label), fontsize=16)
+    if not isinstance(x, (list, tuple)):
+      x = [x]
+    for x_target in x:
+      y, u = self.y, self.get_vertical_gridline_values(x_target)
+      if all(boundaries):
+        mask = numpy.where(numpy.logical_and(y >= boundaries[0], 
+                                             y <= boundaries[1]))[0]
+        y, u = y[mask], u[mask]
+      ax.plot(y, u, label='x={}'.format(x_target), **plot_settings)
+    if validation_data != None:
+      y, u = validation_data
+      if all(boundaries):
+        mask = numpy.where(numpy.logical_and(y >= boundaries[0], 
+                                             y <= boundaries[1]))[0]
+        y, u = y[mask], u[mask]
+      ax.plot(y, u, **validation_plot_settings)
+    ax.axis(plot_limits)
+    ax.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
+    ax.legend(prop={'size': 16})
+    if save_directory and os.path.isdir(save_directory):
+      pyplot.savefig('{}/{}VerticalGridline{:0>7}.png'.format(save_directory, 
+                                                              self.label, 
+                                                              self.time_step))
+    if show:
+      pyplot.show()
+    print('done')
+
+  def plot_horizontal_gridline_values(self, y,
+                                      boundaries=(None, None),
+                                      plot_settings={},
+                                      plot_limits=(None, None, None, None),
+                                      save_directory=None,
+                                      show=False,
+                                      validation_data=None,
+                                      validation_plot_settings={}):
+    """Plots the field values along a group of horizontal gridlines.
+
+    Parameters
+    ----------
+    y: list of floats
+      Group of horizontal gridlines defined by their y-position.
+    boundaries: 2-tuple of floats, optional
+      Gridline limits to consider;
+      default: (None, None) (the entire gridline)
+    plot_settings: dictionary of (string, object) items, optional
+      Contains optional arguments to call pyplot.plot function 
+      for the gridline data;
+      default: empty dictionary.
+    plot_limits: 4-tuple of floats, optional
+      Limits of the plot (x-start, x-end, y-start, y-end);
+      default: (None, None, None, None)
+    save_directory: string, optional
+      Directory where to save the figure;
+      default: None (does not save).
+    show: boolean, optional
+      Set 'True' if you want to display the figure;
+      default: False.
+    validation_data: 2-tuple of 1d arrays of floats, optional
+      Validation data to add to the figure (1st array contains the y-stations,
+      2nd array contains the values at the stations);
+      default: None.
+    validation_plot_settings: dictionary of (string, object) items, optional
+      Contains optional arguments to call pyplot.plot function 
+      for the validation data;
+      default: empty dictionary.
+    """
+    print('[info] plotting field values along horizontal gridline(s) ...'),
+    fig, ax = pyplot.subplots(figsize=(6, 6))
+    ax.grid(True, zorder=0)
+    ax.set_xlabel('x-coordinate', fontsize=16)
+    ax.set_ylabel('{} along horizontal gridline'.format(self.label), fontsize=16)
+    if not isinstance(y, (list, tuple)):
+      y = [y]
+    for y_target in y:
+      x, u = self.x, self.get_horizontal_gridline_values(y_target)
+      if all(boundaries):
+        mask = numpy.where(numpy.logical_and(x >= boundaries[0], 
+                                             x <= boundaries[1]))[0]
+        x, u = x[mask], u[mask]
+      ax.plot(x, u, label='y={}'.format(y_target), **plot_settings)
+    if validation_data != None:
+      x, u = validation_data
+      if all(boundaries):
+        mask = numpy.where(numpy.logical_and(x >= boundaries[0], 
+                                             x <= boundaries[1]))[0]
+        x, u = x[mask], u[mask]
+      ax.plot(x, u, **validation_plot_settings)
+    ax.axis(plot_limits)
+    ax.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
+    ax.legend(prop={'size': 16})
+    if save_directory and os.path.isdir(save_directory):
+      pyplot.savefig('{}/{}HorizontalGridline{:0>7}.png'.format(save_directory, 
+                                                                self.label, 
+                                                                self.time_step))
+    if show:
+      pyplot.show()
+    print('done')
 
   def plot_contour(self, 
                    field_range=None, 
