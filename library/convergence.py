@@ -104,7 +104,7 @@ def plot_grid_convergence(simulations, exact,
     if not os.path.isdir(directory):
       print('[info] creating directory: {} ...'.format(directory))
       os.makedirs(directory)
-    time_step = getattr(simulations[0], field_names[0].replace('-', '_')).time_step
+    time_step = simulations[0].fields[field_names[0]].time_step
     pyplot.savefig('{}/{}{:0>7}.png'.format(directory, save_name, time_step))
   if show:
     print('[info] displaying figure ...')
@@ -143,18 +143,17 @@ def get_observed_orders(simulations, field_names, mask,
   coarse, medium, fine = simulations
   ratio = coarse.get_grid_spacing()/medium.get_grid_spacing()
   alpha = {} # will contain observed order of convergence
-  for field_name in field_names:
-    attribute_name = field_name.replace('-', '_')
-    grid = [getattr(mask, attribute_name).x, getattr(mask, attribute_name).y]
-    alpha[field_name] = get_observed_order(getattr(coarse, attribute_name), 
-                                           getattr(medium, attribute_name),
-                                           getattr(fine, attribute_name),
-                                           ratio,
-                                           grid)
-    print('\t{}: {}'.format(field_name, alpha[field_name]))
+  for name in field_names:
+    grid = [mask.fields[name].x, mask.fields[name].y]
+    alpha[name] = get_observed_order(coarse.fields[name],
+                                     medium.fields[name],
+                                     fine.fields[name],
+                                     ratio,
+                                     grid)
+    print('\t{}: {}'.format(name, alpha[name]))
   if save_name:
     print('[info] writing orders into .dat file ...')
-    time_step = getattr(mask, attribute_name).time_step
+    time_step = mask.fields[name].time_step
     if not os.path.isdir(directory):
       print('[info] creating directory: {} ...'.format(directory))
       os.makedirs(directory)
@@ -165,8 +164,8 @@ def get_observed_orders(simulations, field_names, mask,
                                                    fine.description, 
                                                    time_step)
     with open(file_path, 'w') as outfile:
-      for field_name in field_names:
-        outfile.write('{}: {}\n'.format(field_name, alpha[field_name]))
+      for name in field_names:
+        outfile.write('{}: {}\n'.format(name, alpha[name]))
   return alpha
 
 
@@ -228,13 +227,12 @@ def plot_asymptotic_ranges(simulations, orders, mask,
   field_names = orders.keys()
   coarse, medium, fine = simulations
   ratio = coarse.get_grid_spacing()/medium.get_grid_spacing()
-  for field_name in field_names:
-    attribute_name = field_name.replace('-', '_')
-    grid = [getattr(mask, attribute_name).x, getattr(mask, attribute_name).y]
-    field = get_asymptotic_range(getattr(coarse, attribute_name),
-                                 getattr(medium, attribute_name),
-                                 getattr(fine, attribute_name),
-                                 orders[field_name],
+  for name in field_names:
+    grid = [mask.fields[name].x, mask.fields[name].y]
+    field = get_asymptotic_range(coarse.fields[name],
+                                 medium.fields[name],
+                                 fine.fields[name],
+                                 orders[name],
                                  ratio,
                                  grid)
     field.plot_contour(field_range=(0.0, 2.0, 101),

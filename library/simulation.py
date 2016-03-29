@@ -40,6 +40,7 @@ class Simulation(object):
       setattr(self, key, value)
     self.print_registration()
     self.derive_class()
+    self.fields = {}
 
   def print_registration(self):
     """Prints global details of the simulation"""
@@ -301,7 +302,7 @@ class Simulation(object):
 
 class BarbaGroupSimulation(object):
   def __init__(self):
-    pass
+    self.fields = {}
 
   def get_time_steps(self, time_steps_range=None):
     """Returns a list of the time-steps to post-process.
@@ -320,6 +321,10 @@ class BarbaGroupSimulation(object):
       return sorted(int(folder) for folder in os.listdir(self.directory)
                                 if folder[0] == '0')
 
+  def get_grid_spacing(self):
+    """Returns the grid-spacing of a uniform grid."""
+    return (self.grid[0][-1]-self.grid[0][0])/(self.grid[0].size-1)
+
   def read_fields(self, field_names, time_step, 
                   periodic_directions=[]):
     """Gets the field at a given time-step. 
@@ -328,7 +333,9 @@ class BarbaGroupSimulation(object):
     ----------
     field_names: list of strings
       Name of the fields to get; 
-      choices: 'pressure', 'vorticity', 'x-velocity', 'y-velocity'.
+      choices: 'pressure', 'vorticity', 
+               'x-velocity', 'y-velocity', 
+               'x-flux', 'y-flux'.
     time_step: integer
       Time-step at which the solution is read.
     periodic_directions: list of strings
@@ -336,18 +343,18 @@ class BarbaGroupSimulation(object):
       choices: 'x', 'y', 'z',
       default: [].
     """
-    if 'vorticity' in field_names:
-      self.read_velocity(time_step, periodic_directions=periodic_directions)
-      self.compute_vorticity()
+    if 'pressure' in field_names:
+      self.fields['pressure'] = self.read_pressure(time_step)
+    if any(name in ['x-flux', 'y-flux'] for name in field_names):
+      self.fields['x-flux'], self.fields['y-flux'] = self.read_fluxes(time_step, 
+                                         periodic_directions=periodic_directions)
     if any(name in ['x-velocity', 'y-velocity'] for name in field_names):
+      self.fields['x-velocity'], self.fields['y-velocity'] = self.get_velocity(time_step, 
+                                                 periodic_directions=periodic_directions)
+    if 'vorticity' in field_names:
       self.read_velocity(time_step, 
                          periodic_directions=periodic_directions)
-    if 'pressure' in field_names:
-      self.read_pressure(time_step)
-
-  def get_grid_spacing(self):
-    """Returns the grid-spacing of a uniform grid."""
-    return (self.grid[0][-1]-self.grid[0][0])/(self.grid[0].size-1)
+      self.compute_vorticity()
 
   def compute_vorticity(self):
     """Computes the vorticity field for a two-dimensional simulation.
@@ -373,7 +380,52 @@ class BarbaGroupSimulation(object):
                            time_step=time_step, label='vorticity')
     print('done')
 
-  def subtract(self, other, field_name):
+  def get_velocity(self, time_step, periodic_directions=[]):
+    """Gets the velocity fields at a given time-step.
+
+    We first read the fluxes from file, then convert into velocity-components.
+    """
+    print('[time-step {}] get velocity fields ...'.format(time_step))
+    fluxes = self.read_fluxes(time_step, periodic_directions=periodic_directions)
+    dim3 = (True if len(self.grid) == 3 else False)
+    # get stations, cell-widths, and number of cells in x- and y-directions
+    x, y = self.grid[:2]
+    dx, dy = x[1:]-x[:-1], y[1:]-y[:-1]
+    nx, ny = dx.size, dy.size
+    # get stations, cell-widths, and number of cells in z-direction
+    if dim3:
+      z = self.grid[2]
+      dz = z[1:]-z[:-1]
+      nz = dz.size
+    if dim3:
+      u = Field(label='x-velocity',
+                time_step=time_step,
+                x=fluxes[0].x, y=fluxes[0].y, z=fluxes[0].z,
+                values=fluxes[0].values/reduce(numpy.multiply, 
+                                               numpy.ix_(dz, dy, numpy.ones(nx-1))))
+      v = Field(label='y-velocity',
+                time_step=time_step, 
+                x=fluxes[1].x, y=fluxes[1].y, z=fluxes[1].z,
+                values=fluxes[1].values/reduce(numpy.multiply, 
+                                               numpy.ix_(dz, numpy.ones(ny-1), dx)))
+      w = Field(label='z-velocity',
+                time_step=time_step,
+                x=fluxes[2].x, y=fluxes[2].y, z=fluxes[2].z,
+                values=fluxes[2].values/reduce(numpy.multiply, 
+                                               numpy.ix_(numpy.ones(nz-1), dy, dx)))
+      return u, v, w
+    else:
+      u = Field(label='x-velocity',
+                time_step=time_step,
+                x=fluxes[0].x, y=fluxes[0].y,
+                values=fluxes[0].values/numpy.outer(dy, numpy.ones(nx-1)))
+      v = Field(label='y-velocity',
+                time_step=time_step,
+                x=fluxes[1].x, y=fluxes[1].y,
+                values=fluxes[1].values/numpy.outer(numpy.ones(ny-1), dx))
+      return u, v
+
+  def subtract(self, other, field_name, label=None):
     """Subtract one field to another in place.
 
     Parameters
@@ -382,22 +434,24 @@ class BarbaGroupSimulation(object):
       Simulation to subtract.
     field_name: string
       Name of the field to subtract; 
-      choices: 'pressure', 'vorticity', 'x-velocity', 'y-velocity'.
+      choices: 'pressure', 'vorticity', 'x-velocity', 'y-velocity', 'x-flux', 'y-flux'.
+    label: string, optional
+      Name of the output subtracted field;
+      default: None (will be <current name>+'-subtracted')
     """
-    field_name = field_name.replace('-', '_')
-    subtracted_field = getattr(self, field_name).subtract(getattr(other, field_name))
-    field_name = subtracted_field.label.replace('-', '_')
-    print(field_name)
-    setattr(self, field_name, subtracted_field)
+    if not label:
+      label = field_name+'-subtracted'
+    self.fields[label] = self.fields[field_name].subtract(other.fields[field_name],
+                                                          label=label)
 
-  def get_error(self, exact, field_name, mask=None, norm=None):
+  def get_error(self, exact, name, mask=None, norm=None):
     """Returns the difference between a field and an exact solution.
 
     Parameters
     ----------
     exact: Simulation object
       The exact solution.
-    field_name: string
+    name: string
       Name of the field to use.
     mask: Simulation object
       Simulation whose staggered grid arrangement is used to restrict the solutions;
@@ -411,13 +465,13 @@ class BarbaGroupSimulation(object):
     error: float
       The difference between the two fields.
     """
-    field = getattr(self, field_name.replace('-', '_'))
-    exact_field = getattr(exact, field_name.replace('-', '_'))
     if mask:
-      mask_field = getattr(mask, field_name.replace('-', '_'))
-    return field.get_difference(exact_field, mask=mask_field, norm=norm)
+      mask_field = mask.fields[name]
+    return self.fields[name].get_difference(exact.fields[name],
+                                            mask=mask_field, 
+                                            norm=norm)
 
-  def get_relative_differences(self, exact, reference, field_names=[]):
+  def get_relative_differences(self, exact, mask, field_names=[]):
     """Computes the relative differences between a list of simulations 
     and an analytical solution for a given list of fields.
 
@@ -425,7 +479,7 @@ class BarbaGroupSimulation(object):
     ----------
     exact: Analytical object
       The analytical solution.
-    reference: Simulation object
+    mask: Simulation object
       Simulation whose grid is used as a mask.
     field_names: list of strings
       The fields for which the relative error is computed; default: [].
@@ -436,13 +490,13 @@ class BarbaGroupSimulation(object):
       Relative difference for each field indicated.
     """
     errors = {}
-    for field_name in field_names:
+    for name in field_names:
       field_name = field_name.replace('-', '_')
       field = getattr(self, field_name)
       exact_field = getattr(exact, field_name)
-      grid = [getattr(reference, field_name).x, 
-              getattr(reference, field_name).y]
-      errors[field_name] = field.get_relative_difference(exact_field, grid)
+      grid = [mask.fields[name].x, mask.fields[name].y]
+      errors[name] = self.fields[name].get_relative_difference(exact.fields[name], 
+                                                               grid)
     self.errors = errors
     return errors
 
@@ -482,21 +536,24 @@ class BarbaGroupSimulation(object):
     view[1] = (self.grid[1].min() if view[1] == float('-inf') else view[1])
     view[2] = (self.grid[0].max() if view[2] == float('inf') else view[2])
     view[3] = (self.grid[1].max() if view[3] == float('inf') else view[3])
-    getattr(self, field_name.replace('-', '_')).plot_contour(directory='{}/images'.format(self.directory),
-                                                             field_range=field_range,
-                                                             filled_contour=filled_contour,
-                                                             view=view,
-                                                             bodies=bodies,
-                                                             save_name=save_name,
-                                                             width=width,
-                                                             dpi=dpi)
+    self.fields[field_name].plot_contour(directory='{}/images'.format(self.directory),
+                                         field_range=field_range,
+                                         filled_contour=filled_contour,
+                                         view=view,
+                                         bodies=bodies,
+                                         save_name=save_name,
+                                         width=width,
+                                         dpi=dpi)
 
   def plot_gridline_values(self, field_name, 
                            x=[], y=[], 
                            boundaries=(None, None),
-                           limits=(None, None, None, None),
-                           save_directory=None, show=False,
-                           **kwargs):
+                           plot_settings={},
+                           plot_limits=(None, None, None, None),
+                           save_directory=None,
+                           show=False,
+                           validation_data=None,
+                           validation_plot_settings={}):
     """Plots the field values along either a set of vertical gridlines or a set
     of horizontal gridlines.
 
@@ -513,17 +570,27 @@ class BarbaGroupSimulation(object):
     boundaries: 2-tuple of floats, optional
       Gridline boundaries;
       default: (None, None).
-    limits: 4-tuple of floats, optional
+    plot_settings: dictionary of (string, object) items, optional
+      Contains optional arguments to call pyplot.plot function 
+      for the gridline data;
+      default: empty dictionary.
+    plot_limits: 4-tuple of floats, optional
       Limits of the plot (x-start, x-end, y-start, y-end);
-      default: (None, None, None, None).
+      default: (None, None, None, None)
     save_directory: string, optional
-      Directory where to save the figures;
+      Directory where to save the figure;
       default: None (does not save).
     show: boolean, optional
-      Set 'True' if you want to display the figures;
+      Set 'True' if you want to display the figure;
       default: False.
-    **kwargs: dictionary of (string, dictionary) items, optional
-      Plot settings.
+    validation_data: 2-tuple of 1d arrays of floats, optional
+      Validation data to add to the figure (1st array contains the y-stations,
+      2nd array contains the values at the stations);
+      default: None.
+    validation_plot_settings: dictionary of (string, object) items, optional
+      Contains optional arguments to call pyplot.plot function 
+      for the validation data;
+      default: empty dictionary.
     """
     if not isinstance(x, (list, tuple)):
       x = [x]
@@ -532,30 +599,32 @@ class BarbaGroupSimulation(object):
     if not (x or y):
       print('[error] provide either x or y keyword arguments')
       return
-    attribute = field_name.replace('-', '_')
     if x:
-      getattr(self, attribute).plot_vertical_gridline_values(x=x, 
-                                                  boundaries=boundaries,
-                                                  limits=limits,
-                                                  save_directory=save_directory,
-                                                  show=show,
-                                                  **kwargs)
+      self.fields[field_name].plot_vertical_gridline_values(x=x, 
+                              boundaries=boundaries,
+                              plot_settings=plot_settings,
+                              save_directory=save_directory,
+                              show=show,
+                              validation_data=validation_data,
+                              validation_plot_settings=validation_plot_settings)
     if y:
-      getattr(self, attribute).plot_horizontal_gridline_values(y=y, 
-                                                  boundaries=boundaries,
-                                                  limits=limits,
-                                                  save_directory=save_directory,
-                                                  show=show,
-                                                  **kwargs)
+      self.fields[field_name].plot_horizontal_gridline_values(y=y, 
+                              boundaries=boundaries,
+                              plot_settings=plot_settings,
+                              save_directory=save_directory,
+                              show=show,
+                              validation_data=validation_data,
+                              validation_plot_settings=validation_plot_settings)
 
   def get_velocity_cell_centers(self):
     """Interpolates the staggered velocity field to the cell-centers of the mesh."""
-    dim3 = hasattr(self, 'z_velocity')
-    x_centers, y_centers = self.y_velocity.x[1:-1], self.x_velocity.y[1:-1]
-    u, v = self.x_velocity.values, self.y_velocity.values
+    dim3 = 'z-velocity' in self.fields.keys()
+    x_centers = self.fields['y-velocity'].x[1:-1] 
+    y_centers = self.fields['x-velocity'].y[1:-1]
+    u, v = self.fields['x-velocity'].values, self.fields['y-velocity'].values
     if dim3:
-      z_centers = self.x_velocity.z[1:-1]
-      w = self.z_velocity.values
+      z_centers = self.fields['x-velocity'].z[1:-1]
+      w = self.fields['z-velocity'].values
       u = 0.5*(u[1:-1, 1:-1, :-1] + u[1:-1, 1:-1, 1:])
       v = 0.5*(v[1:-1, :-1, 1:-1] + v[1:-1:, 1:, 1:-1])
       w = 0.5*(w[:-1, 1:-1, 1:-1] + w[1:, 1:-1, 1:-1])
@@ -563,17 +632,34 @@ class BarbaGroupSimulation(object):
       assert (z_centers.size, y_centers.size, x_centers.size) == u.shape
       assert (z_centers.size, y_centers.size, x_centers.size) == v.shape
       assert (z_centers.size, y_centers.size, x_centers.size) == w.shape
-      self.x_velocity = Field(x=x_centers, y=y_centers, z=z_centers, values=u)
-      self.y_velocity = Field(x=x_centers, y=y_centers, z=z_centers, values=v)
-      self.z_velocity = Field(x=x_centers, y=y_centers, z=z_centers, values=w)
+      u = Field(label='x-velocity', 
+                time_step=self.fields['x-velocity'].time_step, 
+                x=x_centers, y=y_centers, z=z_centers, 
+                values=u)
+      v = Field(label='y-velocity', 
+                time_step=self.fields['y-velocity'].time_step, 
+                x=x_centers, y=y_centers, z=z_centers, 
+                values=v)
+      w = Field(label='z-velocity', 
+                time_step=self.fields['z-velocity'].time_step, 
+                x=x_centers, y=y_centers, z=z_centers, 
+                values=w)
+      return u, v, w
     else:
       u = 0.5*(u[1:-1, :-1] + u[1:-1, 1:])
       v = 0.5*(v[:-1, 1:-1] + v[1:, 1:-1])
       # tests
       assert (y_centers.size, x_centers.size) == u.shape
       assert (y_centers.size, x_centers.size) == v.shape
-      self.x_velocity = Field(x=x_centers, y=y_centers, values=u)
-      self.y_velocity = Field(x=x_centers, y=y_centers, values=v)
+      u = Field(label='x-velocity', 
+                time_step=self.fields['x-velocity'].time_step, 
+                x=x_centers, y=y_centers, 
+                values=u)
+      u = Field(label='y-velocity', 
+                time_step=self.fields['y-velocity'].time_step, 
+                x=x_centers, y=y_centers, 
+                values=v)
+      return u, v
 
   def write_vtk(self, field_name, time_step, 
                 view=[[float('-inf'), float('-inf'), float('-inf')], 
@@ -594,18 +680,15 @@ class BarbaGroupSimulation(object):
       Stride at which the field is written; default: 1.
     """
     print('[info] writing the {} field into .vtk file ...'.format(field_name))
-    # get fields
+    dim3 = (len(self.grid) == 3)
     if field_name == 'velocity':
-      field = [self.x_velocity, self.y_velocity]
-      try:
-        field.append(self.z_velocity)
-        dim3 = True
-      except:
-        dim3 = False
-      scalar = False
+      scalar_field = False
+      field = [self.fields['x-velocity'], self.fields['y-velocity']]
+      if dim3:
+        field.append(self.fields['z-velocity'])
     elif field_name == 'pressure':
-      field = [self.pressure]
-      scalar = True
+      scalar_field = True
+      field = [self.fields['pressure']]
     # get mask for the view
     mx = numpy.where(numpy.logical_and(field[0].x > view[0][0],
                                        field[0].x < view[1][0]))[0][::stride]
@@ -642,7 +725,7 @@ class BarbaGroupSimulation(object):
       else:
         outfile.write('0.0\n')
       outfile.write('POINT_DATA {}\n'.format(nx*ny*nz))
-      if scalar:
+      if scalar_field:
         outfile.write('\nSCALARS {} double 1\nLOOKUP_TABLE default\n'.format(name))
         if dim3:
           values = field[0].values[mz[0]:mz[-1]+1, 

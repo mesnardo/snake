@@ -33,20 +33,26 @@ class Field(object):
     self.x, self.y = x, y
     self.values = values
 
-  def subtract(self, other):
+  def subtract(self, other, label=None):
     """Subtract a given field to the current one.
 
     Parameters
     ----------
     other: Field object
       The field that is subtracted.
+    label: string, optional
+      Label of the Field object to create;
+      default: None (will be <current label>).
     """
+    if not label:
+      label = self.label
     assert numpy.allclose(self.x, other.x, atol=1.0E-04)
     assert numpy.allclose(self.y, other.y, atol=1.0E-04)
     assert self.values.shape == other.values.shape
-    return Field(x=self.x, y=self.y, time_step=self.time_step,
-                 values=self.values-other.values,
-                 label=self.label+'-subtracted')
+    return Field(label=label,
+                 time_step=self.time_step,
+                 x=self.x, y=self.y, 
+                 values=self.values-other.values)
 
   def restriction(self, grid):
     """Restriction of the field solution onto a coarser grid.
