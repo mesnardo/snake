@@ -387,43 +387,61 @@ class BarbaGroupSimulation(object):
     """
     print('[time-step {}] get velocity fields ...'.format(time_step))
     fluxes = self.read_fluxes(time_step, periodic_directions=periodic_directions)
-    dim3 = (True if len(self.grid) == 3 else False)
+    dim3 = (len(self.grid) == 3)
     # get stations, cell-widths, and number of cells in x- and y-directions
     x, y = self.grid[:2]
     dx, dy = x[1:]-x[:-1], y[1:]-y[:-1]
     nx, ny = dx.size, dy.size
-    # get stations, cell-widths, and number of cells in z-direction
     if dim3:
+      # get stations, cell-widths, and number of cells in z-direction
       z = self.grid[2]
       dz = z[1:]-z[:-1]
       nz = dz.size
     if dim3:
-      u = Field(label='x-velocity',
-                time_step=time_step,
-                x=fluxes[0].x, y=fluxes[0].y, z=fluxes[0].z,
-                values=fluxes[0].values/reduce(numpy.multiply, 
-                                               numpy.ix_(dz, dy, numpy.ones(nx-1))))
-      v = Field(label='y-velocity',
-                time_step=time_step, 
-                x=fluxes[1].x, y=fluxes[1].y, z=fluxes[1].z,
-                values=fluxes[1].values/reduce(numpy.multiply, 
-                                               numpy.ix_(dz, numpy.ones(ny-1), dx)))
-      w = Field(label='z-velocity',
-                time_step=time_step,
-                x=fluxes[2].x, y=fluxes[2].y, z=fluxes[2].z,
-                values=fluxes[2].values/reduce(numpy.multiply, 
-                                               numpy.ix_(numpy.ones(nz-1), dy, dx)))
-      return u, v, w
+      ux = numpy.empty_like(fluxes[0].values, dtype=numpy.float64)
+      for k in xrange(fluxes[0].shape[0]):
+        for j in xrange(fluxes[0].shape[1]):
+          for i in xrange(fluxes[0].shape[2]):
+            ux[k, j, i] = fluxes[0].values[k, j, i]/dy[j]/dz[k]
+      ux = Field(label='x-velocity',
+                 time_step=time_step,
+                 x=fluxes[0].x, y=fluxes[0].y, z=fluxes[0].z,
+                 values=ux)
+      uy = numpy.empty_like(fluxes[1].values, dtype=numpy.float64)
+      for k in xrange(fluxes[1].shape[0]):
+        for j in xrange(fluxes[1].shape[1]):
+          for i in xrange(fluxes[1].shape[2]):
+            uy[k, j, i] = fluxes[1].values[k, j, i]/dx[i]/dz[k]
+      uy = Field(label='y-velocity',
+                 time_step=time_step, 
+                 x=fluxes[1].x, y=fluxes[1].y, z=fluxes[1].z,
+                 values=uy)
+      uz = numpy.empty_like(fluxes[2].values, dtype=numpy.float64)
+      for k in xrange(fluxes[2].shape[0]):
+        for j in xrange(fluxes[2].shape[1]):
+          for i in xrange(fluxes[2].shape[2]):
+            uz[k, j, i] = fluxes[2].values[k, j, i]/dx[i]/dy[j]
+      uz = Field(label='z-velocity',
+                 time_step=time_step,
+                 x=fluxes[2].x, y=fluxes[2].y, z=fluxes[2].z,
+                 values=uz)
+      return ux, uy, uz
     else:
-      u = Field(label='x-velocity',
-                time_step=time_step,
-                x=fluxes[0].x, y=fluxes[0].y,
-                values=fluxes[0].values/numpy.outer(dy, numpy.ones(nx-1)))
-      v = Field(label='y-velocity',
-                time_step=time_step,
-                x=fluxes[1].x, y=fluxes[1].y,
-                values=fluxes[1].values/numpy.outer(numpy.ones(ny-1), dx))
-      return u, v
+      ux = numpy.empty_like(fluxes[0].values, dtype=numpy.float64)
+      for i in xrange(fluxes[0].values.shape[1]):
+        ux[:, i] = fluxes[0].values[:, i]/dy[:]
+      ux = Field(label='x-velocity',
+                 time_step=time_step,
+                 x=fluxes[0].x, y=fluxes[0].y,
+                 values=ux)
+      uy = numpy.empty_like(fluxes[1].values, dtype=numpy.float64)
+      for j in xrange(fluxes[1].values.shape[0]):
+        uy[j, :] = fluxes[1].values[j, :]/dx[:]
+      uy = Field(label='y-velocity',
+                 time_step=time_step,
+                 x=fluxes[1].x, y=fluxes[1].y,
+                 values=uy)
+      return ux, uy
 
   def subtract(self, other, field_name, label=None):
     """Subtract one field to another in place.
