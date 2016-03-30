@@ -36,7 +36,7 @@ class PetIBMSimulation(Simulation, BarbaGroupSimulation):
     grid_path = '{}/{}'.format(self.directory, file_name)
     with open(grid_path, 'r') as infile:
       nCells = numpy.array([int(n) for n in infile.readline().strip().split()])
-      coords = numpy.loadtxt(infile, dtype=float)
+      coords = numpy.loadtxt(infile, dtype=numpy.float64)
     self.grid = numpy.array(numpy.split(coords, numpy.cumsum(nCells[:-1]+1)))
     print('done')
 
@@ -52,7 +52,7 @@ class PetIBMSimulation(Simulation, BarbaGroupSimulation):
       default: [].
     """
     print('[time-step {}] reading fluxes from files ...'.format(time_step)),
-    dim3 = (True if len(self.grid) == 3 else False)
+    dim3 = (len(self.grid) == 3)
     # folder with numerical solution
     folder = '{}/{:0>7}'.format(self.directory, time_step)
     # read grid-stations and fluxes
@@ -67,37 +67,47 @@ class PetIBMSimulation(Simulation, BarbaGroupSimulation):
     # create flux Field objects in staggered arrangement
     # reshape fluxes in multi-dimensional arrays
     if dim3:
+      qx = qx.reshape((nz, ny, (nx if 'x' in periodic_directions else nx-1)))
+      qx = qx[:, :, :(-1 if 'x' in periodic_directions else 0)]
       qx = Field(label='x-flux',
                  time_step=time_step,
                  x=x[1:-1], 
                  y=0.5*(y[:-1]+y[1:]), 
                  z=0.5*(z[:-1]+z[1:]), 
-                 values=qx.reshape((nz, ny, (nx if 'x' in periodic_directions else nx-1))))
+                 values=qx)
+      qy = qy.reshape((nz, (ny if 'y' in periodic_directions else ny-1), nx))
+      qy = qy[:, :(-1 if 'y' in periodic_directions else 0), :]
       qy = Field(label='y-flux',
                  time_step=time_step,
                  x=0.5*(x[:-1]+x[1:]), 
                  y=y[1:-1], 
                  z=0.5*(z[:-1]+z[1:]), 
-                 values=qy.reshape((nz, (ny if 'y' in periodic_directions else ny-1), nx)))
+                 values=qy)
+      qz = qz.reshape(((nz if 'z' in periodic_directions else nz-1), ny, nx))
+      qz = qz[:(-1 if 'z' in periodic_directions else 0), :, :]
       qz = Field(label='z-flux',
                  time_step=time_step,
                  x=0.5*(x[:-1]+x[1:]), 
                  y=0.5*(y[:-1]+y[1:]), 
                  z=z[1:-1], 
-                 values=qz.reshape(((nz if 'z' in periodic_directions else nz-1), ny, nx)))
+                 values=qz)
       print('done')
       return qx, qy, qz
     else:
+      qx = qx.reshape((ny, (nx if 'x' in periodic_directions else nx-1)))
+      qx = qx[:, :(-1 if 'x' in periodic_directions else 0)]
       qx = Field(label='x-flux',
                  time_step=time_step,
                  x=x[1:-1],
                  y=0.5*(y[:-1]+y[1:]),
-                 values=qx.reshape((ny, (nx if 'x' in periodic_directions else nx-1))))
+                 values=qx)
+      qy = qy.reshape(((ny if 'y' in periodic_directions else ny-1), nx))
+      qy = qy[:(-1 if 'y' in periodic_directions else 0), :]
       qy = Field(label='y-flux',
                  time_step=time_step,
                  x=0.5*(x[:-1]+x[1:]),
                  y= y[1:-1],
-                 values=qy.reshape(((ny if 'y' in periodic_directions else ny-1), nx)))
+                 values=qy)
       print('done')
       return qx, qy
 
@@ -110,7 +120,7 @@ class PetIBMSimulation(Simulation, BarbaGroupSimulation):
       Time-step at which the field will be read.
     """
     print('[time-step {}] reading pressure field ...'.format(time_step)),
-    dim3 = (True if len(self.grid) == 3 else False)
+    dim3 = (len(self.grid) == 3)
     # get grid stations and number of cells along each direction
     x, y = self.grid[:2]
     nx, ny = x.size-1, y.size-1
@@ -153,7 +163,7 @@ class PetIBMSimulation(Simulation, BarbaGroupSimulation):
     forces_path = '{}/{}'.format(self.directory, file_name)
     print('[info] reading forces from file {} ...'.format(forces_path)),
     with open(forces_path, 'r') as infile:
-      times, force_x, force_y = numpy.loadtxt(infile, dtype=float, 
+      times, force_x, force_y = numpy.loadtxt(infile, dtype=numpy.float64, 
                                               usecols=(0, 1, 2), unpack=True)
     # set Force objects
     self.force_x = Force(times, force_x)
