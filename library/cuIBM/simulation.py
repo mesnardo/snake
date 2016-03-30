@@ -45,7 +45,7 @@ class CuIBMSimulation(Simulation, BarbaGroupSimulation):
         y = numpy.array(struct.unpack('d'*(ny+1), infile.read(8*(ny+1))))
     else:
       with open(grid_file, 'r') as infile:
-        data = numpy.loadtxt(infile, dtype=float)
+        data = numpy.loadtxt(infile, dtype=numpy.float64)
         # x-direction
         nx = int(data[0])
         x, data = data[1:nx+2], data[nx+2:]
@@ -80,7 +80,7 @@ class CuIBMSimulation(Simulation, BarbaGroupSimulation):
     else:
       with open(flux_file, 'r') as infile:
         nq = int(infile.readline())
-        q = numpy.loadtxt(infile, dtype=float)
+        q = numpy.loadtxt(infile, dtype=numpy.float64)
     # set flux Field objects
     qx = Field(label='x-flux',
                time_step=time_step,
@@ -121,7 +121,7 @@ class CuIBMSimulation(Simulation, BarbaGroupSimulation):
     else:
       with open(lambda_file, 'r') as infile:
         nlambda = int(infile.readline())
-        p = numpy.loadtxt(infile, dtype=float)[:nx*ny]
+        p = numpy.loadtxt(infile, dtype=numpy.float64)[:nx*ny]
     # set pressure Field object
     p = Field(label='pressure',
               time_step=time_step,
@@ -146,7 +146,7 @@ class CuIBMSimulation(Simulation, BarbaGroupSimulation):
     print('[info] reading forces from file ...'),
     forces_path = '{}/{}'.format(self.directory, file_name)
     with open(forces_path, 'r') as infile:
-      times, force_x, force_y = numpy.loadtxt(infile, dtype=float, 
+      times, force_x, force_y = numpy.loadtxt(infile, dtype=numpy.float64, 
                                               usecols=(0, 1, 2), unpack=True)
     # set Force objects
     self.force_x = Force(times, force_x)
