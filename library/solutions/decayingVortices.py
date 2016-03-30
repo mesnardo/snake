@@ -136,7 +136,7 @@ class DecayingVortices(object):
       default: 'analytical'.
     """
     for name, field in self.fields.iteritems():
-      self.fields[name] = time_step
+      self.fields[name].time_step = time_step
       field.plot_contour(directory=directory, view=view, save_name=save_name)
 
   def write_fields_petsc_format(self, x, y, time, Re, amplitude,
