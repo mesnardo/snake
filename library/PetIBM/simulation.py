@@ -68,7 +68,7 @@ class PetIBMSimulation(Simulation, BarbaGroupSimulation):
     # reshape fluxes in multi-dimensional arrays
     if dim3:
       qx = qx.reshape((nz, ny, (nx if 'x' in periodic_directions else nx-1)))
-      qx = qx[:, :, :(-1 if 'x' in periodic_directions else 0)]
+      qx = qx[:, :, :(-1 if 'x' in periodic_directions else None)]
       qx = Field(label='x-flux',
                  time_step=time_step,
                  x=x[1:-1], 
@@ -76,7 +76,7 @@ class PetIBMSimulation(Simulation, BarbaGroupSimulation):
                  z=0.5*(z[:-1]+z[1:]), 
                  values=qx)
       qy = qy.reshape((nz, (ny if 'y' in periodic_directions else ny-1), nx))
-      qy = qy[:, :(-1 if 'y' in periodic_directions else 0), :]
+      qy = qy[:, :(-1 if 'y' in periodic_directions else None), :]
       qy = Field(label='y-flux',
                  time_step=time_step,
                  x=0.5*(x[:-1]+x[1:]), 
@@ -84,7 +84,7 @@ class PetIBMSimulation(Simulation, BarbaGroupSimulation):
                  z=0.5*(z[:-1]+z[1:]), 
                  values=qy)
       qz = qz.reshape(((nz if 'z' in periodic_directions else nz-1), ny, nx))
-      qz = qz[:(-1 if 'z' in periodic_directions else 0), :, :]
+      qz = qz[:(-1 if 'z' in periodic_directions else None), :, :]
       qz = Field(label='z-flux',
                  time_step=time_step,
                  x=0.5*(x[:-1]+x[1:]), 
@@ -95,14 +95,14 @@ class PetIBMSimulation(Simulation, BarbaGroupSimulation):
       return qx, qy, qz
     else:
       qx = qx.reshape((ny, (nx if 'x' in periodic_directions else nx-1)))
-      qx = qx[:, :(-1 if 'x' in periodic_directions else 0)]
+      qx = qx[:, :(-1 if 'x' in periodic_directions else None)]
       qx = Field(label='x-flux',
                  time_step=time_step,
                  x=x[1:-1],
                  y=0.5*(y[:-1]+y[1:]),
                  values=qx)
       qy = qy.reshape(((ny if 'y' in periodic_directions else ny-1), nx))
-      qy = qy[:(-1 if 'y' in periodic_directions else 0), :]
+      qy = qy[:(-1 if 'y' in periodic_directions else None), :]
       qy = Field(label='y-flux',
                  time_step=time_step,
                  x=0.5*(x[:-1]+x[1:]),
