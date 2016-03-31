@@ -304,6 +304,30 @@ class BarbaGroupSimulation(object):
   def __init__(self):
     self.fields = {}
 
+  def create_uniform_grid(self, bottom_left=[], top_right=[], n_cells=[]):
+    """Creates a uniform Cartesian grid.
+
+    Parameters
+    ----------
+    bottom_left: list of floats, optional
+      Coordinates of the bottom-left corner;
+      default: []
+    top_right: list of floats, optional
+      Coordinates of the top-right corner;
+      default: []
+    n_cells: list of integers, optional
+      Number of cells in each direction;
+      default: []
+    """
+    print('[info] creating a uniform Cartesian grid ...'),
+    assert len(bottom_left) == len(n_cells)
+    assert len(top_right) == len(n_cells)
+    self.grid = []
+    for i, n in enumerate(n_cells):
+      self.grid.append(numpy.linspace(bottom_left[i], top_right[i], n+1,
+                                      dtype=numpy.float64))
+    print('done')
+
   def get_time_steps(self, time_steps_range=None):
     """Returns a list of the time-steps to post-process.
 
