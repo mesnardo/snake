@@ -35,9 +35,9 @@ class PetIBMSimulation(Simulation, BarbaGroupSimulation):
     print('[info] reading the grid ...'),
     grid_path = '{}/{}'.format(self.directory, file_name)
     with open(grid_path, 'r') as infile:
-      nCells = numpy.array([int(n) for n in infile.readline().strip().split()])
+      n_cells = numpy.array([int(n) for n in infile.readline().strip().split()])
       coords = numpy.loadtxt(infile, dtype=numpy.float64)
-    self.grid = numpy.array(numpy.split(coords, numpy.cumsum(nCells[:-1]+1)))
+    self.grid = numpy.array(numpy.split(coords, numpy.cumsum(n_cells[:-1]+1)))
     print('done')
 
   def read_fluxes(self, time_step, periodic_directions=[]):
