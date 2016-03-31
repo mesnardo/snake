@@ -73,6 +73,9 @@ def parse_command_line():
                       type=str, nargs='+',
                       default=[],
                       help='PetIBM: directions with periodic boundary conditions')
+  parser.add_argument('--plot-asymptotic-ranges', dest='plot_asymptotic_ranges',
+                      action='store_true',
+                      help='computes the GCI and plots the asymptotic ranges')
   parser.add_argument('--analytical-solution', dest='analytical_solution',
                       type=str, nargs='+',
                       default=[],
@@ -124,12 +127,13 @@ def main():
                                             args.field_names, 
                                             simulations[args.mask],
                                             directory=args.directory+'/data')
-    convergence.plot_asymptotic_ranges([simulations[size] for size in sizes],
-                                       alpha,
-                                       simulations[args.mask],
-                                       directory=args.directory+'/images')
+    if args.plot_asymptotic_ranges:
+      convergence.plot_asymptotic_ranges([simulations[size] for size in sizes],
+                                         alpha,
+                                         simulations[args.mask],
+                                         directory=args.directory+'/images')
 
-  exact = convergence.get_exact_solution(simulations, *args.analytical_solution)
+  exact = convergence.get_exact_solution(simulations, args.mask, *args.analytical_solution)
   if args.plot_analytical_solution:
     exact.plot_fields(args.time_step, 
                       view=args.bottom_left+args.top_right, 
