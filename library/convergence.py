@@ -11,15 +11,18 @@ from matplotlib import pyplot
 from field import Field
 
 
-def get_exact_solution(simulations, *arguments):
+def get_exact_solution(simulations, mask, *arguments):
   """Gets the exact solution on the finest grid available.
   If no analytical solution is available, the solution on the finest grid is 
   considered to be exact.
 
   Parameters
   ----------
-  simulations: list of Simulation objects
+  simulations: dictionary of (string, Simulation object) items
     Solutions on grids with constant refinement ratio.
+  mask: string
+    Key of the dictionary simulations to define the simulation 
+    whose grid will be used to compute the analytical solution.
   arguments:
     Arguments for the analytical plug-in 
     (arguments of the __init__ method of the class).
@@ -29,16 +32,16 @@ def get_exact_solution(simulations, *arguments):
   exact: SolutionClass object
     Contains the exact solution.
   """
-  finest = simulations.keys()[-1]
   if arguments:
     from solutions.dispatcher import dispatcher
     SolutionClass = dispatcher[arguments[0]]
-    # compute analytical solution on finest grid
-    exact = SolutionClass(simulations[finest].grid[0],
-                          simulations[finest].grid[1],
+    # compute analytical solution
+    exact = SolutionClass(simulations[mask].grid[0],
+                          simulations[mask].grid[1],
                           *arguments[1:])
   else:
     # assume finest grid contains exact solution if no analytical solution
+    finest = simulations.keys()[-1]
     exact = simulations[finest]
     del simulations[finest]
   return exact
