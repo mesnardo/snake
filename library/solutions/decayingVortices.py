@@ -92,6 +92,14 @@ class DecayingVortices(object):
                   values=( amplitude*numpy.sin(X)*numpy.cos(Y)
                            *math.exp(-2.0*(2.0*numpy.pi)**2*time/Re) )))
 
+  def get_flux_from_velocity(self):
+    return ( Field(label='x-flux',
+                   x=self.fields['x-velocity'].x,
+                   y=self.fields['x-velocity'].y),
+             Field(label='y-flux',
+                   x=self.fields['y-velocity'].x,
+                   y=self.fields['y-velocity'].y) )
+
   def get_pressure(self, x, y, time, Re):
     """Computes the analytical solution of the pressure field.
 
