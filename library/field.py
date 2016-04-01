@@ -47,7 +47,7 @@ class Field(object):
     if not label:
       label = self.label
     # check the two solutions share the same grid
-    atol = 1.0E-06
+    atol = 1.0E-12
     assert numpy.allclose(self.x, other.x, atol=atol)
     assert numpy.allclose(self.y, other.y, atol=atol)
     assert self.values.shape == other.values.shape
@@ -56,7 +56,7 @@ class Field(object):
                  x=self.x, y=self.y, 
                  values=self.values-other.values)
 
-  def restriction(self, grid, atol=1.0E-06):
+  def restriction(self, grid, atol=1.0E-12):
     """Restriction of the field solution onto a coarser grid.
     Note: all nodes on the coarse grid are present in the fine grid.
 
