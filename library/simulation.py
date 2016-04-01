@@ -486,7 +486,7 @@ class BarbaGroupSimulation(object):
     self.fields[label] = self.fields[field_name].subtract(other.fields[field_name],
                                                           label=label)
 
-  def get_error(self, exact, name, mask=None, norm=None):
+  def get_difference(self, exact, name, mask=None, norm=None):
     """Returns the difference between a field and an exact solution.
 
     Parameters
