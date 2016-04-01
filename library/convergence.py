@@ -83,21 +83,18 @@ def plot_grid_convergence(simulations, exact,
   fig, ax = pyplot.subplots(figsize=(6, 6))
   ax.grid(True, zorder=0)
   ax.set_xlabel('grid-spacing')
-  ax.set_ylabel('errors')
-  all_grid_spacings, all_errors = [], []
+  ax.set_ylabel('differences')
+  grid_spacings = [case.get_grid_spacing() for case in simulations]
   norm_labels = {'L2': '$L_2$', 'Linf': '$L_\infty$'}
   for field_name in field_names:
     for norm in norms:
-      grid_spacings = [case.get_grid_spacing() for case in simulations]
-      errors = [case.get_error(exact, field_name, mask=mask, norm=norm) 
-                for case in simulations]  
-      ax.plot(grid_spacings, errors,
+      differences = [case.get_difference(exact, field_name, mask=mask, norm=norm) 
+                     for case in simulations]  
+      ax.plot(grid_spacings, differences,
               label='{} - {}-norm'.format(field_name, norm_labels[norm]), 
               marker='o', zorder=10)
-      all_grid_spacings += grid_spacings
-      all_errors += errors
   ax.legend()
-  ax.set_xlim(0.1*min(all_grid_spacings), 10.0*max(all_grid_spacings))
+  ax.set_xlim(0.1*min(grid_spacings), 10.0*max(grid_spacings))
   pyplot.xscale('log')
   pyplot.yscale('log')
   ax.axis('equal')
