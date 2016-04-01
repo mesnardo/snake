@@ -44,6 +44,7 @@ class DecayingVortices(object):
                                                 0.5*(y[:-1]+y[1:]), 
                                                 float(time), 
                                                 float(Re))
+    self.fields['x-flux'], self.fields['y-flux'] = self.get_flux_from_velocity(x, y)
 
   def mapped_meshgrid(self, x, y):
     """Maps the grid to a $[0,2\pi]x[0,2\pi]$ domain and returns the mesh-grid.
@@ -92,13 +93,16 @@ class DecayingVortices(object):
                   values=( amplitude*numpy.sin(X)*numpy.cos(Y)
                            *math.exp(-2.0*(2.0*numpy.pi)**2*time/Re) )))
 
-  def get_flux_from_velocity(self):
+  def get_flux_from_velocity(self, x, y):
+    dx, dy = x[1:]-x[:-1], y[1:]-y[:-1]
     return ( Field(label='x-flux',
                    x=self.fields['x-velocity'].x,
-                   y=self.fields['x-velocity'].y),
+                   y=self.fields['x-velocity'].y,
+                   values=self.fields['x-velocity'].values*dy[:, None]),
              Field(label='y-flux',
                    x=self.fields['y-velocity'].x,
-                   y=self.fields['y-velocity'].y) )
+                   y=self.fields['y-velocity'].y,
+                   values=self.fields['y-velocity'].values*dx[None, :]) )
 
   def get_pressure(self, x, y, time, Re):
     """Computes the analytical solution of the pressure field.
