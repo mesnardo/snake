@@ -376,21 +376,21 @@ class BarbaGroupSimulation(object):
       self.fields['x-velocity'], self.fields['y-velocity'] = self.get_velocity(time_step, 
                                                  periodic_directions=periodic_directions)
     if 'vorticity' in field_names:
-      self.read_velocity(time_step, 
-                         periodic_directions=periodic_directions)
-      self.compute_vorticity()
+      self.fields['x-velocity'], self.fields['y-velocity'] = self.get_velocity(time_step, 
+                                                 periodic_directions=periodic_directions)
+      self.fields['vorticity'] = self.compute_vorticity()
 
   def compute_vorticity(self):
     """Computes the vorticity field for a two-dimensional simulation.
 
-    Parameters
-    ----------
-    time_step: integer
-      Time-step at which to read the velocity fields.
+    Returns
+    -------
+    vorticity: Field object
+      The vorticity field. 
     """
-    time_step = self.x_velocity.time_step
+    time_step = self.fields['x-velocity'].time_step
     print('[time-step {}] computing the vorticity field ...'.format(time_step)),
-    u, v = self.x_velocity, self.y_velocity
+    u, v = self.fields['x-velocity'], self.fields['y-velocity']
     mask_x = numpy.where(numpy.logical_and(u.x > v.x[0], u.x < v.x[-1]))[0]
     mask_y = numpy.where(numpy.logical_and(v.y > u.y[0], v.y < u.y[-1]))[0]
     # vorticity nodes at cell vertices intersection
@@ -400,9 +400,11 @@ class BarbaGroupSimulation(object):
           / numpy.outer(numpy.ones(yw.size), v.x[1:]-v.x[:-1])
         - (u.values[1:, mask_x] - u.values[:-1, mask_x])
           / numpy.outer(u.y[1:]-u.y[:-1], numpy.ones(xw.size)) )
-    self.vorticity = Field(x=xw, y=yw, values=w, 
-                           time_step=time_step, label='vorticity')
     print('done')
+    return Field(label='vorticity',
+                 time_step=time_step,
+                 x=xw, y=yw, 
+                 values=w)
 
   def get_velocity(self, time_step, periodic_directions=[]):
     """Gets the velocity fields at a given time-step.
