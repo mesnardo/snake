@@ -33,39 +33,50 @@ class Field(object):
     self.x, self.y = x, y
     self.values = values
 
-  def subtract(self, other):
+  def subtract(self, other, label=None):
     """Subtract a given field to the current one.
 
     Parameters
     ----------
     other: Field object
       The field that is subtracted.
+    label: string, optional
+      Label of the Field object to create;
+      default: None (will be <current label>).
     """
-    assert numpy.allclose(self.x, other.x, atol=1.0E-04)
-    assert numpy.allclose(self.y, other.y, atol=1.0E-04)
+    if not label:
+      label = self.label
+    # check the two solutions share the same grid
+    atol = 1.0E-12
+    assert numpy.allclose(self.x, other.x, atol=atol)
+    assert numpy.allclose(self.y, other.y, atol=atol)
     assert self.values.shape == other.values.shape
-    return Field(x=self.x, y=self.y, time_step=self.time_step,
-                 values=self.values-other.values,
-                 label=self.label+'-subtracted')
+    return Field(label=label,
+                 time_step=self.time_step,
+                 x=self.x, y=self.y, 
+                 values=self.values-other.values)
 
-  def restriction(self, grid):
+  def restriction(self, grid, atol=1.0E-12):
     """Restriction of the field solution onto a coarser grid.
     Note: all nodes on the coarse grid are present in the fine grid.
 
     Parameters
     ----------
-    grid: list of numpy arrays of floats
+    grid: list of 1d arrays of floats
       Nodal stations in each direction of the coarser grid.
+    atol: float, optional
+      Absolute tolerance used to define shared nodes between two grids;
+      default: 1.0E-06.
 
     Returns
     -------
     restricted_field: Field object
       Field restricted onto the coarser grid.
     """
-    def intersection(a, b, tolerance=1.0E-06):
-      return numpy.any(numpy.abs(a-b[:, numpy.newaxis]) <= tolerance, axis=0)
-    mask_x = intersection(self.x, grid[0])
-    mask_y = intersection(self.y, grid[1])
+    def intersection(a, b, atol=atol):
+      return numpy.any(numpy.abs(a-b[:, numpy.newaxis]) <= atol, axis=0)
+    mask_x = intersection(self.x, grid[0], atol=atol)
+    mask_y = intersection(self.y, grid[1], atol=atol)
     return Field(x=self.x[mask_x], y=self.y[mask_y], 
                  values=numpy.array([self.values[j][mask_x] 
                                      for j in xrange(self.y.size)

@@ -24,15 +24,16 @@ class MovingVortices(object):
       Time at which the analytical solution is computed.
     """
     self.bottom_left, self.top_right = [x[0], y[0]], [x[-1], y[-1]]
-    self.x_velocity, _ = self.get_velocity(x[1:-1], 
-                                           0.5*(y[:-1]+y[1:]), 
-                                           float(time))
-    _, self.y_velocity = self.get_velocity(0.5*(x[:-1]+x[1:]), 
-                                           y[1:-1], 
-                                           float(time))
-    self.pressure = self.get_pressure(0.5*(x[:-1]+x[1:]), 
-                                      0.5*(y[:-1]+y[1:]), 
-                                      float(time))
+    self.fields = {}
+    self.fields['x-velocity'], _ = self.get_velocity(x[1:-1], 
+                                                     0.5*(y[:-1]+y[1:]), 
+                                                     float(time))
+    _, self.fields['y-velocity'] = self.get_velocity(0.5*(x[:-1]+x[1:]), 
+                                                     y[1:-1], 
+                                                     float(time))
+    self.fields['pressure'] = self.get_pressure(0.5*(x[:-1]+x[1:]), 
+                                                0.5*(y[:-1]+y[1:]), 
+                                                float(time))
 
   def mapped_meshgrid(self, x, y):
     """Maps the grid to a $[0,2\pi]x[0,2\pi]$ domain and returns the mesh-grid.
@@ -64,14 +65,16 @@ class MovingVortices(object):
 
     Returns
     -------
-    x_velocity, y_velocity: Field objects
+    ux, uy: Field objects
       The velocity components.
     """
     X, Y = self.mapped_meshgrid(x, y)
-    return (Field(x=x, y=y, label='x-velocity',
+    return (Field(label='x-velocity',
+                  x=x, y=y, 
                   values=( 1.0 - 2.0*numpy.cos(X-2.0*numpy.pi*time)
                                     *numpy.sin(Y-2.0*numpy.pi*time) )),
-            Field(x=x, y=y, label='y-velocity',
+            Field(label='y-velocity', 
+                  x=x, y=y, 
                   values=( 1.0 + 2.0*numpy.sin(X-2.0*numpy.pi*time)
                                     *numpy.cos(Y-2.0*numpy.pi*time) )))
 
@@ -91,7 +94,8 @@ class MovingVortices(object):
       The pressure field.
     """
     X, Y = self.mapped_meshgrid(x, y)
-    return Field(x=x, y=y, label='pressure', 
+    return Field(label='pressure', 
+                 x=x, y=y, 
                  values=( -numpy.cos(2.0*(X-2.0*numpy.pi*time)) 
                           -numpy.cos(2.0*(Y-2.0*numpy.pi*time)) ))
 
@@ -115,12 +119,9 @@ class MovingVortices(object):
       Prefix of the folder name that will contain the .png files;
       default: 'analytical'.
     """
-    self.x_velocity.time_step = time_step
-    self.y_velocity.time_step = time_step
-    self.pressure.time_step = time_step
-    self.x_velocity.plot_contour(directory=directory, view=view, save_name=save_name)
-    self.y_velocity.plot_contour(directory=directory, view=view, save_name=save_name)
-    self.pressure.plot_contour(directory=directory, view=view, save_name=save_name)
+    for name, field in self.fields.iteritems():
+      self.fields[name].time_step = time_step
+      field.plot_contour(directory=directory, view=view, save_name=save_name)
 
   def write_fields_petsc_format(self, x, y, time,
                                 periodic_directions=None, 

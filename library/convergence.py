@@ -11,15 +11,18 @@ from matplotlib import pyplot
 from field import Field
 
 
-def get_exact_solution(simulations, *arguments):
+def get_exact_solution(simulations, mask, *arguments):
   """Gets the exact solution on the finest grid available.
   If no analytical solution is available, the solution on the finest grid is 
   considered to be exact.
 
   Parameters
   ----------
-  simulations: list of Simulation objects
+  simulations: dictionary of (string, Simulation object) items
     Solutions on grids with constant refinement ratio.
+  mask: string
+    Key of the dictionary simulations to define the simulation 
+    whose grid will be used to compute the analytical solution.
   arguments:
     Arguments for the analytical plug-in 
     (arguments of the __init__ method of the class).
@@ -29,16 +32,16 @@ def get_exact_solution(simulations, *arguments):
   exact: SolutionClass object
     Contains the exact solution.
   """
-  finest = simulations.keys()[-1]
   if arguments:
     from solutions.dispatcher import dispatcher
     SolutionClass = dispatcher[arguments[0]]
-    # compute analytical solution on finest grid
-    exact = SolutionClass(simulations[finest].grid[0],
-                          simulations[finest].grid[1],
+    # compute analytical solution
+    exact = SolutionClass(simulations[mask].grid[0],
+                          simulations[mask].grid[1],
                           *arguments[1:])
   else:
     # assume finest grid contains exact solution if no analytical solution
+    finest = simulations.keys()[-1]
     exact = simulations[finest]
     del simulations[finest]
   return exact
@@ -80,21 +83,18 @@ def plot_grid_convergence(simulations, exact,
   fig, ax = pyplot.subplots(figsize=(6, 6))
   ax.grid(True, zorder=0)
   ax.set_xlabel('grid-spacing')
-  ax.set_ylabel('errors')
-  all_grid_spacings, all_errors = [], []
+  ax.set_ylabel('differences')
+  grid_spacings = [case.get_grid_spacing() for case in simulations]
   norm_labels = {'L2': '$L_2$', 'Linf': '$L_\infty$'}
   for field_name in field_names:
     for norm in norms:
-      grid_spacings = [case.get_grid_spacing() for case in simulations]
-      errors = [case.get_error(exact, field_name, mask=mask, norm=norm) 
-                for case in simulations]  
-      ax.plot(grid_spacings, errors,
+      differences = [case.get_difference(exact, field_name, mask=mask, norm=norm) 
+                     for case in simulations]  
+      ax.plot(grid_spacings, differences,
               label='{} - {}-norm'.format(field_name, norm_labels[norm]), 
               marker='o', zorder=10)
-      all_grid_spacings += grid_spacings
-      all_errors += errors
   ax.legend()
-  ax.set_xlim(0.1*min(all_grid_spacings), 10.0*max(all_grid_spacings))
+  ax.set_xlim(0.1*min(grid_spacings), 10.0*max(grid_spacings))
   pyplot.xscale('log')
   pyplot.yscale('log')
   ax.axis('equal')
@@ -104,7 +104,7 @@ def plot_grid_convergence(simulations, exact,
     if not os.path.isdir(directory):
       print('[info] creating directory: {} ...'.format(directory))
       os.makedirs(directory)
-    time_step = getattr(simulations[0], field_names[0].replace('-', '_')).time_step
+    time_step = simulations[0].fields[field_names[0]].time_step
     pyplot.savefig('{}/{}{:0>7}.png'.format(directory, save_name, time_step))
   if show:
     print('[info] displaying figure ...')
@@ -143,18 +143,17 @@ def get_observed_orders(simulations, field_names, mask,
   coarse, medium, fine = simulations
   ratio = coarse.get_grid_spacing()/medium.get_grid_spacing()
   alpha = {} # will contain observed order of convergence
-  for field_name in field_names:
-    attribute_name = field_name.replace('-', '_')
-    grid = [getattr(mask, attribute_name).x, getattr(mask, attribute_name).y]
-    alpha[field_name] = get_observed_order(getattr(coarse, attribute_name), 
-                                           getattr(medium, attribute_name),
-                                           getattr(fine, attribute_name),
-                                           ratio,
-                                           grid)
-    print('\t{}: {}'.format(field_name, alpha[field_name]))
+  for name in field_names:
+    grid = [mask.fields[name].x, mask.fields[name].y]
+    alpha[name] = get_observed_order(coarse.fields[name],
+                                     medium.fields[name],
+                                     fine.fields[name],
+                                     ratio,
+                                     grid)
+    print('\t{}: {}'.format(name, alpha[name]))
   if save_name:
     print('[info] writing orders into .dat file ...')
-    time_step = getattr(mask, attribute_name).time_step
+    time_step = mask.fields[name].time_step
     if not os.path.isdir(directory):
       print('[info] creating directory: {} ...'.format(directory))
       os.makedirs(directory)
@@ -165,8 +164,8 @@ def get_observed_orders(simulations, field_names, mask,
                                                    fine.description, 
                                                    time_step)
     with open(file_path, 'w') as outfile:
-      for field_name in field_names:
-        outfile.write('{}: {}\n'.format(field_name, alpha[field_name]))
+      for name in field_names:
+        outfile.write('{}: {}\n'.format(name, alpha[name]))
   return alpha
 
 
@@ -228,13 +227,12 @@ def plot_asymptotic_ranges(simulations, orders, mask,
   field_names = orders.keys()
   coarse, medium, fine = simulations
   ratio = coarse.get_grid_spacing()/medium.get_grid_spacing()
-  for field_name in field_names:
-    attribute_name = field_name.replace('-', '_')
-    grid = [getattr(mask, attribute_name).x, getattr(mask, attribute_name).y]
-    field = get_asymptotic_range(getattr(coarse, attribute_name),
-                                 getattr(medium, attribute_name),
-                                 getattr(fine, attribute_name),
-                                 orders[field_name],
+  for name in field_names:
+    grid = [mask.fields[name].x, mask.fields[name].y]
+    field = get_asymptotic_range(coarse.fields[name],
+                                 medium.fields[name],
+                                 fine.fields[name],
+                                 orders[name],
                                  ratio,
                                  grid)
     field.plot_contour(field_range=(0.0, 2.0, 101),
