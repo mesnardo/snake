@@ -455,10 +455,10 @@ class Geometry2d(Geometry):
       # pyplot.plot(x_init[1:], y_init[1:], label='initial', 
       #             lw=0, marker='o')
       pyplot.plot(x_init[1:], y_init[1:], label='initial', 
-                  linewidth=1, color='black', zorder=10)
+                  linewidth=1, color='black', marker='s', markersize='4', zorder=10)
       # pyplot.scatter(x_init[0], y_init[0], s=80, c='red')
     pyplot.plot(x, y, label='current', 
-                color='#CD2305', linewidth=0, marker='o', zorder=10)
+                color='#CD2305', linewidth=0, marker='o', markersize='4', zorder=10)
     pyplot.legend()
     pyplot.axis('equal')
     pyplot.show()

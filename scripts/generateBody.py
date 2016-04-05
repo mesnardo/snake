@@ -58,9 +58,9 @@ def parse_command_line():
                       help='target segment-length')
   # geometry modification arguments
   parser.add_argument('--rotation', '-r', dest='rotation', 
-                      type=float, nargs='+', 
+                      type=float, nargs=3, 
                       default=None,
-                      metavar=('x', 'y', 'z')
+                      metavar=('x', 'y', 'z'),
                       help='center of rotation')
   parser.add_argument('--roll', dest='roll', 
                       type=float, 
@@ -79,7 +79,7 @@ def parse_command_line():
                       choices=['deg', 'rad'], default='deg',
                       help='angles in degrees or radians')
   parser.add_argument('--translation', '-t', dest='translation', 
-                      type=float, nargs='+', 
+                      type=float, nargs=3, 
                       default=[0.0, 0.0, 0.0],
                       metavar=('x-disp', 'y-disp', 'z-disp'),
                       help='displacement in each directions')
