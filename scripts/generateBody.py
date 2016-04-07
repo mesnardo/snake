@@ -87,11 +87,19 @@ def parse_command_line():
                       type=float, 
                       default=1.0,
                       help='scaling factor for 2D geometry')
-  parser.add_argument('--extrusion', '-e', dest='extrusion', 
+  parser.add_argument('--extrusion-limits', dest='extrusion_limits', 
                       type=float, nargs=2,
                       metavar=('start', 'end'),
                       help='limits of the cylinder in the third direction')
-  parser.add_argument('--force', dest='force', 
+  parser.add_argument('--extrusion-n', dest='extrusion_n',
+                      type=int,
+                      default=None,
+                      help='number of divisions in the extrusion direction')
+  parser.add_argument('--extrusion-ds', dest='extrusion_ds',
+                      type=float,
+                      default=None,
+                      help='resolution in the extrusion direction')
+  parser.add_argument('--extrusion-force', dest='extrusion_force', 
                       action='store_true',
                       help='forces the limits of extrusion')
   parser.add_argument('--inside', dest='keep_inside',
@@ -161,9 +169,12 @@ def main():
     body.keep_inside(ds=args.ds)
   elif body.dimensions == 2 and args.body_type == 'file':
     body.discretization(n=args.n, ds=args.ds)
-  if body.dimensions == 2 and args.extrusion:
-    body = body.extrusion(limits=args.extrusion, n=args.n, ds=args.ds, 
-                          force=args.force)
+  if body.dimensions == 2 and args.extrusion_limits:
+    if args.extrusion_ds or args.extrusion_n:
+      body = body.extrusion(limits=args.extrusion_limits, 
+                            n=args.extrusion_n, 
+                            ds=args.extrusion_ds, 
+                            force=args.extrusion_force)
   if args.save:
       output_path = '{}/{}.{}'.format(args.save_directory, 
                                       args.save_name, 
