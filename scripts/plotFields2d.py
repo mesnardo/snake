@@ -122,12 +122,14 @@ def main():
     simulation.read_fields([args.field_name], time_step, 
                            periodic_directions=args.periodic_directions)
     
+    field_name = (args.field_name if not args.subtract_simulation
+                                  else args.field_name+'-subtracted')
     if args.subtract_simulation:
       other.read_fields([args.field_name], time_step, 
                         periodic_directions=args.periodic_directions)
-      simulation.subtract(other, args.field_name)
+      simulation.subtract(other, args.field_name, field_name)
 
-    simulation.plot_contour(args.field_name,
+    simulation.plot_contour(field_name,
                             field_range=args.range,
                             filled_contour=args.filled_contour,
                             view=args.bottom_left+args.top_right,
