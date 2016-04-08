@@ -24,6 +24,20 @@ except ImportError:
   print('[warning] could not import ipywidgets')
 
 
+class RedirectOutput(object):
+  """Context manager to redirect stdout to a given file."""
+  def __init__(self, stdout=''):
+    self.stdout = stdout
+
+  def __enter__(self):
+    self.sys_stdout = sys.stdout
+
+    if self.stdout:
+      sys.stdout = open(self.stdout, 'w')
+
+  def __exit__(self, exc_type, exc_value, traceback):
+    sys.stdout = self.sys_stdout
+
 
 class ReadOptionsFromFile(argparse.Action):
   """Container to read parameters from file."""
