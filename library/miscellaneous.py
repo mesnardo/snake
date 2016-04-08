@@ -221,9 +221,60 @@ def plot_image(ax, image_path):
   return ax
 
 
-def displayer(images_directory=os.getcwd(), forces_path=None,
-              time=(), ylim=[0.0, 3.0], openfoam=False):
-  """Displays images anf forces interactively in a notebook.
+def displayer(directories=[os.getcwd()], time=(), openfoam=False):
+  """Interactively displays multiple images in a Jupyter Notebook with ipywidgets.
+
+  Parameters
+  ----------
+  directories: list of strings, optional
+    Path of folders containing images to display;
+    default: current directory.
+  time: 3-tuple, optional
+    Temporal limits and time-increment to choose which images to display;
+    default: empty tuple (all images in the folder).
+  openfoam: boolean, optional
+    Set 'True' if OpenFOAM simulation;
+    default: False (not an OpenFOAM simulation).
+
+  Returns
+  -------
+  The interactive display.
+  """
+  # check parameter is a list, if not convert into a list
+  try:
+    assert isinstance(directories, (list, tuple))
+    assert not isinstance(directories, basestring)
+  except:
+    directories = [directories]
+  all_images = []
+  if not time:
+    for directory in directories:
+      all_images.append(get_images(directory))
+    slider = create_slider(description='index', values=numpy.arange(len(all_images[0])))
+  else:
+    times = numpy.arange(time[0], time[1]+time[2]/2.0, time[2])
+    if openfoam:
+      steps = times
+    else:
+      steps = numpy.rint(times/time[3]).astype(int)
+    for directory in directories:
+      all_images.append(get_images(directory, steps=steps))
+    slider = create_slider(description='time', values=times)
+
+  def create_view(tic):
+    if not time:
+      index = int(round(tic))
+    else:
+      index = numpy.where(numpy.abs(times-tic) <= 1.0E-06)[0][0]
+    for images in all_images:
+      display(Image(filename=images[index]))
+
+  ipywidgets.interact(create_view, tic=slider)
+
+
+def displayer_with_forces(images_directory=os.getcwd(), forces_path=None,
+                          time=(), ylim=[0.0, 3.0], openfoam=False):
+  """Displays images and forces interactively in a notebook.
 
   Parameters
   ----------
