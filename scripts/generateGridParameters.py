@@ -46,7 +46,7 @@ def main():
   mesh.generate(data)
   if args.output:
     mesh.write_yaml_file(file_path=args.output)
-  mesh.write('gridOlivier.txt')
+  mesh.write_gridlines('gridOlivier.txt')
 
 if __name__ == '__main__':
   print('\n[{}] START\n'.format(os.path.basename(__file__)))
