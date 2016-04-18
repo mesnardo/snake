@@ -9,7 +9,7 @@ import os
 
 sys.path.append(os.environ['SCRIPTS'])
 from library import miscellaneous
-from library.cartesianMesh import StructuredCartesianMesh
+from library.cartesianMesh import CartesianStructuredMesh
 
 def parse_command_line():
   """Parses the command-line with module argparse."""
@@ -20,15 +20,18 @@ def parse_command_line():
                                                'surrounded by a stretched grid',
                                    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
   # fill parser with arguments
-  parser.add_argument('--input', dest='input',
+  parser.add_argument('--input', dest='input_path',
                       type=str,
                       default='cartesianMesh.yaml',
-                      help='path of the Yaml file to read')
-  parser.add_argument('--output', dest='output',
+                      help='path of the YAML file to read')
+  parser.add_argument('--output', dest='output_path',
                       type=str,
                       default=None,
-                      help='path of the file to write in Yaml format')
-
+                      help='path of the file to write in YAML format')
+  parser.add_argument('--write-grid', dest='grid_path',
+                      type=str,
+                      default=None,
+                      help='path of the grid file to write')
   # parse given options file
   parser.add_argument('--options', 
                       type=open, action=miscellaneous.ReadOptionsFromFile,
@@ -41,12 +44,14 @@ def parse_command_line():
 def main():
   """Creates cartesianMesh.yaml file for stretched grid."""
   args = parse_command_line()
-  mesh = StructuredCartesianMesh()
-  data = mesh.read_yaml_file(file_path=args.input)
-  mesh.generate(data)
-  if args.output:
-    mesh.write_yaml_file(file_path=args.output)
-  mesh.write_gridlines('gridOlivier.txt')
+  mesh = CartesianStructuredMesh()
+  mesh.create(mesh.read_yaml_file(args.input_path))
+  mesh.print_parameters()
+  if args.output_path:
+    mesh.write_yaml_file(args.output_path)
+  if args.grid_path:
+    mesh.write(args.grid_path, precision=16)
+
 
 if __name__ == '__main__':
   print('\n[{}] START\n'.format(os.path.basename(__file__)))
