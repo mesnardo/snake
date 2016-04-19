@@ -46,8 +46,8 @@ class IBAMRSimulation(Simulation):
     """
     if not file_path:
       file_path = '{}/dataIB/ib_Drag_force_struct_no_0'.format(self.directory)
-    print('[info] reading forces from {} ...'.format(forces_path)),
-    with open(forces_path, 'r') as infile:
+    print('[info] reading forces from {} ...'.format(file_path)),
+    with open(file_path, 'r') as infile:
       times, force_x, force_y = numpy.loadtxt(infile, dtype=float, 
                                               usecols=(0, 4, 5), unpack=True)
     self.forces.append(Force(times, force_x, '$F_x$'))
