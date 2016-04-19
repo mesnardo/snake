@@ -7,10 +7,6 @@ import os
 
 import numpy
 from matplotlib import pyplot, cm
-try:
-  pyplot.style.use('{}/styles/mesnardo.mplstyle'.format(os.environ['SNAKE']))
-except:
-  pass
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
 
@@ -349,25 +345,30 @@ class Field(object):
 
     Parameters
     ----------
-    field_range: list of floats
-      Min, max and number of contours to plot; default: None.
-    filled_contour: boolean
+    field_range: 3-list of floats, optional
+      Min, max and number of contours to plot; 
+      default: None.
+    filled_contour: boolean, optional
       Set 'True' to create a filled contour;
       default: True.
-    view: list of floats
+    view: 4-list of floats, optional
       Bottom-left and top-right coordinates of the rectangular view to plot;
       default: the whole domain.
-    bodies: list of Body objects
-      The immersed bodies to add to the figure; default: [] (no immersed body).
-    save_name: string
+    bodies: list of Body objects or single Body object, optional
+      The immersed bodies to add to the figure; 
+      default: [] (no immersed body).
+    save_name: string, optional
       Prefix used to create the images directory and to save the .png files; 
       default: None.
-    directory: string
-      Directory where to save the image; default: current directory.
-    width: float
-      Width of the figure (in inches); default: 8.
-    dpi: int
-      Dots per inch (resolution); default: 100
+    directory: string, optional
+      Directory where to save the image; 
+      default: current directory.
+    width: float, optional
+      Width of the figure (in inches); 
+      default: 8.
+    dpi: integer, optional
+      Dots per inch (resolution); 
+      default: 100
     """
     if abs(self.values.min()-self.values.max()) <= 1.0E-06:
       print('[warning] uniform field; plot contour skipped!')
@@ -380,6 +381,11 @@ class Field(object):
     if not os.path.isdir(images_directory):
       print('[info] creating images directory: {} ...'.format(images_directory))
       os.makedirs(images_directory)
+    # convert bodies in list if single body provided
+    try:
+      assert isinstance(bodies, (list, tuple))
+    except:
+      bodies = [bodies]
 
     print('[info] plotting the {} contour ...'.format(self.label))
     height = width*(view[3]-view[1])/(view[2]-view[0])
