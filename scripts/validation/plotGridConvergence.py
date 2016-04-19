@@ -103,15 +103,13 @@ def parse_command_line():
   return parser.parse_args()
 
 
-def main():
+def main(args):
   """Grid convergence study.
   Computes the observed order of convergence using the solution on three 
   consecutive grids with constant grid refinement.
   Computes the Grid Convergence Index and plots the asymptotic ranges.
   Plots the log-log error versus grid-spacing.
   """
-  args = parse_command_line()
-
   # read numerical solutions
   simulations = collections.OrderedDict()
   for size in args.gridline_sizes:
@@ -150,5 +148,6 @@ def main():
 
 if __name__ == '__main__':
   print('\n[{}] START\n'.format(os.path.basename(__file__)))
-  main()
+  args = parse_command_line()
+  main(args)
   print('\n[{}] END\n'.format(os.path.basename(__file__)))

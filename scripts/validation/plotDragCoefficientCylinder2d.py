@@ -139,12 +139,10 @@ def plot_drag_coefficients(simulation, validation_data,
   print('done')
 
 
-def main():
+def main(args):
   """Plots the instantaneous drag coefficient 
   and compares to Koumoutsakos and Leonard (1995).
   """
-  args = parse_command_line()
-  
   print('[info] simulation: {}'.format(args.directory))
 
   simulation = Simulation(directory=args.directory, 
@@ -164,5 +162,6 @@ def main():
 
 if __name__ == '__main__':
   print('\n[{}] START\n'.format(os.path.basename(__file__)))
-  main()
+  args = parse_command_line()
+  main(args)
   print('\n[{}] END\n'.format(os.path.basename(__file__)))

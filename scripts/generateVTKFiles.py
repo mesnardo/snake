@@ -66,11 +66,9 @@ def parse_command_line():
   return parser.parse_args()
 
 
-def main():
+def main(args):
   """Writes the numerical solution into .vtk files."""
   # parse command-line
-  args = parse_command_line()
-
   simulation = Simulation(directory=args.directory, software=args.software)
 
   time_steps = simulation.get_time_steps(args.case_directory, args.time_steps)
@@ -95,5 +93,6 @@ def main():
 
 if __name__ == '__main__':
   print('\n[{}] START\n'.format(os.path.basename(__file__)))
-  main()
+  args = parse_command_line()
+  main(args)
   print('\n[{}] END\n'.format(os.path.basename(__file__)))

@@ -41,9 +41,8 @@ def parse_command_line():
   return parser.parse_args()
 
 
-def main():
+def main(args):
   """Creates cartesianMesh.yaml file for stretched grid."""
-  args = parse_command_line()
   mesh = CartesianStructuredMesh()
   mesh.create(mesh.read_yaml_file(args.input_path))
   mesh.print_parameters()
@@ -55,5 +54,6 @@ def main():
 
 if __name__ == '__main__':
   print('\n[{}] START\n'.format(os.path.basename(__file__)))
-  main()
+  args = parse_command_line()
+  main(args)
   print('\n[{}] END\n'.format(os.path.basename(__file__)))

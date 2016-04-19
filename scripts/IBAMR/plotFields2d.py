@@ -68,11 +68,8 @@ def parse_command_line():
   return parser.parse_args()
 
 
-def main():
+def main(args):
   """Plots the two-dimensional field with VisIt."""
-
-  args = parse_command_line()
-
   # define field to plot
   if args.field == 'vorticity':
     visit_field_name = 'Omega'
@@ -341,6 +338,7 @@ def main():
 
 if __name__ == '__main__':
   print('\n[START] {}\n'.format(os.path.basename(__file__)))
-  main()
+  args = parse_command_line()
+  main(args)
   print('\n[END] {}\n'.format(os.path.basename(__file__)))
   sys.exit()

@@ -101,12 +101,10 @@ def parse_command_line():
   return parser.parse_args()
 
 
-def main():
+def main(args):
   """Plots the the velocity, pressure, or vorticity fields at saved time-steps
   for a two-dimensional simulation.
   """
-  args = parse_command_line()
-  
   simulation = Simulation(directory=args.directory, software=args.software)
   time_steps = simulation.get_time_steps(time_steps_range=args.time_steps_range)
   simulation.read_grid()
@@ -141,5 +139,6 @@ def main():
 
 if __name__ == '__main__':
   print('\n[{}] START\n'.format(os.path.basename(__file__)))
-  main()
+  args = parser_command_line()
+  main(args)
   print('\n[{}] END\n'.format(os.path.basename(__file__)))

@@ -133,11 +133,8 @@ def parse_command_line():
   return parser.parse_args()
 
 
-def main():
+def main(args):
   """Generates a file containing the coordinates of a body."""
-  # parse command-line
-  args = parse_command_line()
-
   # generate the geometry
   if args.body_type == 'file':
     body = geometry.Geometry(file_path=args.file_path)
@@ -186,5 +183,6 @@ def main():
 
 if __name__ == '__main__':
   print('\n[{}] START\n'.format(os.path.basename(__file__)))
-  main()
+  args = parse_command_line()
+  main(args)
   print('\n[{}] END\n'.format(os.path.basename(__file__)))

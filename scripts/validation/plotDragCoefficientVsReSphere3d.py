@@ -170,11 +170,9 @@ class RoosWillmarth1971(object):
     print('done')
 
 
-def main():
+def main(args):
   """Plots the steady drag coefficient of a sphere versus Reynolds number 
   and compares to experimental data (Roos and Willmarth, 1971)."""
-  args = parse_command_line()
-
   simulations = []
   for index, directory in enumerate(args.directories):
     simulations.append(Simulation(directory=directory,
@@ -195,5 +193,6 @@ def main():
 
 if __name__ == '__main__':
   print('\n[{}] START\n'.format(os.path.basename(__file__)))
-  main()
+  args = parse_command_line()
+  main(args)
   print('\n[{}] END\n'.format(os.path.basename(__file__)))

@@ -92,12 +92,10 @@ def get_validation_data(path, Re):
            Field(x=x, values=v, label='y-velocity') )
 
 
-def main():
+def main(args):
   """Plots and writes the velocity components at the centerline of the cavity
   and compares with experimental results form Ghia et al. (1982).
   """
-  args = parse_command_line()
-  
   # register simulation
   simulation = Simulation(directory=args.directory, 
                           software=args.software)
@@ -144,5 +142,6 @@ def main():
 
 if __name__ == '__main__':
   print('\n[{}] START\n'.format(os.path.basename(__file__)))
-  main()
+  args = parse_command_line()
+  main(args)
   print('\n[{}] END\n'.format(os.path.basename(__file__)))

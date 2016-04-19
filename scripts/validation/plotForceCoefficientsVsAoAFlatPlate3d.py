@@ -211,13 +211,11 @@ def plot_coefficients_vs_angles(simulations, validation,
   print('done')
 
 
-def main():
+def main(args):
   """Plots the lift and drag coefficients versus the angle-of-attack of the
   flat-plate and compares to experimental results reported by 
   Taira et al. (2007) and Taira (2008).
   """
-  args = parse_command_line()
-
   simulations = collections.OrderedDict()
   for description, series in zip(args.descriptions, args.series):
     series_directory = os.path.join(args.directory, series)
@@ -246,5 +244,6 @@ def main():
 
 if __name__ == '__main__':
   print('\n[{}] START\n'.format(os.path.basename(__file__)))
-  main()
+  args = parse_command_line()
+  main(args)
   print('\n[{}] END\n'.format(os.path.basename(__file__)))
