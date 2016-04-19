@@ -3,3 +3,8 @@
 
 # ingore IPython Notebook checkpoints folder
 *.ipynb_checkpoints
+
+# ignore installer info
+*.egg
+*.egg-info
+dist
