@@ -162,7 +162,7 @@ class Simulation(object):
     fill_between: boolean, optional
       Set 'True' to fill between lines defined by the extrema; 
       default: False.
-    other_simulations: list of Simulation objects, optional
+    other_simulations: list of Simulation objects or single Simulation object, optional
       List of other simulations to add to plot; 
       default: [].
     other_coefficients: list of floats, optional
@@ -171,6 +171,16 @@ class Simulation(object):
     """
     if not (save_name or show):
       return
+    # convert other_simulations in list if single Simulation provided
+    try:
+      assert isinstance(other_simulations, (list, tuple))
+    except:
+      other_simulations = [other_simulations]
+    # convert other_coefficients in list if single float provided
+    try:
+      assert isinstance(other_coefficients, (list, tuple))
+    except:
+      other_coefficients = [other_coefficients]
     print('[info] plotting forces ...')
     fig, ax = pyplot.subplots(figsize=(8, 6))
     color_cycle = ax._get_lines.prop_cycler
@@ -255,9 +265,11 @@ class Simulation(object):
     pyplot.close()
 
   def create_dataframe_forces(self, 
-                              indices=None, display_strouhal=False, columns=None,
-                              display_coefficients=False, coefficient=1.0,
-                              other_simulations=[], other_coefficients=[]):
+                              indices=[],
+                              display_coefficients=False, 
+                              coefficient=1.0,
+                              display_strouhal=False,
+                              labels=[]):
     """Creates a data frame with Pandas to display 
     time-averaged forces (or force coefficients).
 
@@ -266,21 +278,15 @@ class Simulation(object):
     indices: list of integers, optional
       List of the index of each force to display in the dataframe;
       default: None (all forces);
-    display_strouhal: boolean, optional
-      Set 'True' to display the mean Strouhal number in the dataframe;
-      default: False.
     display_coefficients: boolean, optional
       Set 'True' if force coefficients are to be displayed; 
       default: False.
     coefficient: float, optional
       Scale factor to convert a force into a force-coefficient; 
       default: 1.0.
-    other_simulations: list of Simulation objects, optional
-      List of other simulations used for comparison; 
-      default: [].
-    other_coefficients: list of floats, optional
-      List of scale factors of other simulations; 
-      default: [].
+    display_strouhal: boolean, optional
+      Set 'True' to display the mean Strouhal number in the dataframe;
+      default: False.
 
     Returns
     -------
@@ -291,11 +297,16 @@ class Simulation(object):
           '{} and {} time-units.'.format(self.forces[0].mean['start'], 
                                          self.forces[0].mean['end']))
     descriptions = ['<no description>' if not self.description else self.description]
-    if not indices:
-      indices = numpy.arange(0, len(self.forces)+1, 1)
-    if not columns:
-      columns = (['<Cd>', '<Cl>', '<Cm>'] if display_coefficients else ['<Fx>', '<Fy>', '<Fz>'])
-    columns = numpy.array(columns)
+    # set default indices
+    if not any(indices):
+      indices = numpy.arange(0, len(self.forces), 1)
+    # set default labels
+    if not any(labels):
+      if display_coefficients:
+        labels = numpy.array(['<Cd>', '<Cl>', '<Cm>'])
+      else:
+        labels = numpy.array(['<Fx>', '<Fy>', '<Fz>'])
+    # grab mean values of interest
     values = []
     for index, force in enumerate(self.forces):
       if index not in indices:
@@ -303,8 +314,9 @@ class Simulation(object):
       values.append('{0:.4f}'.format(coefficient*force.mean['value']))
     dataframe = pandas.DataFrame([values],
                                  index=descriptions,
-                                 columns=columns[indices])
+                                 columns=labels[indices])
     if display_strouhal:
+      # assuming Strouhal number based on lift curve signal
       strouhal = self.forces[1].strouhal
       print('[info] Strouhal number is averaged '
             'over the {} periods of the lift curve '
@@ -312,10 +324,4 @@ class Simulation(object):
             ''.format(strouhal['n-periods'],
                       strouhal['time-limits'][0], strouhal['time-limits'][1]))
       dataframe['<St>'] = '{0:.4f}'.format(strouhal['mean'])
-    for index, simulation in enumerate(other_simulations):
-      dataframe = dataframe.append(simulation.create_dataframe_forces(
-                                        indices=indices,
-                                        display_strouhal=display_strouhal,
-                                        display_coefficients=display_coefficients,
-                                        coefficient=other_coefficients[index]))
     return dataframe
