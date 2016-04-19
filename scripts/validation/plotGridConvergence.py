@@ -12,11 +12,10 @@ import numpy
 from matplotlib import pyplot
 pyplot.style.use('{}/styles/mesnardo.mplstyle'.format(os.environ['SCRIPTS']))
 
-sys.path.append(os.environ['SCRIPTS'])
-from library import miscellaneous
-from library import convergence
-from library.simulation import Simulation
-from library.field import Field
+from snake import miscellaneous
+from snake import convergence
+from snake.simulation import Simulation
+from snake.field import Field
 
 
 def parse_command_line():

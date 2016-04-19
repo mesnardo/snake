@@ -11,10 +11,9 @@ import argparse
 import numpy
 from matplotlib import pyplot
 
-sys.path.append(os.environ['SCRIPTS'])
-from library import miscellaneous
-from library.simulation import Simulation
-from library.field import Field
+from snake import miscellaneous
+from snake.simulation import Simulation
+from snake.field import Field
 
 
 def parse_command_line():

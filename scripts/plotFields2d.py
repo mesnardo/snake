@@ -7,10 +7,9 @@ import os
 import sys
 import argparse
 
-sys.path.append(os.environ['SCRIPTS'])
-from library import miscellaneous
-from library.simulation import Simulation
-from library.body import Body
+from snake import miscellaneous
+from snake.simulation import Simulation
+from snake.body import Body
 
 
 def parse_command_line():

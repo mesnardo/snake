@@ -11,8 +11,7 @@ import numpy
 from scipy import signal
 from matplotlib import pyplot
 
-sys.path.append(os.environ['SCRIPTS'])
-from library import miscellaneous
+from snake import miscellaneous
 
 
 def parse_command_line():

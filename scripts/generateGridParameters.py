@@ -7,9 +7,8 @@ import argparse
 import sys
 import os
 
-sys.path.append(os.environ['SCRIPTS'])
-from library import miscellaneous
-from library.cartesianMesh import CartesianStructuredMesh
+from snake import miscellaneous
+from snake.cartesianMesh import CartesianStructuredMesh
 
 def parse_command_line():
   """Parses the command-line with module argparse."""

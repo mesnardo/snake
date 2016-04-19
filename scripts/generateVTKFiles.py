@@ -9,9 +9,8 @@ import argparse
 
 import numpy
 
-sys.path.append(os.environ['SCRIPTS'])
-from library import miscellaneous
-from library.simulation import Simulation
+from snake import miscellaneous
+from snake.simulation import Simulation
 
 
 def parse_command_line():

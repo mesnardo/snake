@@ -9,8 +9,7 @@ import sys
 import math
 import argparse
 
-sys.path.append('{}/scripts/library'.format(os.environ['SCRIPTS']))
-import miscellaneous
+from snake import miscellaneous
 
 
 def parse_command_line():

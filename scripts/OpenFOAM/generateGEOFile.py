@@ -7,8 +7,7 @@ import argparse
 import os
 import sys
 
-sys.path.append(os.environ['SCRIPTS'])
-from library.OpenFOAM import GEOFile
+from snake.OpenFOAM import GEOFile
 
 
 def parse_command_line():

@@ -10,8 +10,7 @@ import sys
 import numpy
 from paraview.simple import *
 
-sys.path.append(os.environ['SCRIPTS'])
-from library import miscellaneous
+from snake import miscellaneous
 
 
 def parse_command_line():

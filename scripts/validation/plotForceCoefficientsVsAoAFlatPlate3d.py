@@ -12,10 +12,9 @@ import collections
 import numpy
 from matplotlib import pyplot
 
-sys.path.append(os.environ['SCRIPTS'])
-from library import miscellaneous
-from library.simulation import Simulation
-from library.force import Force
+from snake import miscellaneous
+from snake.simulation import Simulation
+from snake.force import Force
 
 
 def parse_command_line():
