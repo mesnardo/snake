@@ -9,6 +9,7 @@ import sys
 import numpy
 
 from .simulation import Simulation
+from .field import Field
 
 
 class BarbaGroupSimulation(Simulation):
@@ -87,18 +88,24 @@ class BarbaGroupSimulation(Simulation):
 
     Parameters
     ----------
-    field_names: list of strings
+    field_names: list of strings or single string
       Name of the fields to get; 
       choices: 'pressure', 'vorticity', 
                'x-velocity', 'y-velocity', 
                'x-flux', 'y-flux'.
     time_step: integer
       Time-step at which the solution is read.
-    periodic_directions: list of strings
+    periodic_directions: list of strings, optional
       Directions that uses periodic boundary conditions; 
       choices: 'x', 'y', 'z',
       default: [].
     """
+    # convert field_names in list if single string provided
+    try:
+      assert isinstance(field_names, (list, tuple))
+      assert not isinstance(field_names, basestring)
+    except:
+      field_names = [field_names]
     if 'pressure' in field_names:
       self.fields['pressure'] = self.read_pressure(time_step)
     if any(name in ['x-flux', 'y-flux'] for name in field_names):
@@ -307,7 +314,7 @@ class BarbaGroupSimulation(Simulation):
     dpi: int
       Dots per inch (resolution); default: 100
     """
-    # get view
+    # set view
     view[0] = (self.grid[0].min() if view[0] == float('-inf') else view[0])
     view[1] = (self.grid[1].min() if view[1] == float('-inf') else view[1])
     view[2] = (self.grid[0].max() if view[2] == float('inf') else view[2])
