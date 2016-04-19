@@ -11,17 +11,31 @@ import numpy
 sys.path.append(os.path.join(os.environ['PETSC_DIR'], 'bin', 'pythonscripts'))
 import PetscBinaryIO
 
-from ..simulation import Simulation, BarbaGroupSimulation
+from ..barbaGroupSimulation import BarbaGroupSimulation
 from ..field import Field
 from ..force import Force
 
 
-class PetIBMSimulation(Simulation, BarbaGroupSimulation):
+class PetIBMSimulation(BarbaGroupSimulation):
   """Contains info about a PetIBM simulation.
-  Inherits from classes Simulation and BarbaGroupSimulation.
+  Inherits from the class BarbaGroupSimulation.
   """
-  def __init__(self):
-    self.fields = {}
+  def __init__(self, description=None, directory=os.getcwd(), **kwargs):
+    """Initializes by calling the parent constructor.
+
+    Parameters
+    ----------
+    description: string, optional
+      Description of the simulation;
+      default: None.
+    directory: string, optional
+      Directory of the simulation;
+      default: present working directory.
+    """
+    super(PetIBMSimulation, self).__init__(description=description, 
+                                           directory=directory, 
+                                           software='petibm', 
+                                           **kwargs)
 
   def read_grid(self, file_name='grid.txt'):
     """Reads the coordinates from the file grid.txt.
@@ -38,6 +52,30 @@ class PetIBMSimulation(Simulation, BarbaGroupSimulation):
       n_cells = numpy.array([int(n) for n in infile.readline().strip().split()])
       coords = numpy.loadtxt(infile, dtype=numpy.float64)
     self.grid = numpy.array(numpy.split(coords, numpy.cumsum(n_cells[:-1]+1)))
+    print('done')
+
+  def read_forces(self, file_path=None, labels=None):
+    """Reads forces from files.
+
+    Parameters
+    ----------
+    file_path: string, optional
+      Path of the file containing the forces data;
+      default: None.
+    labels: list of strings, optional
+      Label to give to each force that will be read from file;
+      default: None
+    """
+    if not file_path:
+      file_path = '{}/forces.txt'.format(self.directory)
+    print('[info] reading forces from file {} ...'.format(file_path)),
+    with open(file_path, 'r') as infile:
+      data = numpy.loadtxt(infile, dtype=numpy.float64, unpack=True)
+    times = data[0]
+    if not labels:
+      labels = ['f_x', 'f_z', 'f_z'] # default labels
+    for index, values in enumerate(data[1:]):
+      self.forces.append(Force(times, values, label=labels[index]))
     print('done')
 
   def read_fluxes(self, time_step, periodic_directions=[]):
@@ -147,25 +185,3 @@ class PetIBMSimulation(Simulation, BarbaGroupSimulation):
                 values=p.reshape((y.size-1, x.size-1)))
     print('done')
     return p
-
-  def read_forces(self, file_name='forces.txt', display_coefficients=False):
-    """Reads forces from files.
-
-    Parameters
-    ----------
-    file_name: string
-      Name of the file containing the forces; 
-      default: 'forces.txt'.
-    display_coefficients: boolean
-      Set to 'True' if force coefficients are required; 
-      default: False (i.e. forces).
-    """
-    forces_path = '{}/{}'.format(self.directory, file_name)
-    print('[info] reading forces from file {} ...'.format(forces_path)),
-    with open(forces_path, 'r') as infile:
-      times, force_x, force_y = numpy.loadtxt(infile, dtype=numpy.float64, 
-                                              usecols=(0, 1, 2), unpack=True)
-    # set Force objects
-    self.force_x = Force(times, force_x)
-    self.force_y = Force(times, force_y)
-    print('done')
