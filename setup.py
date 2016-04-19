@@ -15,10 +15,12 @@ def main():
         version='0.1',
         description=('Personal collection of Python scripts '
                      'to post-process the snake reproducibility case-study'),
-        platforms='Unix',
-        license='MIT',
         author='Olivier Mesnard',
-        author_email='mesnardo@gwu.edu')
+        author_email='mesnardo@gwu.edu',
+        url='https://github.com/mesnardo/scripts',
+        packages=['snake'],
+        platforms='Unix',
+        license='MIT')
 
 
 if __name__ == '__main__':

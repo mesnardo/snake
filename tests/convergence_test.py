@@ -8,9 +8,8 @@ import os
 
 import numpy
 
-sys.path.append(os.environ['SCRIPTS'])
-from library.field import Field
-from library import convergence
+from snake.field import Field
+from snake import convergence
 
 
 def test_same_grid():

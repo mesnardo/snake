@@ -1,12 +1,17 @@
 # scripts
 
 
-A collection of Python and bash scripts used to process the numerical solution
+A personal collection of Python and bash scripts used to process the numerical solution
 of simulations run with one of the following code:
 * [PetIBM](https://github.com/barbagroup/PetIBM)
 * [cuIBM](https://github.com/barbaGroup/cuIBM)
 * [IBAMR](https://github.com/IBAMR/IBAMR)
 * [OpenFOAM](www.openfoam.com)
+
+To install the package:
+
+  > python setup.py install
+
 
 Some of the Python scripts call the environment variable `$SCRIPTS`.
 The variable can set by adding the following line to your `.bashrc` 

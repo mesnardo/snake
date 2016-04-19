@@ -8,8 +8,7 @@ import sys
 
 import numpy
 
-sys.path.append(os.environ['SCRIPTS'])
-from library.field import Field
+from snake.field import Field
 
 
 class FieldTest(object):
