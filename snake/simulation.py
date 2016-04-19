@@ -8,6 +8,10 @@ import sys
 
 import numpy
 from matplotlib import pyplot
+try:
+  pyplot.style.use('{}/styles/mesnardo.mplstyle'.format(os.environ['SNAKE']))
+except:
+  pass
 import pandas
 
 from .field import Field
@@ -53,16 +57,16 @@ class Simulation(object):
   def derive_class(self):
     """Finds the appropriate child class based on the software used."""
     if self.software == 'cuibm':
-      from .cuIBM.simulation import CuIBMSimulation
+      from .cuibm.simulation import CuIBMSimulation
       self.__class__ = CuIBMSimulation
     elif self.software == 'petibm':
-      from .PetIBM.simulation import PetIBMSimulation
+      from .petibm.simulation import PetIBMSimulation
       self.__class__ = PetIBMSimulation
     elif self.software == 'openfoam':
-      from .OpenFOAM.simulation import OpenFOAMSimulation
+      from .openfoam.simulation import OpenFOAMSimulation
       self.__class__ = OpenFOAMSimulation
     elif self.software == 'ibamr':
-      from .IBAMR.simulation import IBAMRSimulation
+      from .ibamr.simulation import IBAMRSimulation
       self.__class__ = IBAMRSimulation
     else:
       print('[error] software indicated: {}'.format(self.software))
@@ -168,7 +172,6 @@ class Simulation(object):
     if not (save_name or show):
       return
     print('[info] plotting forces ...')
-    pyplot.style.use('{}/styles/mesnardo.mplstyle'.format(os.environ['SCRIPTS']))
     fig, ax = pyplot.subplots(figsize=(8, 6))
     color_cycle = ax._get_lines.prop_cycler
     ax.grid(True, zorder=0)

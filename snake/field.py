@@ -7,8 +7,10 @@ import os
 
 import numpy
 from matplotlib import pyplot, cm
-# load default style of matplotlib figures
-pyplot.style.use('{}/styles/mesnardo.mplstyle'.format(os.environ['SCRIPTS']))
+try:
+  pyplot.style.use('{}/styles/mesnardo.mplstyle'.format(os.environ['SNAKE']))
+except:
+  pass
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
 

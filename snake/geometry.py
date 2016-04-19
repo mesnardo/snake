@@ -8,6 +8,11 @@ import math
 import copy
 
 import numpy
+from matplotlib import pyplot
+try:
+  pyplot.style.use('{}/styles/mesnardo.mplstyle'.format(os.environ['SNAKE']))
+except:
+  pass
 
 
 class Point(object):
@@ -437,8 +442,6 @@ class Geometry2d(Geometry):
   def plot(self):
     """Plots the two-dimensional geometry using Matplotlib."""
     print('\nPlot the two-dimensional geometry ...')
-    from matplotlib import pyplot
-    pyplot.style.use('{}/styles/mesnardo.mplstyle'.format(os.environ['SCRIPTS']))
     pyplot.grid(True, zorder=0)
     pyplot.xlabel('x')
     pyplot.ylabel('y')

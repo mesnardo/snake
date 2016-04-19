@@ -8,7 +8,7 @@ import sys
 
 import numpy
 
-from simulation import Simulation
+from .simulation import Simulation
 
 
 class BarbaGroupSimulation(Simulation):

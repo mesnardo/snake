@@ -7,6 +7,10 @@ import os
 
 import numpy
 from matplotlib import pyplot
+try:
+  pyplot.style.use('{}/styles/mesnardo.mplstyle'.format(os.environ['SNAKE']))
+except:
+  pass
 
 from field import Field
 

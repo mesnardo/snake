@@ -13,6 +13,10 @@ try:
   import numpy
   from scipy import misc
   from matplotlib import pyplot, gridspec
+  try:
+    pyplot.style.use('{}/styles/mesnardo.mplstyle'.format(os.environ['SNAKE']))
+  except:
+    pass
 except:
   pass
 
@@ -309,10 +313,6 @@ def displayer_with_forces(images_directory=os.getcwd(), forces_path=None,
     images = get_images(images_directory, steps=steps)
     slider = create_slider(description='time', values=times)
   if forces_path:
-    try:
-      pyplot.style.use('{}/styles/mesnardo.mplstyle'.format(os.environ['SCRIPTS']))
-    except:
-      pass
     forces = get_forces(path=forces_path, limits=list(time[:2]))
 
   def create_view(tic):

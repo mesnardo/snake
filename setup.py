@@ -4,7 +4,7 @@
 
 
 import sys
-from setuptools import setup
+from setuptools import setup, find_packages
 
 
 def main():
@@ -18,9 +18,10 @@ def main():
         author='Olivier Mesnard',
         author_email='mesnardo@gwu.edu',
         url='https://github.com/mesnardo/scripts',
-        packages=['snake'],
+        packages=find_packages(),
         platforms='Unix',
-        license='MIT')
+        license='MIT',
+        install_requires=['numpy', 'matplotlib', 'scipy'])
 
 
 if __name__ == '__main__':
