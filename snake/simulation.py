@@ -8,11 +8,11 @@ import sys
 
 import numpy
 from matplotlib import pyplot
+import pandas
 try:
   pyplot.style.use('{}/styles/mesnardo.mplstyle'.format(os.environ['SNAKE']))
 except:
   pass
-import pandas
 
 from .field import Field
 from .force import Force

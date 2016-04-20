@@ -13,13 +13,12 @@ try:
   import numpy
   from scipy import misc
   from matplotlib import pyplot, gridspec
-  try:
-    pyplot.style.use('{}/styles/mesnardo.mplstyle'.format(os.environ['SNAKE']))
-  except:
-    pass
 except:
   pass
-
+try:
+  pyplot.style.use('{}/styles/mesnardo.mplstyle'.format(os.environ['SNAKE']))
+except:
+  pass
 
 try:
   from IPython.display import HTML, Image, display

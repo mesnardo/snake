@@ -1,7 +1,8 @@
-# file: plotFields2d.py
+# file: plotField2dVisIt.py
 # author: Olivier Mesnard (mesnardo@gwu.edu)
-# description: Generates .png files of the two-dimensional vorticity field.
-# running: visit -nowin -cli -s plotFields2d.py <arguments>
+# description: Calls VisIt in batch mode to generate .png files
+#              of the 2D field contour.
+# cli: visit -nowin -cli -s plotField2dVisIt.py <arguments>
 
 
 import os
@@ -9,6 +10,7 @@ import sys
 import math
 import argparse
 
+sys.path.append(os.environ['SNAKE'])
 from snake import miscellaneous
 
 
@@ -27,37 +29,35 @@ def parse_command_line():
                       type=str, 
                       default='numericalSolution',
                       help='name of folder containing the solution in time')
-  parser.add_argument('--body-name', dest='body_name',
+  parser.add_argument('--body', dest='body',
                       type=str,
+                      default=None,
                       help='name of the body file (without the .vertex extension)')
-  parser.add_argument('--field', dest='field',
+  parser.add_argument('--field', dest='field_name',
                       type=str,
                       choices=['vorticity', 'pressure', 
-                               'u-velocity', 'v-velocity', 'velocity-magnitude'],
+                               'x-velocity', 'x-velocity', 
+                               'velocity-magnitude'],
                       help='name of the field to plot')
-  parser.add_argument('--limits', dest='limits',
+  parser.add_argument('--range', dest='field_range',
                       type=float, nargs=2, 
                       default=(-1.0, 1.0),
                       metavar=('min', 'max'),
                       help='Range of the field to plot')
   parser.add_argument('--states', dest='states',
                       type=int, nargs=3, 
-                      default=[0, 2**10000, 1],
+                      default=(0, 2**10000, 1),
                       metavar=('min', 'max', 'increment'),
                       help='steps to plot')
-  parser.add_argument('--bottom-left', dest='bottom_left',
-                      type=float, nargs=2, 
-                      default=(-2.0, -2.0),
-                      metavar=('x', 'y'),
-                      help='bottom-left corner of the rectangular view')
-  parser.add_argument('--top-right', dest='top_right',
-                      type=float, nargs='+',
-                      default=(2.0, 2.0),
-                      metavar=('x', 'y'),
-                      help='top-right corner of the rectangular view')
+  parser.add_argument('--view', dest='view',
+                      type=float, nargs=4,
+                      default=(-2.0, -2.0, 2.0, 2.0),
+                      metavar=('x-bl', 'y-bl', 'x-tr', 'y-tr'),
+                      help='bottom-left coordinates followed by top-right '
+                           'coordinates of the view to display')
   parser.add_argument('--width', dest='width',
                       type=int, 
-                      default=600,
+                      default=800,
                       help='figure width in pixels')
   # parse given options file
   parser.add_argument('--options', 
@@ -67,99 +67,133 @@ def parse_command_line():
   return parser.parse_args()
 
 
-def main(args):
-  """Plots the two-dimensional field with VisIt."""
-  # define field to plot
-  if args.field == 'vorticity':
-    visit_field_name = 'Omega'
-    field_name = 'vorticity'
-    color_table_name = 'RdBu'
-    invert_color_table = 1
-  elif args.field == 'pressure':
-    visit_field_name = 'P'
-    field_name = 'pressure'
-    color_table_name = 'hot'
-    invert_color_table = 0
-  elif args.field == 'velocity-magnitude':
-    visit_field_name = 'U_magnitude'
-    field_name = 'velocityMagnitude'
-    color_table_name = 'RdBu'
-    invert_color_table = 1
-  elif args.field == 'u-velocity':
-    visit_field_name = 'U_x'
-    field_name = 'uVelocity'
-    color_table_name = 'RdBu'
-    invert_color_table = 1
-  elif args.field == 'v-velocity':
-    visit_field_name = 'U_y'
-    field_name = 'vVelocity'
-    color_table_name = 'RdBu'
-    invert_color_table = 1
-  else:
-    sys.exit()
+def check_version():
+  """Check the VisIt version and prints warning 
+  if the version has not been tested.
+  """
+  script_version = '2.8.2'
+  tested_versions = ['2.8.2', '2.10.2']
+  current_version = Version()
+  if current_version not in tested_versions:
+    print('[warning] You are using VisIt-{}'.format(current_version))
+    print('[warning] This script was created with VisIt-{}.'.format(script_version))
+    print('[warning] This script was tested with versions: {}.'.format(tested_versions))
+    print('[warning] It may not work as expected')
 
+
+def plot_field_contours(field_name, field_range, 
+                        body=None,
+                        directory=os.getcwd(),
+                        solution_folder='numericalSolution',
+                        states=(0, 2**10000, 1),
+                        view=(-2.0, -2.0, 2.0, 2.0), 
+                        width=800):
+  """Plots the contour of a given field using VisIt.
+
+  Parameters
+  ----------
+  field_name: string
+    Name of field to plot;
+    choices: vorticity, pressure, velocity-magnitude, x-velocity, y-velocity.
+  field_range: 2-tuple of floats
+    Range of the field to plot (min, max).
+  body: string, optional
+    Name of the immersed body;
+    default: None.
+  directory: string, optional
+    Directory of the IBAMR simulation;
+    default: current directory.
+  solution_folder: string, optional
+    Relative path of the folder containing the numerical solution;
+    default: 'numericalSolution'.
+  states: 3-tuple of integers, optional
+    Limits of index of the states to plot followed by the increment;
+    default: (0, 20000, 1).
+  view: 4-tuple of floats, optional
+    Bottom-left and top-right coordinates of the view to display;
+    default: (-2.0, -2.0, 2.0, 2.0).
+  width: integer, optional
+    Width (in pixels) of the figure;
+    default: 800. 
+  """
+  info = {}
+  info['vorticity'] = {'variable': 'Omega',
+                       'color-table': 'RdBu',
+                       'invert-color-table': 1}
+  info['pressure'] = {'variable': 'P',
+                      'color-table': 'hot',
+                      'invert-color-table': 0}
+  info['velocity-magnitude'] = {'variable': 'U_magnitude',
+                                'color-table': 'RdBu',
+                                'invert-color-table': 1}
+  info['x-velocity'] = {'variable': 'U_x',
+                        'color-table': 'RdBu',
+                        'invert-color-table': 1}
+  info['y-velocity'] = {'variable': 'U_y',
+                        'color-table': 'RdBu',
+                        'invert-color-table': 1}
   # define dimensions of domain to plot
-  view = args.bottom_left + args.top_right
-  width = args.width
   height = int(math.ceil(width*(view[3]-view[1])/(view[2]-view[0])))
-
   # create images directory
   view_string = '{:.2f}_{:.2f}_{:.2f}_{:.2f}'.format(*view)
-  images_directory = '{}/images/{}_{}'.format(args.directory, field_name, view_string)
+  images_directory = '{}/images/{}_{}'.format(directory, 
+                                              field_name, 
+                                              view_string)
   if not os.path.isdir(images_directory):
-    print('[info] creating directory {} to save images ...'.format(images_directory))
+    print('[info] creating images directory {} ...'.format(images_directory))
     os.makedirs(images_directory)
-
-  # check VisIt version
-  script_version = '2.8.2'
-  current_version = Version()
-  if script_version != current_version:
-    print('[warning] This script was created with VisIt-{}.'.format(script_version))
-    print('[warning] It may not work with version {}'.format(current_version))
 
   ShowAllWindows()
 
   # display body
-  OpenDatabase("{}:{}/{}/lag_data.visit".format(GetLocalHostName(), args.directory, args.solution_folder), 0)
-  AddPlot("Mesh", "{}_vertices".format(args.body_name), 1, 1)
-  DrawPlots()
-  MeshAtts = MeshAttributes()
-  MeshAtts.legendFlag = 0
-  MeshAtts.lineStyle = MeshAtts.SOLID  # SOLID, DASH, DOT, DOTDASH
-  MeshAtts.lineWidth = 0
-  MeshAtts.meshColor = (0, 0, 0, 255)
-  MeshAtts.outlineOnlyFlag = 0
-  MeshAtts.errorTolerance = 0.01
-  MeshAtts.meshColorSource = MeshAtts.Foreground  # Foreground, MeshCustom
-  MeshAtts.opaqueColorSource = MeshAtts.Background  # Background, OpaqueCustom
-  MeshAtts.opaqueMode = MeshAtts.Auto  # Auto, On, Off
-  MeshAtts.pointSize = 0.05
-  MeshAtts.opaqueColor = (255, 255, 255, 255)
-  MeshAtts.smoothingLevel = MeshAtts.None  # None, Fast, High
-  MeshAtts.pointSizeVarEnabled = 0
-  MeshAtts.pointSizeVar = "default"
-  MeshAtts.pointType = MeshAtts.Point  # Box, Axis, Icosahedron, Octahedron, Tetrahedron, SphereGeometry, Point, Sphere
-  MeshAtts.showInternal = 0
-  MeshAtts.pointSizePixels = 2
-  MeshAtts.opacity = 1
-  SetPlotOptions(MeshAtts)
+  if body:
+    OpenDatabase("{}:{}/{}/lag_data.visit".format(GetLocalHostName(), 
+                                                  directory, 
+                                                  solution_folder), 0)
+    AddPlot("Mesh", "{}_vertices".format(body), 1, 1)
+    DrawPlots()
+    MeshAtts = MeshAttributes()
+    MeshAtts.legendFlag = 0
+    MeshAtts.lineStyle = MeshAtts.SOLID  # SOLID, DASH, DOT, DOTDASH
+    MeshAtts.lineWidth = 0
+    MeshAtts.meshColor = (0, 0, 0, 255)
+    try:
+      MeshAtts.outlineOnlyFlag = 0
+      MeshAtts.errorTolerance = 0.01
+    except:
+      pass
+    MeshAtts.meshColorSource = MeshAtts.Foreground  # Foreground, MeshCustom
+    MeshAtts.opaqueColorSource = MeshAtts.Background  # Background, OpaqueCustom
+    MeshAtts.opaqueMode = MeshAtts.Auto  # Auto, On, Off
+    MeshAtts.pointSize = 0.05
+    MeshAtts.opaqueColor = (255, 255, 255, 255)
+    MeshAtts.smoothingLevel = MeshAtts.None  # None, Fast, High
+    MeshAtts.pointSizeVarEnabled = 0
+    MeshAtts.pointSizeVar = "default"
+    MeshAtts.pointType = MeshAtts.Point  # Box, Axis, Icosahedron, Octahedron, Tetrahedron, SphereGeometry, Point, Sphere
+    MeshAtts.showInternal = 0
+    MeshAtts.pointSizePixels = 2
+    MeshAtts.opacity = 1
+    SetPlotOptions(MeshAtts)
 
   # display vorticity field
-  OpenDatabase("{}:{}/{}/dumps.visit".format(GetLocalHostName(), args.directory, args.solution_folder), 0)
+  OpenDatabase("{}:{}/{}/dumps.visit".format(GetLocalHostName(), 
+                                             directory, 
+                                             solution_folder), 0)
   HideActivePlots()
-  AddPlot("Pseudocolor", visit_field_name, 1, 1)
+  AddPlot("Pseudocolor", info[field_name]['variable'], 1, 1)
   DrawPlots()
   PseudocolorAtts = PseudocolorAttributes()
   PseudocolorAtts.scaling = PseudocolorAtts.Linear  # Linear, Log, Skew
   PseudocolorAtts.skewFactor = 1
   PseudocolorAtts.limitsMode = PseudocolorAtts.OriginalData  # OriginalData, CurrentPlot
   PseudocolorAtts.minFlag = 1
-  PseudocolorAtts.min = args.limits[0]
+  PseudocolorAtts.min = field_range[0]
   PseudocolorAtts.maxFlag = 1
-  PseudocolorAtts.max = args.limits[1]
+  PseudocolorAtts.max = field_range[1]
   PseudocolorAtts.centering = PseudocolorAtts.Natural  # Natural, Nodal, Zonal
-  PseudocolorAtts.colorTableName = color_table_name
-  PseudocolorAtts.invertColorTable = invert_color_table
+  PseudocolorAtts.colorTableName = info[field_name]['color-table']
+  PseudocolorAtts.invertColorTable = info[field_name]['invert-color-table']
   PseudocolorAtts.opacityType = PseudocolorAtts.FullyOpaque  # ColorTable, FullyOpaque, Constant, Ramp, VariableRange
   PseudocolorAtts.opacityVariable = ""
   PseudocolorAtts.opacity = 1
@@ -272,10 +306,10 @@ def main(args):
   print(time_annotation)
 
   # check number of states available
-  if args.states[1] > TimeSliderGetNStates():
+  if states[1] > TimeSliderGetNStates():
     print('[warning] maximum number of states available is {}'.format(TimeSliderGetNStates()))
     print('[warning] setting new final state ...')
-    args.states[1] = TimeSliderGetNStates()
+    states[1] = TimeSliderGetNStates()
 
   # loop over saved time-steps
   for state in xrange(args.states[0], args.states[1], args.states[2]):
@@ -333,11 +367,18 @@ def main(args):
     
     SaveWindow()
 
-  return
+def main(args):
+  check_version()
+  plot_field_contours(args.field_name, args.field_range, 
+                      directory=args.directory,
+                      body=args.body,
+                      solution_folder=args.solution_folder,
+                      states=args.states,
+                      view=args.view, 
+                      width=args.width)
+  os.remove('visitlog.py')
 
 if __name__ == '__main__':
-  print('\n[START] {}\n'.format(os.path.basename(__file__)))
   args = parse_command_line()
   main(args)
-  print('\n[END] {}\n'.format(os.path.basename(__file__)))
-  sys.exit()
+  sys.exit(0)
