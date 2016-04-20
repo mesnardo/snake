@@ -75,3 +75,122 @@ class OpenFOAMSimulation(Simulation):
     # set Force objects
     self.forces.append(Force(times, force_x, label=labels[0]))
     self.forces.append(Force(times, force_y, label=labels[1]))
+
+  def read_maximum_cfl(self, file_path):
+    """Reads the instantaneous maximum CFL number from a given log file.
+
+    Parameters
+    ----------
+    file_path: string
+      Path of the logging file containing the instantaneous maximum CFL number.
+
+    Returns
+    -------
+    cfl: dictionary of (string, 1D array of floats) items
+      Contains the discrete time and cfl values.
+    """
+    print('[info] reading CFL from {} ...'.format(file_path)),
+    with open(file_path, 'r') as infile:
+      times = numpy.array([float(line.split()[-1]) 
+                           for line in infile if line.startswith('Time = ')])
+    with open(file_path, 'r') as infile:
+      cfl = numpy.array([float(line.split()[-1]) 
+                         for line in infile if line.startswith('Courant Number mean')])
+    assert(times.shape == cfl.shape)
+    self.cfl = {'times': times, 'values': cfl}
+    print('done')
+    return self.cfl
+
+  def get_mean_maximum_cfl(self, limits=(0.0, float('inf'))):
+    """Computes the mean CFL number.
+
+    Parameters
+    ----------
+    limits: list of floats, optional
+      Time-limits to compute the mean value; 
+      default: (0.0, float('inf')).
+
+    Returns
+    -------
+    mean: dictionary of (string, float) items
+      The mean value and the actual time-limits used to average the CFL.
+    """
+    print('[info] computing the mean CFL number ...')
+    mask = numpy.where(numpy.logical_and(self.cfl['times'] >= limits[0],
+                                         self.cfl['values'] <= limits[1]))[0]
+    self.cfl['mean'] = {'start': self.cfl['times'][mask[0]],
+                        'end': self.cfl['times'][mask[-1]],
+                        'value': self.cfl['values'].mean()}
+    print('[info] averaging the maximum CFL number '
+          'between {} and {} time-units:'.format(self.cfl['mean']['start'],
+                                                 self.cfl['mean']['end']))
+    print('\t<max(CFL)> = {}'.format(self.cfl['mean']['value']))
+    return self.cfl['mean']
+
+  def plot_maximum_cfl(self, 
+                       display_extrema=False, order=5, 
+                       limits=(0.0, float('inf'), 0.0, float('inf')),
+                       save_name=None,
+                       show=False):
+    """Plots the instantaneous maximum CFL number.
+
+    Parameters
+    ----------
+    time: 1d array of floats
+      Discrete time values.
+    cfl: 1d array of floats
+      Maximum CFL values.
+    display_extrema: boolean, optional
+      Set 'True' to emphasize the extrema of the curves; 
+      default: False.
+    order: integer, optional
+      Number of neighbors used on each side to define an extremum; 
+      default: 5.
+    limits: list of floats, optional
+      Limits of the axes [xmin, xmax, ymin, ymax]; 
+      default: [0.0, +inf, 0.0, +inf].
+    directory: string, optional
+      Directory of the simulation; 
+      default: <current directory>.
+    save_name: string, optional
+      Name of the .PNG file to save; 
+      default: None (does not save).
+    show: boolean, optional
+      Set 'True' to display the figure; 
+      default: False.
+    """
+    print('[info] plotting cfl ...')
+    try:
+      pyplot.style.use('{}/styles/mesnardo.mplstyle'.format(os.environ['SNAKE']))
+    except:
+      pass
+    fig, ax = pyplot.subplots(figsize=(8, 6))
+    color_cycle = ax._get_lines.prop_cycler
+    color = next(color_cycle)['color']
+    ax.grid(True, zorder=0)
+    ax.set_xlabel('time', fontsize=18)
+    ax.set_ylabel('maximum CFL', fontsize=18)
+    ax.plot(self.cfl['times'], self.cfl['values'], zorder=10)
+    if display_extrema:
+      minima = signal.argrelextrema(self.cfl['values'], numpy.less_equal, 
+                                    color=color, order=order)[0][:-1]
+      maxima = signal.argrelextrema(self.cfl['values'], numpy.greater_equal, 
+                                    color=color, order=order)[0][:-1]
+      # remove indices that are too close
+      minima = minima[numpy.append(True, minima[1:]-minima[:-1] > order)]
+      maxima = maxima[numpy.append(True, maxima[1:]-maxima[:-1] > order)]
+      ax.scatter(self.cfl['time'][minima], self.cfl['values'][minima], 
+                 c=color, marker='o', zorder=10)
+      ax.scatter(self.cfl['time'][maxima], self.cfl['values'][maxima], 
+                 c=color, marker='o', zorder=10)
+    ax.axis(limits)
+    if save_name:
+      images_directory = '{}/images'.format(self.directory)
+      print('[info] saving figure in directory {} ...'.format(images_directory))
+      if not os.path.isdir(images_directory):
+        os.makedirs(images_directory)
+      pyplot.savefig('{}/{}.png'.format(images_directory, save_name))
+    if show:
+      print('[info] displaying figure ...')
+      pyplot.show()
+    pyplot.close()
