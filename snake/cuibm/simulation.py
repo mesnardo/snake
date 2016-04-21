@@ -69,7 +69,7 @@ class CuIBMSimulation(BarbaGroupSimulation):
     self.grid = x, y
     print('done')
 
-  def read_forces(self, file_path=None, labels=None):
+  def read_forces(self, file_path=None, labels=None, usecols=(0, 1, 2)):
     """Reads forces from files.
 
     Parameters
@@ -80,15 +80,19 @@ class CuIBMSimulation(BarbaGroupSimulation):
     labels: list of strings, optional
       Label to give to each force that will be read from file;
       default: None
+    usecols: tuple of integers, optional
+      Index of each column to read in the forces file (including the time column);
+      default: (0, 1, 2)
     """
     if not file_path:
       file_path = '{}/forces'.format(self.directory)
     print('[info] reading forces from file {} ...'.format(file_path)),
     with open(file_path, 'r') as infile:
-      data = numpy.loadtxt(infile, dtype=numpy.float64, unpack=True)
+      data = numpy.loadtxt(infile, dtype=numpy.float64, usecols=usecols, 
+                           unpack=True)
     times = data[0]
     if not labels:
-      labels = ['f_x', 'f_z', 'f_z'] # default labels
+      labels = ['f_x', 'f_y'] # default labels
     for index, values in enumerate(data[1:]):
       self.forces.append(Force(times, values, label=labels[index]))
     print('done')
