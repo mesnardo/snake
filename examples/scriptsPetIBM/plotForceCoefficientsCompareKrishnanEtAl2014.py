@@ -34,6 +34,6 @@ dataframe = simulation.create_dataframe_forces(display_strouhal=True,
                                                display_coefficients=True,
                                                coefficient=2.0)
 dataframe = dataframe.append(krishnan.create_dataframe_forces(display_strouhal=True,
-                                      display_coefficients=True,
-                                      coefficient=2.0))
+                                                              display_coefficients=True,
+                                                              coefficient=2.0))
 print(dataframe)
