@@ -10,8 +10,7 @@ import os
 from snake.cuibm.simulation import CuIBMSimulation
 
 
-simulation = CuIBMSimulation(description='cuIBM (cusp-0.4.0)',
-                             directory='numericalSolution')
+simulation = CuIBMSimulation(description='cuIBM')
 simulation.read_forces()
 simulation.get_mean_forces(limits=[32.0, 64.0])
 simulation.get_strouhal(limits=[32.0, 64.0], order=200)
