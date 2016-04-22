@@ -6,6 +6,8 @@
 import os
 
 import numpy
+from scipy import signal
+from matplotlib import pyplot
 
 from ..simulation import Simulation
 from ..force import Force
@@ -170,18 +172,18 @@ class OpenFOAMSimulation(Simulation):
     ax.grid(True, zorder=0)
     ax.set_xlabel('time', fontsize=18)
     ax.set_ylabel('maximum CFL', fontsize=18)
-    ax.plot(self.cfl['times'], self.cfl['values'], zorder=10)
+    ax.plot(self.cfl['times'], self.cfl['values'], color=color, zorder=10)
     if display_extrema:
       minima = signal.argrelextrema(self.cfl['values'], numpy.less_equal, 
-                                    color=color, order=order)[0][:-1]
+                                    order=order)[0][:-1]
       maxima = signal.argrelextrema(self.cfl['values'], numpy.greater_equal, 
-                                    color=color, order=order)[0][:-1]
+                                    order=order)[0][:-1]
       # remove indices that are too close
       minima = minima[numpy.append(True, minima[1:]-minima[:-1] > order)]
       maxima = maxima[numpy.append(True, maxima[1:]-maxima[:-1] > order)]
-      ax.scatter(self.cfl['time'][minima], self.cfl['values'][minima], 
+      ax.scatter(self.cfl['times'][minima], self.cfl['values'][minima], 
                  c=color, marker='o', zorder=10)
-      ax.scatter(self.cfl['time'][maxima], self.cfl['values'][maxima], 
+      ax.scatter(self.cfl['times'][maxima], self.cfl['values'][maxima], 
                  c=color, marker='o', zorder=10)
     ax.axis(limits)
     if save_name:
@@ -194,3 +196,39 @@ class OpenFOAMSimulation(Simulation):
       print('[info] displaying figure ...')
       pyplot.show()
     pyplot.close()
+
+  def plot_field_contours_paraview(self, field_name,
+                                   field_range=(-1.0, 1.0),
+                                   view=(-2.0, -2.0, 2.0, 2.0), 
+                                   times=(None, None, None),
+                                   width=800):
+    """Plots the contour of a given field using ParaView.
+
+    Parameters
+    ----------
+    field_name: string
+      Name of field to plot;
+      choices: vorticity, pressure, x-velocity, y-velocity.
+    field_range: 2-tuple of floats, optional
+      Range of the field to plot (min, max);
+      default: (-1.0, 1.0).
+    view: 4-tuple of floats, optional
+      Bottom-left and top-right coordinates of the view to display;
+      default: (-2.0, -2.0, 2.0, 2.0).
+    times: 3-tuple of floats, optional
+      Time-limits followed by the time-increment to consider;
+      default: (None, None, None).
+    width: integer, optional
+      Width (in pixels) of the figure;
+      default: 800. 
+    """
+    args = {}
+    args['--directory'] = self.directory
+    args['--field'] = field_name
+    args['--range'] = '{} {}'.format(*field_range)
+    args['--times'] = '{} {} {}'.format(*times)
+    args['--view'] = '{} {} {} {}'.format(*view)
+    args['--width'] = str(width)
+    script = '{}/snake/openfoam/plotField2dParaView.py'.format(os.environ['SNAKE'])
+    arguments = ' '.join([key+' '+value for key, value in args.iteritems()])
+    os.system('pvbatch {} {}'.format(script, arguments))
