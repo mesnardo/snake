@@ -24,19 +24,20 @@ krishnan.get_mean_forces(limits=[32.0, 64.0])
 krishnan.get_strouhal(limits=[32.0, 64.0], order=200)
 
 simulation.plot_forces(indices=[1],
-                       display_coefficients=True, 
+                       display_coefficients=True,
                        coefficient=2.0,
                        display_extrema=True, order=200,
                        limits=(0.0, 80.0, 0.0, 3.0),
-                       other_simulations=krishnan, 
+                       other_simulations=krishnan,
                        other_coefficients=2.0,
                        save_name='liftCoefficientCompareKrishnanEtAl2014')
 dataframe = simulation.create_dataframe_forces(indices=[1],
                                                display_strouhal=True,
                                                display_coefficients=True,
                                                coefficient=2.0)
-dataframe = dataframe.append(krishnan.create_dataframe_forces(indices=[1],
-                                                              display_strouhal=True,
-                                                              display_coefficients=True,
-                                                              coefficient=2.0))
+dataframe2 = krishnan.create_dataframe_forces(indices=[1],
+                                              display_strouhal=True,
+                                              display_coefficients=True,
+                                              coefficient=2.0)
+dataframe = dataframe.append(dataframe2)
 print(dataframe)

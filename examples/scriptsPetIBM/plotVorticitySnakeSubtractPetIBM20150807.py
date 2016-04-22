@@ -15,10 +15,10 @@ simulation = PetIBMSimulation()
 simulation.read_grid()
 
 other = PetIBMSimulation(description='PetIBM (previous)',
-                         directory='{}/simulations_PetIBM/flyingSnake/2d/'
-                                   'cuibmGrid/velocityCGPoissonBiCGStab/'
-                                   'flyingSnake2dRe2000AoA35_20150807'
-                                   ''.format(os.environ['HOME']))
+                         directory=('{}/simulations_PetIBM/flyingSnake/2d/'
+                                    'cuibmGrid/velocityCGPoissonBiCGStab/'
+                                    'flyingSnake2dRe2000AoA35_20150807'
+                                    ''.format(os.environ['HOME'])))
 other.read_grid()
 
 body = Body(file_path='flyingSnake2dAoA35ds0.004.body')

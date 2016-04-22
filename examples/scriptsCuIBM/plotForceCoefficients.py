@@ -12,7 +12,7 @@ simulation.read_forces()
 simulation.get_mean_forces(limits=[32.0, 64.0])
 simulation.get_strouhal(limits=[32.0, 64.0], order=200)
 
-simulation.plot_forces(display_coefficients=True, 
+simulation.plot_forces(display_coefficients=True,
                        coefficient=2.0,
                        display_extrema=True, order=200,
                        limits=(0.0, 80.0, 0.0, 3.0),
