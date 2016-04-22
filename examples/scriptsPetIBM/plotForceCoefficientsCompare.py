@@ -36,5 +36,5 @@ dataframe = simulation.create_dataframe_forces(display_strouhal=True,
                                                coefficient=2.0)
 dataframe = dataframe.append(other.create_dataframe_forces(display_strouhal=True,
                                                            display_coefficients=True,
-                                                           coefficient=-2.0))
+                                                           coefficient=2.0))
 print(dataframe)
