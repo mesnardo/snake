@@ -34,7 +34,12 @@ class OpenFOAMSimulation(Simulation):
                                              software='openfoam', 
                                              **kwargs)
 
-  def read_forces(self, display_coefficients=False, labels=None):
+  def read_forces(self, 
+                  display_coefficients=False, 
+                  labels=None,
+                  forces_folder='postProcessing/forces',
+                  force_coefficients_folder='postProcessing/forceCoeffs',
+                  usecols=(0, 2, 3)):
     """Reads forces from files.
 
     Parameters
@@ -45,18 +50,33 @@ class OpenFOAMSimulation(Simulation):
     labels: list of strings, optional
       Label of each force to read;
       default: None.
+    forces_folder: string, optional
+      Relative path from the simulation directory to the folder containing
+      the forces;
+      default: 'postProcessing/forces'.
+    force_coefficients_folder: string, optional
+      Relative path from the simulation directory to the folder containing
+      the force coefficients;
+      default: 'postProcessing/forceCoeffs'.
+    usecols: tuple of integers, optional
+      Index of columns to read from file, including the time-column index;
+      default: (0, 2, 3).
     """
     if display_coefficients:
-      info = {'directory': '{}/postProcessing/forceCoeffs'.format(self.directory),
+      info = {'directory': os.path.join(self.directory, 
+                                        force_coefficients_folder),
+              'file-name': 'forceCoeffs.dat',
               'description': 'force-coefficients'}
       if not labels:
         labels = ['$C_d$', '$C_l$']
     else:
-      info = {'directory': '{}/postProcessing/forces'.format(self.directory),
+      info = {'directory': os.path.join(self.directory,
+                                        forces_folder),
+              'file-name': 'forces.dat',
               'description': 'forces'}
       if not labels:
         labels = ['$F_x$', '$F_y$']
-    info['usecols'] = (0, 2, 3)
+    info['usecols'] = usecols
     info['labels'] = labels
     # backward compatibility from 2.2.2 to 2.0.1
     if not os.path.isdir(info['directory']):
@@ -68,7 +88,7 @@ class OpenFOAMSimulation(Simulation):
     times = numpy.empty(0)
     force_x, force_y = numpy.empty(0), numpy.empty(0)
     for subdirectory in subdirectories:
-      forces_path = '{}/{}/{}.dat'.format(info['directory'], subdirectory, os.path.basename(info['directory']))
+      forces_path = os.path.join(info['directory'], subdirectory, info['file-name'])
       with open(forces_path, 'r') as infile:
         t, fx, fy = numpy.loadtxt(infile, dtype=float, comments='#', 
                                   usecols=info['usecols'], unpack=True)
