@@ -55,12 +55,11 @@ def parse_command_line():
   return parser.parse_args()
 
 
-def main():
+def main(args):
   """Creates the initial velocity field on a staggered grid.
   Converts the velocity components into fluxes.
   Writes the fluxes and the pressure (zeros) into files.
   """
-  args = parse_command_line()
   # create nodal stations along each direction
   grid = [numpy.linspace(args.bottom_left[i], args.top_right[i], args.n_cells[i]+1) 
           for i in range(len(args.n_cells))]
@@ -75,5 +74,6 @@ def main():
 
 if __name__ == '__main__':
   print('\n[{}] START\n'.format(os.path.basename(__file__)))
-  main()
+  args = parse_command_line()
+  main(args)
   print('\n[{}] END\n'.format(os.path.basename(__file__)))

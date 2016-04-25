@@ -7,10 +7,11 @@
 import os
 import sys
 import math
-import numpy
-import yaml
 from operator import mul
 from decimal import Decimal
+
+import numpy
+import yaml
 
 
 class Segment(object):

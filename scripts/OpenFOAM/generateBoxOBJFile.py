@@ -5,9 +5,8 @@
 
 import argparse
 import os
-import sys
 
-from snake.OpenFOAM import OBJFile
+from snake.openfoam import OBJFile
 
 
 def parse_command_line():

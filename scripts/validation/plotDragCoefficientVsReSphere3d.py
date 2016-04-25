@@ -102,7 +102,9 @@ def plot_drag_coefficient(simulations,
   if save_name and not os.path.isdir(images_directory):
     os.makedirs(images_directory)
   try:
-    pyplot.style.use('{}/styles/mesnardo.mplstyle'.format(os.environ['SCRIPTS']))
+    style_path = os.path.join(os.environ['SNAKE'], 'snake', 'styles',
+                              'mesnardo.mplstyle')
+    pyplot.style.use(style_path)
   except:
     pass
   kwargs_data = {'label': simulations[0].description,
@@ -132,7 +134,7 @@ def plot_drag_coefficient(simulations,
   ax.axis(limits)
   ax.legend(prop={'size': 16})
   if save_name:
-    pyplot.savefig('{}/{}.png'.format(images_directory, save_name))
+    pyplot.savefig(os.path.join(images_directory, save_name + '.png'))
   if show:
     pyplot.show()
   print('done')

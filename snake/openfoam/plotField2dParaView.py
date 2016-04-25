@@ -65,8 +65,7 @@ def plot_field_contours(field_name,
                         times=(None, None, None),
                         width=800):
   openfoam_file_name = '{}.OpenFOAM'.format(os.path.basename(os.path.normpath(directory)))
-  reader = PV4FoamReader(FileName='{}/{}'.format(directory, 
-                                                 openfoam_file_name))
+  reader = PV4FoamReader(FileName=os.path.join(directory, openfoam_file_name))
   print('[info] plotting {} field ...'.format(field_name))
   variable_names = {'vorticity': 'vorticity',
                     'pressure': 'p',
@@ -83,7 +82,8 @@ def plot_field_contours(field_name,
     times = numpy.arange(times[0], times[1]+times[2]/2.0, times[2])
   # create images directory
   view_str = '{:.2f}_{:.2f}_{:.2f}_{:.2f}'.format(*view)
-  images_directory = '{}/images/{}_{}'.format(directory, field_name, view_str)
+  images_directory = os.path.join(directory, 'images',
+                                  field_name + '_' + view_str)
   if not os.path.isdir(images_directory):
     os.makedirs(images_directory)
   print('[info] .png files will be saved in: {}'.format(images_directory))
@@ -110,7 +110,8 @@ def plot_field_contours(field_name,
     print('[info] creating view at {} time-units ...'.format(time))
     render_view.ViewTime = time
     text.Text = 'time = {}'.format(time)
-    WriteImage('{}/{}{:06.2f}.png'.format(images_directory, field_name, time))
+    WriteImage(os.path.join(images_directory,
+                            '{}{:06.2f}.png'.format(field_name, time)))
 
 
 def create_render_view(view=(-2.0, -2.0, 2.0, 2.0), width=800):

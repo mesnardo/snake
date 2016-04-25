@@ -10,7 +10,9 @@ import numpy
 from matplotlib import pyplot
 import pandas
 try:
-  pyplot.style.use('{}/styles/mesnardo.mplstyle'.format(os.environ['SNAKE']))
+  style_path = os.path.join(os.environ['SNAKE'], 'snake', 
+                            'styles', 'mesnardo.mplstyle')
+  pyplot.style.use(style_path)
 except:
   pass
 

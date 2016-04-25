@@ -44,7 +44,7 @@ class CuIBMSimulation(BarbaGroupSimulation):
       default: 'grid'.
     """
     print('[info] reading grid from file ...'),
-    grid_file = '{}/{}'.format(self.directory, file_name)
+    grid_file = os.path.join(self.directory, file_name)
     # test if file written in binary format
     textchars = bytearray({7,8,9,10,12,13,27} | set(range(0x20, 0x100)) - {0x7f})
     is_binary_string = lambda bytes: bool(bytes.translate(None, textchars))
@@ -85,7 +85,7 @@ class CuIBMSimulation(BarbaGroupSimulation):
       default: (0, 1, 2)
     """
     if not file_path:
-      file_path = '{}/forces'.format(self.directory)
+      file_path = os.path.join(self.directory, 'forces')
     print('[info] reading forces from file {} ...'.format(file_path)),
     with open(file_path, 'r') as infile:
       data = numpy.loadtxt(infile, dtype=numpy.float64, usecols=usecols, 
@@ -110,17 +110,17 @@ class CuIBMSimulation(BarbaGroupSimulation):
     x, y = self.grid
     nx, ny = x.size-1, y.size-1
     # read fluxes from file
-    flux_file = '{}/{:0>7}/q'.format(self.directory, time_step)
+    flux_file_path = os.path.join(self.directory, '{:0>7}'.format(time_step))
     # test if file written in binary format
     textchars = bytearray({7,8,9,10,12,13,27} | set(range(0x20, 0x100)) - {0x7f})
     is_binary_string = lambda bytes: bool(bytes.translate(None, textchars))
-    binary_format = is_binary_string(open(flux_file, 'rb').read(1024))
+    binary_format = is_binary_string(open(flux_file_path, 'rb').read(1024))
     if binary_format:
-      with open(flux_file, 'rb') as infile:
+      with open(flux_file_path, 'rb') as infile:
         nq = struct.unpack('i', infile.read(4))[0]
         q = numpy.array(struct.unpack('d'*nq, infile.read(8*nq)))
     else:
-      with open(flux_file, 'r') as infile:
+      with open(flux_file_path, 'r') as infile:
         nq = int(infile.readline())
         q = numpy.loadtxt(infile, dtype=numpy.float64)
     # set flux Field objects
@@ -151,17 +151,17 @@ class CuIBMSimulation(BarbaGroupSimulation):
     x, y = self.grid
     nx, ny = x.size-1, y.size-1
     # read pressure from file
-    lambda_file = '{}/{:0>7}/lambda'.format(self.directory, time_step)
+    lambda_file_path = os.path.join(self.directory, '{:0>7}'.format(time_step))
     # test if file written in binary format
     textchars = bytearray({7,8,9,10,12,13,27} | set(range(0x20, 0x100)) - {0x7f})
     is_binary_string = lambda bytes: bool(bytes.translate(None, textchars))
-    binary_format = is_binary_string(open(lambda_file, 'rb').read(1024))
+    binary_format = is_binary_string(open(lambda_file_path, 'rb').read(1024))
     if binary_format:
-      with open(lambda_file, 'rb') as infile:
+      with open(lambda_file_path, 'rb') as infile:
         nlambda = struct.unpack('i', infile.read(4))[0]
         p = numpy.array(struct.unpack('d'*nlambda, infile.read(8*nlambda)))[:nx*ny]
     else:
-      with open(lambda_file, 'r') as infile:
+      with open(lambda_file_path, 'r') as infile:
         nlambda = int(infile.readline())
         p = numpy.loadtxt(infile, dtype=numpy.float64)[:nx*ny]
     # set pressure Field object

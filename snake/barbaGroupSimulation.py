@@ -319,7 +319,7 @@ class BarbaGroupSimulation(Simulation):
     view[1] = (self.grid[1].min() if view[1] == float('-inf') else view[1])
     view[2] = (self.grid[0].max() if view[2] == float('inf') else view[2])
     view[3] = (self.grid[1].max() if view[3] == float('inf') else view[3])
-    self.fields[field_name].plot_contour(directory='{}/images'.format(self.directory),
+    self.fields[field_name].plot_contour(directory=os.path.join(self.directory, 'images'),
                                          field_range=field_range,
                                          filled_contour=filled_contour,
                                          view=view,
@@ -481,11 +481,12 @@ class BarbaGroupSimulation(Simulation):
       mz = numpy.where(numpy.logical_and(field[0].z > view[0][2],
                                          field[0].z < view[1][2]))[0][::stride]
     # create directory where .vtk file will be saved
-    vtk_directory = '{}/vtk_files/{}'.format(case_directory, field_name)
+    vtk_directory = os.path.join(self.directory, 'vtk_files', field_name)
     if not os.path.isdir(vtk_directory):
       print('[info] creating directory: {}'.format(vtk_directory))
       os.makedirs(vtk_directory)
-    vtk_file_path = '{}/{}{:0>7}.vtk'.format(vtk_directory, field_name, time_step)
+    vtk_file_path = os.path.join(vtk_directory, 
+                                 '{}{:0>7}.vtk'.format(field_name, time_step))
     # get coordinates within the view
     x = field[0].x[mx]
     y = field[0].y[my]

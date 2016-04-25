@@ -37,8 +37,10 @@ class OpenFOAMSimulation(Simulation):
   def read_forces(self, 
                   display_coefficients=False, 
                   labels=None,
-                  forces_folder='postProcessing/forces',
-                  force_coefficients_folder='postProcessing/forceCoeffs',
+                  forces_folder=os.path.join('postProcessing', 
+                                             'forces'),
+                  force_coefficients_folder=os.path.join('postProcessing', 
+                                                         'forceCoeffs'),
                   usecols=(0, 2, 3)):
     """Reads forces from files.
 
@@ -207,11 +209,11 @@ class OpenFOAMSimulation(Simulation):
                  c=color, marker='o', zorder=10)
     ax.axis(limits)
     if save_name:
-      images_directory = '{}/images'.format(self.directory)
+      images_directory = os.path.join(self.directory, 'images')
       print('[info] saving figure in directory {} ...'.format(images_directory))
       if not os.path.isdir(images_directory):
         os.makedirs(images_directory)
-      pyplot.savefig('{}/{}.png'.format(images_directory, save_name))
+      pyplot.savefig(os.path.join(images_directory, save_name + '.png'))
     if show:
       print('[info] displaying figure ...')
       pyplot.show()
@@ -249,6 +251,7 @@ class OpenFOAMSimulation(Simulation):
     args['--times'] = '{} {} {}'.format(*times)
     args['--view'] = '{} {} {} {}'.format(*view)
     args['--width'] = str(width)
-    script = '{}/snake/openfoam/plotField2dParaView.py'.format(os.environ['SNAKE'])
+    script = os.path.join(os.environ['SNAKE'], 'snake', 'openfoam',
+                          'plotField2dParaView.py')
     arguments = ' '.join([key+' '+value for key, value in args.iteritems()])
     os.system('pvbatch {} {}'.format(script, arguments))

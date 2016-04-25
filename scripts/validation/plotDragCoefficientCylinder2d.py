@@ -109,7 +109,9 @@ def plot_drag_coefficients(simulation, validation_data,
   images_directory = '{}/images'.format(directory)
   if save_name and not os.path.isdir(images_directory):
     os.makedirs(images_directory)
-  pyplot.style.use('{}/styles/mesnardo.mplstyle'.format(os.environ['SCRIPTS']))
+  style_path = os.path.join(os.environ['SNAKE'], 'snake', 'styles',
+                            'mesnardo.mplstyle')
+  pyplot.style.use(style_path)
   kwargs_data = {'label': simulation.description,
                  'color': '#336699', 'linestyle': '-', 'linewidth': 2,
                  'zorder': 10}
@@ -132,7 +134,7 @@ def plot_drag_coefficients(simulation, validation_data,
   ax.axis(limits)
   ax.legend()
   if save_name:
-    pyplot.savefig('{}/{}.png'.format(images_directory, save_name))
+    pyplot.savefig(os.path.join(images_directory, save_name + '.png'))
   if show:
     pyplot.show()
   print('done')

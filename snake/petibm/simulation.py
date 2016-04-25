@@ -47,7 +47,7 @@ class PetIBMSimulation(BarbaGroupSimulation):
       default: 'grid.txt'.
     """
     print('[info] reading the grid ...'),
-    grid_path = '{}/{}'.format(self.directory, file_name)
+    grid_path = os.path.join(self.directory, file_name)
     with open(grid_path, 'r') as infile:
       n_cells = numpy.array([int(n) for n in infile.readline().strip().split()])
       coords = numpy.loadtxt(infile, dtype=numpy.float64)
@@ -67,7 +67,7 @@ class PetIBMSimulation(BarbaGroupSimulation):
       default: None
     """
     if not file_path:
-      file_path = '{}/forces.txt'.format(self.directory)
+      file_path = os.path.join(self.directory, 'forces.txt')
     print('[info] reading forces from file {} ...'.format(file_path)),
     with open(file_path, 'r') as infile:
       data = numpy.loadtxt(infile, dtype=numpy.float64, unpack=True)
@@ -92,16 +92,19 @@ class PetIBMSimulation(BarbaGroupSimulation):
     print('[time-step {}] reading fluxes from files ...'.format(time_step)),
     dim3 = (len(self.grid) == 3)
     # folder with numerical solution
-    folder = '{}/{:0>7}'.format(self.directory, time_step)
+    folder = os.path.join(self.directory, '{:0>7}'.format(time_step))
     # read grid-stations and fluxes
     x, y = self.grid[:2]
     nx, ny = x.size-1, y.size-1
-    qx = PetscBinaryIO.PetscBinaryIO().readBinaryFile('{}/qx.dat'.format(folder))[0]
-    qy = PetscBinaryIO.PetscBinaryIO().readBinaryFile('{}/qy.dat'.format(folder))[0]
+    qx_file_path = os.path.join(folder, 'qx.dat')
+    qx = PetscBinaryIO.PetscBinaryIO().readBinaryFile(qx_file_path)[0]
+    qy_file_path = os.path.join(folder, 'qy.dat')
+    qy = PetscBinaryIO.PetscBinaryIO().readBinaryFile(qy_file_path)[0]
     if dim3:
       z = self.grid[2]
       nz = z.size-1
-      qz = PetscBinaryIO.PetscBinaryIO().readBinaryFile('{}/qz.dat'.format(folder))[0]
+      qz_file_path = os.path.join(folder, 'qz.dat')
+      qz = PetscBinaryIO.PetscBinaryIO().readBinaryFile(qz_file_path)[0]
     # create flux Field objects in staggered arrangement
     # reshape fluxes in multi-dimensional arrays
     if dim3:
@@ -166,9 +169,10 @@ class PetIBMSimulation(BarbaGroupSimulation):
       z = self.grid[2]
       nz = z.size-1
     # folder with numerical solution
-    folder = '{}/{:0>7}'.format(self.directory, time_step)
+    folder = os.path.join(self.directory, '{:0>7}'.format(time_step))
     # read pressure
-    p = PetscBinaryIO.PetscBinaryIO().readBinaryFile('{}/phi.dat'.format(folder))[0]
+    phi_file_path = os.path.join(folder, 'phi.dat')
+    p = PetscBinaryIO.PetscBinaryIO().readBinaryFile(phi_file_path)[0]
     # set pressure Field object
     if dim3:
       p = Field(label='pressure',

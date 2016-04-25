@@ -5,7 +5,6 @@
 
 
 import os
-import sys
 import argparse
 import collections
 
@@ -141,11 +140,13 @@ def plot_coefficients_vs_angles(simulations, validation,
     default: False.
   """
   print('[info] plotting the coefficients versus the angle-of-attack ...'),
-  images_directory = '{}/images'.format(save_directory)
+  images_directory = os.path.join(save_directory, 'images')
   if save_names and not os.path.isdir(images_directory):
     os.makedirs(images_directory)
   try:
-    pyplot.style.use('{}/styles/mesnardo.mplstyle'.format(os.environ['SCRIPTS']))
+    style_path = os.path.join(os.environ['SNAKE'], 'snake', 'styles',
+                              'mesnardo.mplstyle')
+    pyplot.style.use(style_path)
   except:
     pass
   software_labels = {'petibm': 'PetIBM'}
@@ -174,7 +175,7 @@ def plot_coefficients_vs_angles(simulations, validation,
   ax.legend(loc='upper left', prop={'size': 18})
   ax.axis(limits)
   if save_names:
-    pyplot.savefig('{}/{}'.format(images_directory, save_names[0]))
+    pyplot.savefig(os.path.join(images_directory, save_names[0] + '.png'))
   if show:
     pyplot.show()
     pyplot.close()
@@ -203,7 +204,7 @@ def plot_coefficients_vs_angles(simulations, validation,
   ax.legend(loc='upper left', prop={'size': 18})
   ax.axis(limits)
   if save_names:
-    pyplot.savefig('{}/{}'.format(images_directory, save_names[1]))
+    pyplot.savefig(os.path.join(images_directory, save_names[1] + '.png'))
   if show:
     pyplot.show()
     pyplot.close()

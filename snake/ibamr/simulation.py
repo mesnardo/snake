@@ -47,7 +47,7 @@ class IBAMRSimulation(Simulation):
       default: None.
     """
     if not file_path:
-      file_path = '{}/dataIB/ib_Drag_force_struct_no_0'.format(self.directory)
+      file_path = os.path.join(self.directory, 'dataIB', 'ib_Drag_force_struct_no_0')
     print('[info] reading forces from {} ...'.format(file_path)),
     with open(file_path, 'r') as infile:
       times, force_x, force_y = numpy.loadtxt(infile, dtype=float, 
@@ -68,15 +68,17 @@ class IBAMRSimulation(Simulation):
     print('[info] writing summary files for VisIt ...'),
     time_steps = numpy.arange(time_steps[0], time_steps[1]+1, time_steps[2])
     # list of SAMRAI files to VisIt
-    dumps_visit = numpy.array(['visit_dump.{0:05}/summary.samrai'
-                               ''.format(time_step) for time_step in time_steps])
+    dumps_visit = numpy.array([os.path.join('visit_dump.{0:05}'.format(time_step),
+                                            'summary.samrai')
+                               for time_step in time_steps])
     # list of SILO file to VisIt
-    lag_data_visit = numpy.array(['lag_data.cycle_{0:06d}/lag_data.cycle_{0:06d}.summary.silo'
-                                  ''.format(time_step) for time_step in time_steps])
+    lag_data_visit = numpy.array([os.path.join('lag_data.cycle_{:06d}'.format(time_step),
+                                               'lag_data.cycle_{:06d}.summary.silo'.format(time_step))
+                                  for time_step in time_steps])
     # write files
-    with open('{}/dumps.visit'.format(self.directory), 'w') as outfile:
+    with open(os.path.join(self.directory, 'dumps.visit'), 'w') as outfile:
       numpy.savetxt(outfile, dumps_visit, fmt='%s')
-    with open('{}/lag_data.visit'.format(self.directory), 'w') as outfile:
+    with open(os.path.join(self.directory, 'lag_data.visit'), 'w') as outfile:
       numpy.savetxt(outfile, lag_data_visit, fmt='%s')
     print('done')
 
@@ -122,7 +124,8 @@ class IBAMRSimulation(Simulation):
     args['--states'] = '{} {} {}'.format(*states)
     args['--view'] = '{} {} {} {}'.format(*view)
     args['--width'] = str(width)
-    script = '{}/snake/ibamr/plotField2dVisIt.py'.format(os.environ['SNAKE'])
+    script = os.path.join(os.environ['SNAKE'], 'snake', 'ibamr', 
+                          'plotField2dVisIt.py')
     arguments = ' '.join([key+' '+value for key, value in args.iteritems()])
     os.system('visit -nowin -cli -s {} {}'.format(script, arguments))
 
@@ -150,6 +153,7 @@ class IBAMRSimulation(Simulation):
     args['--solution-folder'] = solution_folder
     args['--states'] = '{} {} {}'.format(*states)
     args['--time-limits'] = '{} {}'.format(*time_limits)
-    script = '{}/snake/ibamr/getNumberCellsVisIt.py'.format(os.environ['SNAKE'])
+    script = os.path.join(os.environ['SNAKE'], 'snake', 'ibamr', 
+                          'getNumberCellsVisIt.py')
     arguments = ' '.join([key+' '+value for key, value in args.iteritems()])
     os.system('visit -nowin -cli -s {} {}'.format(script, arguments))

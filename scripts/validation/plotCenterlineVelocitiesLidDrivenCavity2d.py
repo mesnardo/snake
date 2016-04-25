@@ -120,7 +120,7 @@ def main(args):
                               'marker': 'o', 'markersize': 8,
                               'zorder': 10}
 
-  save_directory = '{}/images'.format(simulation.directory)
+  save_directory = os.path.join(simulation.directory, 'images')
   if not os.path.isdir(save_directory):
     os.makedirs(save_directory)
   simulation.x_velocity.plot_vertical_gridline_values(0.5,

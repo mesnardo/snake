@@ -8,7 +8,9 @@ import os
 import numpy
 from matplotlib import pyplot
 try:
-  pyplot.style.use('{}/styles/mesnardo.mplstyle'.format(os.environ['SNAKE']))
+  style_path = os.path.join(os.environ['SNAKE'], 'snake',
+                            'styles', 'mesnardo.mplstyle')
+  pyplot.style.use(style_path)
 except:
   pass
 
@@ -55,7 +57,7 @@ def plot_grid_convergence(simulations, exact,
                           mask=None,
                           field_names=None,
                           norms=None,
-                          directory=os.getcwd()+'/images', 
+                          directory=os.path.join(os.getcwd(), 'images'), 
                           save_name=None, 
                           show=False):
   """Plots the grid-convergence in a log-log figure.
@@ -109,7 +111,8 @@ def plot_grid_convergence(simulations, exact,
       print('[info] creating directory: {} ...'.format(directory))
       os.makedirs(directory)
     time_step = simulations[0].fields[field_names[0]].time_step
-    pyplot.savefig('{}/{}{:0>7}.png'.format(directory, save_name, time_step))
+    pyplot.savefig(os.path.join(directory, 
+                                '{}{:0>7}.png'.format(save_name, time_step)))
   if show:
     print('[info] displaying figure ...')
     pyplot.show()
@@ -161,12 +164,12 @@ def get_observed_orders(simulations, field_names, mask,
     if not os.path.isdir(directory):
       print('[info] creating directory: {} ...'.format(directory))
       os.makedirs(directory)
-    file_path = '{}/{}_{}_{}_{}_{:0>7}.dat'.format(directory, 
-                                                   save_name, 
-                                                   coarse.description,
-                                                   medium.description,
-                                                   fine.description, 
-                                                   time_step)
+    file_path = os.path.join(directory,
+                             '_'.join([save_name,
+                                       coarse.description,
+                                       medium.description,
+                                       fine.description,
+                                       '{:0>7}'.format(time_step)]))
     with open(file_path, 'w') as outfile:
       for name in field_names:
         outfile.write('{}: {}\n'.format(name, alpha[name]))
@@ -242,10 +245,11 @@ def plot_asymptotic_ranges(simulations, orders, mask,
     field.plot_contour(field_range=(0.0, 2.0, 101),
                        view=[coarse.grid[0][0], coarse.grid[1][0],
                              coarse.grid[0][-1], coarse.grid[1][-1]],
-                       directory='{}/gci_{}_{}_{}'.format(directory,
-                                                          coarse.description,
-                                                          medium.description,
-                                                          fine.description))
+                       directory=os.path.join(directory,
+                                              '_'.join(['gci',
+                                                        coarse.description,
+                                                        medium.description,
+                                                        fine.description])))
 
 
 def get_asymptotic_range(coarse, medium, fine, order, ratio, grid):

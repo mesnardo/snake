@@ -11,7 +11,9 @@ import numpy
 from matplotlib import pyplot
 
 # load matplotlib style sheet
-pyplot.style.use('{}/styles/mesnardo.mplstyle'.format(os.environ['SCRIPTS']))
+style_path = os.path.join(os.environ['SNAKE'], 'snake', 'styles',
+                          'mesnardo.mplstyle')
+pyplot.style.use(style_path)
 
 
 class Series(object):

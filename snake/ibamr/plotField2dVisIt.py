@@ -136,9 +136,8 @@ def plot_field_contours(field_name, field_range,
   height = int(math.ceil(width*(view[3]-view[1])/(view[2]-view[0])))
   # create images directory
   view_string = '{:.2f}_{:.2f}_{:.2f}_{:.2f}'.format(*view)
-  images_directory = '{}/images/{}_{}'.format(directory, 
-                                              field_name, 
-                                              view_string)
+  images_directory = os.path.join(directory, 'images', 
+                                  '_'.join([field_name, view_string]))
   if not os.path.isdir(images_directory):
     print('[info] creating images directory {} ...'.format(images_directory))
     os.makedirs(images_directory)
@@ -147,10 +146,10 @@ def plot_field_contours(field_name, field_range,
 
   # display body
   if body:
-    OpenDatabase("{}:{}/{}/lag_data.visit".format(GetLocalHostName(), 
-                                                  directory, 
-                                                  solution_folder), 0)
-    AddPlot("Mesh", "{}_vertices".format(body), 1, 1)
+    OpenDatabase(GetLocalHostName() + ':' + os.path.join(directory,
+                                                         solution_folder,
+                                                         'lag_data.visit'), 0)
+    AddPlot('Mesh', body + '_vertices', 1, 1)
     DrawPlots()
     MeshAtts = MeshAttributes()
     MeshAtts.legendFlag = 0
@@ -169,7 +168,7 @@ def plot_field_contours(field_name, field_range,
     MeshAtts.opaqueColor = (255, 255, 255, 255)
     MeshAtts.smoothingLevel = MeshAtts.None  # None, Fast, High
     MeshAtts.pointSizeVarEnabled = 0
-    MeshAtts.pointSizeVar = "default"
+    MeshAtts.pointSizeVar = 'default'
     MeshAtts.pointType = MeshAtts.Point  # Box, Axis, Icosahedron, Octahedron, Tetrahedron, SphereGeometry, Point, Sphere
     MeshAtts.showInternal = 0
     MeshAtts.pointSizePixels = 2
@@ -177,11 +176,11 @@ def plot_field_contours(field_name, field_range,
     SetPlotOptions(MeshAtts)
 
   # display vorticity field
-  OpenDatabase("{}:{}/{}/dumps.visit".format(GetLocalHostName(), 
-                                             directory, 
-                                             solution_folder), 0)
+  OpenDatabase(GetLocalHostName() + ':' + os.path.join(directory, 
+                                                       solution_folder,
+                                                       'dumps.visit'), 0)
   HideActivePlots()
-  AddPlot("Pseudocolor", info[field_name]['variable'], 1, 1)
+  AddPlot('Pseudocolor', info[field_name]['variable'], 1, 1)
   DrawPlots()
   PseudocolorAtts = PseudocolorAttributes()
   PseudocolorAtts.scaling = PseudocolorAtts.Linear  # Linear, Log, Skew
@@ -195,7 +194,7 @@ def plot_field_contours(field_name, field_range,
   PseudocolorAtts.colorTableName = info[field_name]['color-table']
   PseudocolorAtts.invertColorTable = info[field_name]['invert-color-table']
   PseudocolorAtts.opacityType = PseudocolorAtts.FullyOpaque  # ColorTable, FullyOpaque, Constant, Ramp, VariableRange
-  PseudocolorAtts.opacityVariable = ""
+  PseudocolorAtts.opacityVariable = ''
   PseudocolorAtts.opacity = 1
   PseudocolorAtts.opacityVarMin = 0
   PseudocolorAtts.opacityVarMax = 1
@@ -204,7 +203,7 @@ def plot_field_contours(field_name, field_range,
   PseudocolorAtts.pointSize = 0.05
   PseudocolorAtts.pointType = PseudocolorAtts.Point  # Box, Axis, Icosahedron, Octahedron, Tetrahedron, SphereGeometry, Point, Sphere
   PseudocolorAtts.pointSizeVarEnabled = 0
-  PseudocolorAtts.pointSizeVar = "default"
+  PseudocolorAtts.pointSizeVar = 'default'
   PseudocolorAtts.pointSizePixels = 2
   PseudocolorAtts.lineType = PseudocolorAtts.Line  # Line, Tube, Ribbon
   PseudocolorAtts.lineStyle = PseudocolorAtts.SOLID  # SOLID, DASH, DOT, DOTDASH
@@ -214,7 +213,7 @@ def plot_field_contours(field_name, field_range,
   PseudocolorAtts.tubeRadiusAbsolute = 0.125
   PseudocolorAtts.tubeRadiusBBox = 0.005
   PseudocolorAtts.varyTubeRadius = 0
-  PseudocolorAtts.varyTubeRadiusVariable = ""
+  PseudocolorAtts.varyTubeRadiusVariable = ''
   PseudocolorAtts.varyTubeRadiusFactor = 10
   PseudocolorAtts.endPointType = PseudocolorAtts.None  # None, Tails, Heads, Both
   PseudocolorAtts.endPointStyle = PseudocolorAtts.Spheres  # Spheres, Cones
@@ -287,7 +286,7 @@ def plot_field_contours(field_name, field_range,
   AnnotationAtts.gradientColor1 = (0, 0, 255, 255)
   AnnotationAtts.gradientColor2 = (0, 0, 0, 255)
   AnnotationAtts.backgroundMode = AnnotationAtts.Solid  # Solid, Gradient, Image, ImageSphere
-  AnnotationAtts.backgroundImage = ""
+  AnnotationAtts.backgroundImage = ''
   AnnotationAtts.imageRepeatX = 1
   AnnotationAtts.imageRepeatY = 1
   AnnotationAtts.axesArray.visible = 0

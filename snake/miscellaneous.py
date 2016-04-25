@@ -16,7 +16,9 @@ try:
 except:
   pass
 try:
-  pyplot.style.use('{}/styles/mesnardo.mplstyle'.format(os.environ['SNAKE']))
+  style_path = os.path.join(os.environ['SNAKE'], 'snake',
+                            'styles', 'mesnardo.mplstyle')
+  pyplot.style.use(style_path)
 except:
   pass
 
@@ -55,29 +57,6 @@ class ReadOptionsFromFile(argparse.Action):
     parser.parse_args(lines, namespace)
 
 
-def parse_command_line():
-  """Parses the command-line."""
-  # create parser
-  parser = argparse.ArgumentParser(description='No description available',
-                        formatter_class= argparse.ArgumentDefaultsHelpFormatter)
-  # fill parser with arguments
-  parser.add_argument('--rsync', dest='rsync', 
-                      action='store_true', 
-                      help='rsync list of images')
-  # parse given options file
-  class LoadFromFile(argparse.Action):
-    """Container to read parameters from file."""
-    def __call__(self, parser, namespace, values, option_string=None):
-      """Fills the namespace with parameters read in file."""
-      with values as f:
-        parser.parse_args(f.read().split(), namespace)
-  parser.add_argument('--file', 
-                      type=open, action=LoadFromFile,
-                      help='path of the file with options to parse')
-  # return namespace
-  return parser.parse_args()
-
-
 def display_image(figure):
   if not os.path.isfile(figure):
     print('Image not available')
@@ -109,7 +88,7 @@ def get_images(directory, prefix=None, steps=None):
   except:
     check = not steps
   if check:
-    images =  sorted(['{}/{}'.format(directory, image) 
+    images =  sorted([os.path.join(directory, image) 
                       for image in os.listdir(directory)])
   else:
     if not prefix:
@@ -117,10 +96,10 @@ def get_images(directory, prefix=None, steps=None):
                         os.listdir(directory)[0], 
                         re.I).groups()[0]
     if all(isinstance(step, int) for step in steps):
-      images = ['{}/{}{:0>7}.png'.format(directory, prefix, step) 
+      images = [os.path.join(directory, '{}{:0>7}.png'.format(prefix, step))
                 for step in steps]
     else:
-      images = ['{}/{}{:06.2f}.png'.format(directory, prefix, step) 
+      images = [os.path.join(directory, '{}{:06.2f}.png'.format(prefix, step))
                 for step in steps]
   return images
 
@@ -156,7 +135,7 @@ def get_forces(path=None, limits=[0.0, float('inf')]):
     Keys are 'time' (discrete time), 'x', and 'y' (forces in x- and y-directions).
   """
   if not path:
-    paths_to_test = ['{}/{}'.format(os.getcwd(), file_name) 
+    paths_to_test = [os.path.join(os.getcwd(), file_name) 
                      for file_name in ['forces', 'forces.txt']]
     for path_to_test in paths_to_test:
       file_in_directory = os.path.isfile(file_test)
@@ -332,64 +311,6 @@ def displayer_with_forces(images_directory=os.getcwd(), forces_path=None,
   ipywidgets.interact(create_view, tic=slider)
 
 
-def get_map(machine='phantom.seas.gwu.edu', file_path=None):
-  mapper = {}
-  if not file_path:
-    file_path = '../resources/simulationDirectoriesPhantom.txt'.format(os.getcwd())
-  with open(file_path, 'r') as infile:
-    lines = infile.readlines()
-  for index, line in enumerate(lines):
-    if line.startswith('code'):
-      offset = index
-      code = line.strip().split(':')[1].lstrip()
-      info = lines[offset+1].strip().split(':')[1].lstrip()
-      brief = lines[offset+2].strip().split(':')[1].lstrip()
-      path = lines[offset+3].strip().split(':')[1].lstrip()
-      offset += 4
-      while offset < len(lines) and lines[offset].strip():
-        simu_key, simu_path = lines[offset].strip().split(':')
-        mapper_key = '{}_{}_{}'.format(code, brief, simu_key.strip())
-        mapper_value = '{}/{}'.format(path, simu_path.strip())
-        mapper[mapper_key] = mapper_value
-        offset += 1
-  if machine == 'osborne':
-    destination='{}/flyingSnakeData'.format(os.environ['HOME'])
-    for key, path in mapper.iteritems():
-      mapper[key] = '{}/{}'.format(destination, path)
-  return mapper
-
-
-def rsync(machine='phantom.seas.gwu.edu', 
-          destination='{}/flyingSnakeData'.format(os.environ['HOME'])):
-  if not os.path.isdir(destination):
-    os.makedirs(destination)
-  mapper = get_map()
-  sources_list = []
-  # list all images directories to rsync
-  sources_list = ['{}/images/'.format(path) for path in mapper.itervalues()]
-  # list all forces paths/directories to rsync
-  # for key, path in mapper.iteritems():
-  #   if 'openfoam' in key:
-  #     forces_name = 'postProcessing/'
-  #   elif 'cuibm' in key:
-  #     forces_name = 'forces'
-  #   elif 'petibm' in key:
-  #     forces_name = 'forces.txt'
-  #   if 'ibamr' not in key:
-  #     sources_list.append('{}/{}'.format(path, forces_name))
-  # list all plotting scripts to rsync
-  for path in mapper.itervalues():
-    sources_list.append('{}/plotOptions/'.format(path))
-    sources_list.append('{}/scriptsOptions/'.format(path))
-  # write sources in temporary file
-  with open('tmp.txt', 'w') as outfile:
-    for source in sources_list:
-      outfile.write(source+'\n')
-  # rsync
-  os.system('rsync -avr --files-from=tmp.txt {}:/ {}/'.format(machine, destination))
-  os.system('rm -f tmp.txt')
-
-
 def load_style(file_path):
   """Loads the style.
 
@@ -398,18 +319,7 @@ def load_style(file_path):
   file_path: string
     Path of the .css file.
   """
-  style = HTML(open('../styles/mesnardo.css' ,'r').read())
+  style_path = os.path.join(os.environ['SNAKE'], 'snake', 
+                            'styles', 'mesnardo.css')
+  style = HTML(open(style_path ,'r').read())
   display(style)
-
-
-def main():
-  parameters = parse_command_line()
-  if parameters.rsync:
-    rsync()
-  return
-
-  
-if __name__ == '__main__':
-  # print('\n[START] {}\n'.format(os.path.basename(__file__)))
-  main()
-  # print('\n[END] {}\n'.format(os.path.basename(__file__)))

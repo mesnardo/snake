@@ -255,9 +255,10 @@ class Field(object):
     ax.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
     ax.legend(prop={'size': 16})
     if save_directory and os.path.isdir(save_directory):
-      pyplot.savefig('{}/{}VerticalGridline{:0>7}.png'.format(save_directory, 
-                                                              self.label, 
-                                                              self.time_step))
+      file_name = '{}VerticalGridline{:0>7}.png'.format(self.label, 
+                                                        self.time_step)
+      pyplot.savefig(os.path.join(save_directory, file_name)
+                                  )
     if show:
       pyplot.show()
     print('done')
@@ -326,9 +327,9 @@ class Field(object):
     ax.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
     ax.legend(prop={'size': 16})
     if save_directory and os.path.isdir(save_directory):
-      pyplot.savefig('{}/{}HorizontalGridline{:0>7}.png'.format(save_directory, 
-                                                                self.label, 
-                                                                self.time_step))
+      file_name = '{}HorizontalGridline{:0>7}.png'.format(self.label, 
+                                                          self.time_step)
+      pyplot.savefig(os.path.join(save_directory, file_name))
     if show:
       pyplot.show()
     print('done')
@@ -376,9 +377,8 @@ class Field(object):
       return
     # create images directory
     save_name = (self.label if not save_name else save_name)
-    images_directory = '{}/{}_{:.2f}_{:.2f}_{:.2f}_{:.2f}'.format(directory, 
-                                                                  save_name, 
-                                                                  *view)
+    folder = '{}_{:.2f}_{:.2f}_{:.2f}_{:.2f}'.format(save_name, *view)
+    images_directory = os.path.join(directory, folder)
     if not os.path.isdir(images_directory):
       print('[info] creating images directory: {} ...'.format(images_directory))
       os.makedirs(images_directory)
@@ -428,6 +428,7 @@ class Field(object):
     ax.set_ylim(view[1::2])
     ax.set_aspect('equal')
     # save image
-    image_path = '{}/{}{:0>7}.png'.format(images_directory, self.label, self.time_step)
+    image_file_name = '{}{:0>7}.png'.format(self.label, self.time_step)
+    image_path = os.path.join(images_directory, image_file_name)
     pyplot.savefig(image_path, dpi=dpi, bbox_inches='tight', pad_inches=0)
     pyplot.close()

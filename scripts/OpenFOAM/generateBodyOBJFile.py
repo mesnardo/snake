@@ -5,9 +5,8 @@
 
 import os
 import argparse
-import sys
 
-from snake.OpenFOAM import OBJFile
+from snake.openfoam import OBJFile
 from snake import miscellaneous
 
 

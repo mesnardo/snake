@@ -85,10 +85,8 @@ def get_number_cells(directory=os.getcwd(),
   n_cells: list of floats
     Number of cells at each state requested.
   """
-
-  OpenDatabase('{}:{}/{}/dumps.visit'.format(GetLocalHostName(), 
-                                             directory, 
-                                             solution_folder), 0)
+  OpenDatabase(GetLocalHostName() + ':' + os.path.join(directory,
+                                                       solution_folder), 0)
   AddPlot('Mesh', 'amr_mesh', 1, 1)
   DrawPlots()
   SetQueryFloatFormat('%g')

@@ -5,9 +5,8 @@
 
 import argparse
 import os
-import sys
 
-from snake.OpenFOAM import GEOFile
+from snake.openfoam import GEOFile
 
 
 def parse_command_line():
