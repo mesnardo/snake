@@ -110,7 +110,9 @@ class CuIBMSimulation(BarbaGroupSimulation):
     x, y = self.grid
     nx, ny = x.size-1, y.size-1
     # read fluxes from file
-    flux_file_path = os.path.join(self.directory, '{:0>7}'.format(time_step))
+    flux_file_path = os.path.join(self.directory, 
+                                  '{:0>7}'.format(time_step), 
+                                  'q')
     # test if file written in binary format
     textchars = bytearray({7,8,9,10,12,13,27} | set(range(0x20, 0x100)) - {0x7f})
     is_binary_string = lambda bytes: bool(bytes.translate(None, textchars))
@@ -151,7 +153,9 @@ class CuIBMSimulation(BarbaGroupSimulation):
     x, y = self.grid
     nx, ny = x.size-1, y.size-1
     # read pressure from file
-    lambda_file_path = os.path.join(self.directory, '{:0>7}'.format(time_step))
+    lambda_file_path = os.path.join(self.directory, 
+                                    '{:0>7}'.format(time_step),
+                                    'lambda')
     # test if file written in binary format
     textchars = bytearray({7,8,9,10,12,13,27} | set(range(0x20, 0x100)) - {0x7f})
     is_binary_string = lambda bytes: bool(bytes.translate(None, textchars))
