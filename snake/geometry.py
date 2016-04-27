@@ -10,7 +10,9 @@ import copy
 import numpy
 from matplotlib import pyplot
 try:
-  pyplot.style.use('{}/styles/mesnardo.mplstyle'.format(os.environ['SNAKE']))
+  style_path = os.path.join(os.environ['SNAKE'], 'snake', 'styles',
+                            'mesnardo.mplstyle')
+  pyplot.style.use(style_path)
 except:
   pass
 
@@ -110,7 +112,7 @@ class Geometry(object):
   """Contains information about a geometry."""
   dimensions = None
 
-  def __init__(self, points=None, file_path=None):
+  def __init__(self, points=None, file_path=None, skiprows=1):
     """Initializes the geometry with points.
     
     Parameters
@@ -124,11 +126,11 @@ class Geometry(object):
       self.points = points
       self.points_initial = copy.deepcopy(points)
     if file_path:
-      self.read_from_file(file_path)
+      self.read_from_file(file_path, skiprows=skiprows)
     if self.dimensions or self.points:
       self.get_mass_center()
           
-  def read_from_file(self, file_path):
+  def read_from_file(self, file_path, skiprows=1):
     """Reads the coordinates of the geometry from a file.
     
     Parameters
@@ -146,7 +148,10 @@ class Geometry(object):
           self.__class__ = Geometry3d
     print('\nRead coordinates from file ...')
     with open(file_path, 'r') as infile:
-      coords = numpy.loadtxt(infile, dtype=float, skiprows=1)
+      coords = numpy.loadtxt(infile, 
+                             dtype=numpy.float64, 
+                             skiprows=skiprows, 
+                             comments='#')
     self.points = [Point(*coord) for coord in coords]
     self.points_initial = copy.deepcopy(self.points)
           
@@ -191,6 +196,7 @@ class Geometry(object):
     y_mass = self.gather_coordinate('y').mean()
     z_mass = (self.gather_coordinate('z').mean() if self.dimensions == 3 else None)
     self.mass_center = Point(x_mass, y_mass, z_mass)
+    return self.mass_center
       
   def translation(self, displacement=[0.0, 0.0, 0.0]):
     """Translates the geometry.
@@ -224,9 +230,11 @@ class Geometry(object):
       return
     print('\nRotate the geometry ...')
     if not center:
-      self.get_mass_center()
+      center = self.get_mass_center()
+    else: 
+      center = Point(*center)
     for i, point in enumerate(self.points):
-      self.points[i].rotation(self.mass_center, roll, yaw, pitch, mode)
+      self.points[i].rotation(center, roll, yaw, pitch, mode)
     self.get_mass_center()
       
   def scale(self, ratio=1.0):
@@ -461,7 +469,7 @@ class Geometry2d(Geometry):
                   linewidth=1, color='black', marker='s', markersize='4', zorder=10)
       # pyplot.scatter(x_init[0], y_init[0], s=80, c='red')
     pyplot.plot(x, y, label='current', 
-                color='#CD2305', linewidth=0, marker='o', markersize='4', zorder=10)
+                color='#CD2305', linewidth=1, marker='o', markersize='4', zorder=10)
     pyplot.legend()
     pyplot.axis('equal')
     pyplot.show()
