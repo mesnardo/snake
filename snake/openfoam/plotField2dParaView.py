@@ -37,7 +37,7 @@ def parse_command_line():
                       help='range of the field to plot')
   parser.add_argument('--times', dest='times',
                       type=float, nargs=3, 
-                      default=(None, None, None),
+                      default=(0, 0, 0),
                       metavar=('min', 'max', 'increment'),
                       help='times to plot')
   parser.add_argument('--view', dest='view',
@@ -62,7 +62,7 @@ def plot_field_contours(field_name,
                         field_range=(-1.0, 1.0),
                         directory=os.getcwd(),
                         view=(-2.0, -2.0, 2.0, 2.0), 
-                        times=(None, None, None),
+                        times=(0, 0, 0),
                         width=800):
   openfoam_file_name = '{}.OpenFOAM'.format(os.path.basename(os.path.normpath(directory)))
   reader = PV4FoamReader(FileName=os.path.join(directory, openfoam_file_name))
@@ -76,7 +76,7 @@ def plot_field_contours(field_name,
   # set view
   render_view = create_render_view(view=view, width=width)
   # grab times available
-  if not any(times):
+  if all(times) == 0.0:
     times = numpy.array(reader.TimestepValues)
   else:
     times = numpy.arange(times[0], times[1]+times[2]/2.0, times[2])
@@ -165,12 +165,12 @@ def edit_colormap(field_name, field_range):
 
 def add_scalar_bar(field_name, PVLookupTable):
   return CreateScalarBar(ComponentTitle='', 
-                         Title=field_name,  
+                         Title='',  
                          Enabled=1, 
-                         LabelFontSize=12, 
+                         LabelFontSize=10, 
                          LabelColor=[0.0, 0.0, 0.0],
                          LookupTable=PVLookupTable,
-                         TitleFontSize=12, 
+                         TitleFontSize=10, 
                          TitleColor=[0.0, 0.0, 0.0], 
                          Orientation='Horizontal',
                          Position=[0.04, 0.1],
