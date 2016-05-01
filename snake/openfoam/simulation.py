@@ -222,7 +222,7 @@ class OpenFOAMSimulation(Simulation):
   def plot_field_contours_paraview(self, field_name,
                                    field_range=(-1.0, 1.0),
                                    view=(-2.0, -2.0, 2.0, 2.0), 
-                                   times=(None, None, None),
+                                   times=(0, 0, 0),
                                    width=800):
     """Plots the contour of a given field using ParaView.
 
@@ -239,7 +239,7 @@ class OpenFOAMSimulation(Simulation):
       default: (-2.0, -2.0, 2.0, 2.0).
     times: 3-tuple of floats, optional
       Time-limits followed by the time-increment to consider;
-      default: (None, None, None).
+      default: (0, 0, 0).
     width: integer, optional
       Width (in pixels) of the figure;
       default: 800. 
