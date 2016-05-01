@@ -133,7 +133,7 @@ def plot_field_contours(field_name, field_range,
                         'color-table': 'RdBu',
                         'invert-color-table': 1}
   # define dimensions of domain to plot
-  height = int(math.ceil(width*(view[3]-view[1])/(view[2]-view[0])))
+  height = int(math.floor(width*(view[3]-view[1])/(view[2]-view[0])))
   # create images directory
   view_string = '{:.2f}_{:.2f}_{:.2f}_{:.2f}'.format(*view)
   images_directory = os.path.join(directory, 'images', 
@@ -230,15 +230,15 @@ def plot_field_contours(field_name, field_range,
   SetPlotOptions(PseudocolorAtts)
   # colorbar of pseudocolor plot
   legend = GetAnnotationObject(GetPlotList().GetPlots(2).plotName)
-  legend.xScale = 1
+  legend.xScale = 1.5
   legend.yScale = 0.5
   legend.numberFormat = '%# -9.2g'
   legend.orientation = legend.HorizontalBottom
   legend.managePosition = 0
-  legend.position = (0.05, 0.10)
+  legend.position = (0.10, 0.10)
   legend.fontFamily = legend.Courier
   legend.fontBold = 1
-  legend.fontHeight = 0.05
+  legend.fontHeight = 0.1
   legend.drawMinMax = 0
   legend.drawTitle = 0
   print('[info] legend settings:')
@@ -297,10 +297,10 @@ def plot_field_contours(field_name, field_range,
 
   # create time-annotation
   time_annotation = CreateAnnotationObject('Text2D')
-  time_annotation.position = (0.05, 0.95)
+  time_annotation.position = (0.05, 0.90)
   time_annotation.fontFamily = 1
   time_annotation.fontBold = 0
-  time_annotation.height = 0.03
+  time_annotation.height = 0.05
   print('[info] time-annotation:')
   print(time_annotation)
 
