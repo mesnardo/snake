@@ -288,6 +288,7 @@ class BarbaGroupSimulation(Simulation):
                    filled_contour=True, 
                    view=[float('-inf'), float('-inf'), float('inf'), float('inf')],
                    bodies=[],
+                   time_increment=None,
                    save_name=None, 
                    width=8.0, 
                    dpi=100): 
@@ -307,6 +308,9 @@ class BarbaGroupSimulation(Simulation):
       default: the whole domain.
     bodies: list of Body objects
       The immersed bodies to add to the figure; default: [] (no immersed body).
+    time_increment: float, optional
+      Time-increment used to advance to the simulation;
+      default: None.
     save_name: string
       Prefix used to create the images directory and to save the .png files; default: None.
     width: float
@@ -324,6 +328,7 @@ class BarbaGroupSimulation(Simulation):
                                          filled_contour=filled_contour,
                                          view=view,
                                          bodies=bodies,
+                                         time_increment=time_increment,
                                          save_name=save_name,
                                          width=width,
                                          dpi=dpi)

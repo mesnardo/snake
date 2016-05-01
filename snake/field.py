@@ -339,6 +339,7 @@ class Field(object):
                    filled_contour=True,
                    view=[float('-inf'), float('-inf'), float('inf'), float('inf')],
                    bodies=[],
+                   time_increment=None,
                    save_name=None,
                    directory=os.getcwd(), 
                    width=8.0, 
@@ -359,6 +360,9 @@ class Field(object):
     bodies: list of Body objects or single Body object, optional
       The immersed bodies to add to the figure; 
       default: [] (no immersed body).
+    time_increment: float, optional
+      Time-increment used to advance the simulation;
+      default: None.
     save_name: string, optional
       Prefix used to create the images directory and to save the .png files; 
       default: None.
@@ -417,7 +421,10 @@ class Field(object):
                             cax=ains, orientation='horizontal',
                             ticks=colorbar_ticks, format=colorbar_format)
     cont_bar.ax.tick_params(labelsize=10) 
-    ax.text(0.05, 0.12, self.label, transform=ax.transAxes, fontsize=10)
+    # ax.text(0.05, 0.15, self.label, transform=ax.transAxes, fontsize=10)
+    if time_increment:
+      ax.text(0.05, 0.90, 'time: {}'.format(time_increment*self.time_step), 
+              transform=ax.transAxes, fontsize=10)
     cont_bar.ax.xaxis.set_ticks_position('top')
     # draw body
     for body in bodies:
