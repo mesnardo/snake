@@ -223,7 +223,8 @@ class OpenFOAMSimulation(Simulation):
                                    field_range=(-1.0, 1.0),
                                    view=(-2.0, -2.0, 2.0, 2.0), 
                                    times=(0, 0, 0),
-                                   width=800):
+                                   width=800,
+                                   colormap=None):
     """Plots the contour of a given field using ParaView.
 
     Parameters
@@ -242,7 +243,10 @@ class OpenFOAMSimulation(Simulation):
       default: (0, 0, 0).
     width: integer, optional
       Width (in pixels) of the figure;
-      default: 800. 
+      default: 800.
+    colormap: string, optional
+      Name of the Matplotlib colormap to use;
+      default: None.
     """
     args = {}
     args['--directory'] = self.directory
@@ -251,7 +255,22 @@ class OpenFOAMSimulation(Simulation):
     args['--times'] = '{} {} {}'.format(*times)
     args['--view'] = '{} {} {} {}'.format(*view)
     args['--width'] = str(width)
+    if colormap:
+      from matplotlib import cm
+      with open(colormap+'.dat', 'w') as outfile:
+        colormap_object = getattr(cm, colormap)
+        try:
+          colors = colormap_object.colors
+        except:
+          colors = []
+          for i in range(colormap_object.N):
+            colors.append(colormap_object(i)[:-1])
+        for color in colors:
+          outfile.write('{}, {}, {}\n'.format(*color))
+      args['--colormap'] = colormap+'.dat'
     script = os.path.join(os.environ['SNAKE'], 'snake', 'openfoam',
                           'plotField2dParaView.py')
     arguments = ' '.join([key+' '+value for key, value in args.iteritems()])
     os.system('pvbatch {} {}'.format(script, arguments))
+    if colormap:
+      os.remove(colormap+'.dat')
