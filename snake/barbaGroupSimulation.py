@@ -290,6 +290,7 @@ class BarbaGroupSimulation(Simulation):
                    bodies=[],
                    time_increment=None,
                    save_name=None, 
+                   colorbar=True,
                    width=8.0, 
                    dpi=100): 
     """Plots and saves the field.
@@ -313,6 +314,10 @@ class BarbaGroupSimulation(Simulation):
       default: None.
     save_name: string
       Prefix used to create the images directory and to save the .png files; default: None.
+    colorbar: boolean, optional
+      Set 'True' to display an horizontal colobar
+      at the bottom-left of the figure;
+      default: True.
     width: float
       Width of the figure (in inches); default: 8.
     dpi: int
@@ -330,6 +335,7 @@ class BarbaGroupSimulation(Simulation):
                                          bodies=bodies,
                                          time_increment=time_increment,
                                          save_name=save_name,
+                                         colorbar=colorbar,
                                          width=width,
                                          dpi=dpi)
 

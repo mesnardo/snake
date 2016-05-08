@@ -341,7 +341,8 @@ class Field(object):
                    bodies=[],
                    time_increment=None,
                    save_name=None,
-                   directory=os.getcwd(), 
+                   directory=os.getcwd(),
+                   colorbar=True, 
                    width=8.0, 
                    dpi=100): 
     """Plots and saves the field.
@@ -369,6 +370,10 @@ class Field(object):
     directory: string, optional
       Directory where to save the image; 
       default: current directory.
+    colorbar: boolean, optional
+      Set 'True' to display an horizontal colorbar 
+      at the bottom-left of the figure;
+      default: True.
     width: float, optional
       Width of the figure (in inches); 
       default: 8.
@@ -416,16 +421,17 @@ class Field(object):
                         levels=levels, extend='both', 
                         cmap=(cm.RdBu_r if self.label not in color_map.keys()
                                         else color_map[self.label]))
-    ains = inset_axes(pyplot.gca(), width='30%', height='2%', loc=3)
-    cont_bar = fig.colorbar(cont, 
-                            cax=ains, orientation='horizontal',
-                            ticks=colorbar_ticks, format=colorbar_format)
-    cont_bar.ax.tick_params(labelsize=10) 
+    if colorbar:
+      ains = inset_axes(pyplot.gca(), width='30%', height='2%', loc=3)
+      cont_bar = fig.colorbar(cont, 
+                              cax=ains, orientation='horizontal',
+                              ticks=colorbar_ticks, format=colorbar_format)
+      cont_bar.ax.tick_params(labelsize=10) 
+      cont_bar.ax.xaxis.set_ticks_position('top')
     # ax.text(0.05, 0.15, self.label, transform=ax.transAxes, fontsize=10)
     if time_increment:
-      ax.text(0.05, 0.90, 'time: {}'.format(time_increment*self.time_step), 
+      ax.text(0.05, 0.85, '{} time-units'.format(time_increment*self.time_step), 
               transform=ax.transAxes, fontsize=10)
-    cont_bar.ax.xaxis.set_ticks_position('top')
     # draw body
     for body in bodies:
       ax.plot(body.x, body.y, 
