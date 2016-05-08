@@ -50,6 +50,10 @@ def parse_command_line():
                       type=int, 
                       default=800,
                       help='figure width in pixels')
+  parser.add_argument('--colormap', dest='colormap_path',
+                      type=str,
+                      default=None,
+                      help='path of the colormap file to use')
   # parse given options file
   parser.add_argument('--options', 
                       type=open, action=miscellaneous.ReadOptionsFromFile,
@@ -63,7 +67,8 @@ def plot_field_contours(field_name,
                         directory=os.getcwd(),
                         view=(-2.0, -2.0, 2.0, 2.0), 
                         times=(0, 0, 0),
-                        width=800):
+                        width=800,
+                        colormap_path=None):
   openfoam_file_name = '{}.OpenFOAM'.format(os.path.basename(os.path.normpath(directory)))
   reader = PV4FoamReader(FileName=os.path.join(directory, openfoam_file_name))
   print('[info] plotting {} field ...'.format(field_name))
@@ -88,7 +93,8 @@ def plot_field_contours(field_name,
     os.makedirs(images_directory)
   print('[info] .png files will be saved in: {}'.format(images_directory))
   # edit colormap
-  PVLookupTable = edit_colormap(field_name, field_range)
+  PVLookupTable = edit_colormap(field_name, field_range, 
+                                colormap_path=colormap_path)
   # add a scalar bar
   scalar_bar = add_scalar_bar(field_name, PVLookupTable)
   # update view
@@ -133,7 +139,8 @@ def create_render_view(view=(-2.0, -2.0, 2.0, 2.0), width=800):
   return render_view
 
 
-def edit_colormap(field_name, field_range):
+def edit_colormap(field_name, field_range, 
+                  colormap_path=None):
   mode = {'vorticity': {'variable': 'vorticity',
                         'vectormode': 'Component', 
                         'vectorcomponent': 2,
@@ -151,10 +158,22 @@ def edit_colormap(field_name, field_range):
                        'vectorcomponent': 0,
                        'colorspace': 'HSV'}, }
   min_range, max_range = round(field_range[0], 2), round(field_range[1], 2)
+  if colormap_path:
+    RGBPoints = []
+    with open(colormap_path, 'r') as infile:
+      data = infile.readlines()
+    increment = abs(max_range-min_range)/(len(data)-1)
+    for i, d in enumerate(data):
+      r, g, b = d.strip().split(',')
+      RGBPoints.append(min_range + i*increment)
+      RGBPoints.append(float(r))
+      RGBPoints.append(float(g))
+      RGBPoints.append(float(b))
+  else:
+    RGBPoints = [min_range, 0.0, 0.0, 1.0, max_range, 1.0, 0.0, 0.0]
   return GetLookupTableForArray(mode[field_name]['variable'], 
                                 mode[field_name]['vectorcomponent']+1, 
-                                RGBPoints=[min_range, 0.0, 0.0, 1.0, 
-                                           max_range, 1.0, 0.0, 0.0], 
+                                RGBPoints=RGBPoints, 
                                 VectorMode=mode[field_name]['vectormode'], 
                                 VectorComponent=mode[field_name]['vectorcomponent'], 
                                 NanColor=[0.0, 0.0, 0.0],
@@ -183,7 +202,8 @@ def main(args):
                       directory=args.directory,
                       view=args.view, 
                       times=args.times,
-                      width=args.width)
+                      width=args.width,
+                      colormap_path=args.colormap_path)
 
 
 if __name__ == '__main__':
