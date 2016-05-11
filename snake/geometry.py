@@ -9,12 +9,6 @@ import copy
 
 import numpy
 from matplotlib import pyplot
-try:
-  style_path = os.path.join(os.environ['SNAKE'], 'snake', 'styles',
-                            'mesnardo.mplstyle')
-  pyplot.style.use(style_path)
-except:
-  pass
 
 
 class Point(object):
@@ -447,8 +441,22 @@ class Geometry2d(Geometry):
         if self.points[0].distance(Point(*new)) > 0.5*ds:
           self.points.append(Point(*new))
 
-  def plot(self):
-    """Plots the two-dimensional geometry using Matplotlib."""
+  def plot(self, style=None):
+    """Plots the two-dimensional geometry using Matplotlib.
+
+    Parameters
+    ----------
+    style: string, optional
+      Path of the Matplotlib style-sheet file to use;
+      default: None.
+    """
+    try:
+      pyplot.style.use(style)
+    except:
+      try:
+        os.path.join(os.environ['SNAKE'], 'snake', 'styles', style+'.mplstyle')
+      except:
+        pass
     print('\nPlot the two-dimensional geometry ...')
     pyplot.grid(True, zorder=0)
     pyplot.xlabel('x')
@@ -463,13 +471,16 @@ class Geometry2d(Geometry):
     else:
       same = False
     if not same:
-      # pyplot.plot(x_init[1:], y_init[1:], label='initial', 
-      #             lw=0, marker='o')
-      pyplot.plot(x_init[1:], y_init[1:], label='initial', 
-                  linewidth=1, color='black', marker='s', markersize='4', zorder=10)
-      # pyplot.scatter(x_init[0], y_init[0], s=80, c='red')
-    pyplot.plot(x, y, label='current', 
-                color='#CD2305', linewidth=1, marker='o', markersize='4', zorder=10)
+      pyplot.plot(x_init[1:], y_init[1:], 
+                  label='initial', 
+                  linewidth=1, color='black', 
+                  marker='s', markersize='4', 
+                  zorder=10)
+    pyplot.plot(x, y, 
+                label='current', 
+                color='#CD2305', linewidth=1, 
+                marker='o', markersize='4', 
+                zorder=10)
     pyplot.legend()
     pyplot.axis('equal')
     pyplot.show()
