@@ -1,4 +1,4 @@
-# convergence.py
+# file: convergence.py
 # author: Olivier Mesnard (mesnardo@gwu.edu)
 # description: Functions related to a convergence study.
 
@@ -7,12 +7,6 @@ import os
 
 import numpy
 from matplotlib import pyplot
-try:
-  style_path = os.path.join(os.environ['SNAKE'], 'snake',
-                            'styles', 'mesnardo.mplstyle')
-  pyplot.style.use(style_path)
-except:
-  pass
 
 from field import Field
 
@@ -57,8 +51,11 @@ def plot_grid_convergence(simulations, exact,
                           mask=None,
                           field_names=None,
                           norms=None,
-                          directory=os.path.join(os.getcwd(), 'images'), 
+                          save_directory=os.path.join(os.getcwd(), 'images'), 
                           save_name=None, 
+                          fmt='png',
+                          dpi=100,
+                          style=None,
                           show=False):
   """Plots the grid-convergence in a log-log figure.
 
@@ -75,17 +72,34 @@ def plot_grid_convergence(simulations, exact,
   field_names: list of strings, optional
     Names of the fields to include in the figure;
     default: None.
-  directory: string, optional
+  save_directory: string, optional
     Directory where to save the figure;
     default: <current directory>.
   save_name: string, optional
-    Prefix of the name of the .png file to save;
+    Name of the file to save;
     default: None (does not save).
+  fmt: string, optional
+    Format of the file to save;
+    default: 'png'.
+  dpi: integer, optional
+    Dots per inch (resolution);
+    default: 100.
+  style: string, optional
+    Path of the Matplotlib style-sheet to use;
+    default: None.
   show: boolean, optional
     Set 'True' if you want to display the figure; 
     default: False.
   """
   print('[info] plotting the grid convergence ...')
+  try:
+    pyplot.style.use(style)
+  except:
+    try:
+      pyplot.style.use(os.environ['SNAKE'], 'snake', 'styles', 
+                       style+'.mplstyle')
+    except: 
+      pass
   fig, ax = pyplot.subplots(figsize=(6, 6))
   ax.grid(True, zorder=0)
   ax.set_xlabel('grid-spacing')
@@ -107,19 +121,24 @@ def plot_grid_convergence(simulations, exact,
   # save and display
   if save_name:
     print('[info] saving figure ...')
-    if not os.path.isdir(directory):
-      print('[info] creating directory: {} ...'.format(directory))
-      os.makedirs(directory)
+    if not os.path.isdir(save_directory):
+      os.makedirs(save_directory)
     time_step = simulations[0].fields[field_names[0]].time_step
-    pyplot.savefig(os.path.join(directory, 
-                                '{}{:0>7}.png'.format(save_name, time_step)))
+    pyplot.savefig(os.path.join(save_directory, 
+                                '{}{:0>7}.{}'.format(save_name, 
+                                                     time_step, 
+                                                     fmt)),
+                   bbox_inches='tight',
+                   dpi=dpi,
+                   format=fmt)
   if show:
     print('[info] displaying figure ...')
     pyplot.show()
+  pyplot.close()
 
 
 def get_observed_orders(simulations, field_names, mask,
-                        directory=os.getcwd(),
+                        save_directory=os.getcwd(),
                         save_name='observedOrders'):
   """Computes the observed orders of convergence using the solution on three grids
   with constant grid refinement ratio.
@@ -132,9 +151,9 @@ def get_observed_orders(simulations, field_names, mask,
     List of field names whose observed order of convergence will be computed.
   mask: Simulation object
     Simulation whose grids are used as a mask to restrict the solutions.
-  directory: string, optional
-    Shared path of case directories; 
-    default: current directory.
+  save_directory: string, optional
+    Directory where to save the file; 
+    default: <current directory>.
   save_name: string, optional
     Prefix of the name of the .dat files to save; 
     default: 'observedOrders'.
@@ -161,10 +180,9 @@ def get_observed_orders(simulations, field_names, mask,
   if save_name:
     print('[info] writing orders into .dat file ...')
     time_step = mask.fields[name].time_step
-    if not os.path.isdir(directory):
-      print('[info] creating directory: {} ...'.format(directory))
-      os.makedirs(directory)
-    file_path = os.path.join(directory,
+    if not os.path.isdir(save_directory):
+      os.makedirs(save_directory)
+    file_path = os.path.join(save_directory,
                              '_'.join([save_name,
                                        coarse.description,
                                        medium.description,
@@ -211,7 +229,8 @@ def get_observed_order(coarse, medium, fine, ratio, grid, order=None):
 
 
 def plot_asymptotic_ranges(simulations, orders, mask, 
-                           directory=os.getcwd()+'/images'):
+                           save_directory=os.path.join(os.getcwd(), 'images'),
+                           style='mesnardo'):
   """Computes and plots the asymptotic range fields 
   using the grid convergence index and given the observed orders of convergence.
 
@@ -227,9 +246,13 @@ def plot_asymptotic_ranges(simulations, orders, mask,
     Contains the observed order of convergence of each flow variable considered.
   mask: Simulation  object
     Case whose grids are used to restrict the other (finer) solutions.
-  directory: string, optional
+  save_directory: string, optional
     Directory where to save the contours;
-    default: <current directory>/images.
+    default: '<current directory>/images'.
+  style: string, optional
+    Name of the Matplotlib style-sheet to use.
+    The .mplstyle file should be located in 'snake/styles';
+    default: 'mesnardo'.
   """
   field_names = orders.keys()
   coarse, medium, fine = simulations
@@ -245,11 +268,12 @@ def plot_asymptotic_ranges(simulations, orders, mask,
     field.plot_contour(field_range=(0.0, 2.0, 101),
                        view=[coarse.grid[0][0], coarse.grid[1][0],
                              coarse.grid[0][-1], coarse.grid[1][-1]],
-                       directory=os.path.join(directory,
-                                              '_'.join(['gci',
-                                                        coarse.description,
-                                                        medium.description,
-                                                        fine.description])))
+                       style=style,
+                       save_directory=os.path.join(directory,
+                                                   '_'.join(['gci',
+                                                             coarse.description,
+                                                             medium.description,
+                                                             fine.description])))
 
 
 def get_asymptotic_range(coarse, medium, fine, order, ratio, grid):
