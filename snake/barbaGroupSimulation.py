@@ -16,25 +16,28 @@ class BarbaGroupSimulation(Simulation):
   """Contains info about a BarbaGroup simulation.
   Inherits from the class Simulation.
   """
-  def __init__(self, description=None, directory=os.getcwd(), software=None, **kwargs):
+  def __init__(self, 
+               software,
+               description=None, 
+               directory=os.getcwd(), 
+               **kwargs):
     """Initializes object by calling parent constructor.
 
     Parameters
     ----------
+    software: string
+      Software used;
+      choices: 'cuibm', 'petibm'.
     description: string, optional
       Description of the simulation;
       default: None.
     directory: string, optional
       Directory of the simulation;
       default: present working directory.
-    software: string, optional
-      Software used to compute the numerical solutio;
-      choices: 'cuibm' or 'petibm';
-      default: None.
     """
-    super(BarbaGroupSimulation, self).__init__(description=description, 
+    super(BarbaGroupSimulation, self).__init__(software,
+                                               description=description, 
                                                directory=directory, 
-                                               software=software, 
                                                **kwargs)
 
   def create_uniform_grid(self, bottom_left=[], top_right=[], n_cells=[]):
@@ -61,7 +64,7 @@ class BarbaGroupSimulation(Simulation):
                                       dtype=numpy.float64))
     print('done')
 
-  def get_time_steps(self, time_steps_range=None):
+  def get_time_steps(self, time_steps_range=None, directory=None):
     """Returns a list of the time-steps to post-process.
 
     Parameters
@@ -69,13 +72,18 @@ class BarbaGroupSimulation(Simulation):
     time_steps_range: 3-list of integers, optional
       Initial, final and stride of the time-steps to consider;
       default: None (all saved time-steps).
+    directory: string, optional
+      Directory containing the save time-step folders;
+      default: None.
     """
     if time_steps_range:
       return range(time_steps_range[0],
                    time_steps_range[1]+1,
                    time_steps_range[2])
     else:
-      return sorted(int(folder) for folder in os.listdir(self.directory)
+      if not directory:
+        directory = self.directory
+      return sorted(int(folder) for folder in os.listdir(directory)
                                 if folder[0] == '0')
 
   def get_grid_spacing(self):
@@ -83,7 +91,8 @@ class BarbaGroupSimulation(Simulation):
     return (self.grid[0][-1]-self.grid[0][0])/(self.grid[0].size-1)
 
   def read_fields(self, field_names, time_step, 
-                  periodic_directions=[]):
+                  periodic_directions=[], 
+                  directory=None):
     """Gets the field at a given time-step. 
 
     Parameters
@@ -99,6 +108,9 @@ class BarbaGroupSimulation(Simulation):
       Directions that uses periodic boundary conditions; 
       choices: 'x', 'y', 'z',
       default: [].
+    directory: string, optional
+      Directory containing the saved time-step folders;
+      default: None.
     """
     # convert field_names in list if single string provided
     try:
@@ -106,17 +118,23 @@ class BarbaGroupSimulation(Simulation):
       assert not isinstance(field_names, basestring)
     except:
       field_names = [field_names]
+    if not directory:
+      directory = self.directory
     if 'pressure' in field_names:
-      self.fields['pressure'] = self.read_pressure(time_step)
+      self.fields['pressure'] = self.read_pressure(time_step, 
+                                                   directory=directory)
     if any(name in ['x-flux', 'y-flux'] for name in field_names):
       self.fields['x-flux'], self.fields['y-flux'] = self.read_fluxes(time_step, 
-                                         periodic_directions=periodic_directions)
+                                         periodic_directions=periodic_directions,
+                                         directory=directory)
     if any(name in ['x-velocity', 'y-velocity'] for name in field_names):
       self.fields['x-velocity'], self.fields['y-velocity'] = self.get_velocity(time_step, 
-                                                 periodic_directions=periodic_directions)
+                                                 periodic_directions=periodic_directions,
+                                                 directory=directory)
     if 'vorticity' in field_names:
       self.fields['x-velocity'], self.fields['y-velocity'] = self.get_velocity(time_step, 
-                                                 periodic_directions=periodic_directions)
+                                                 periodic_directions=periodic_directions,
+                                                 directory=directory)
       self.fields['vorticity'] = self.compute_vorticity()
 
   def compute_vorticity(self):
@@ -145,13 +163,36 @@ class BarbaGroupSimulation(Simulation):
                  x=xw, y=yw, 
                  values=w)
 
-  def get_velocity(self, time_step, periodic_directions=[]):
+  def get_velocity(self, time_step, 
+                   periodic_directions=[], 
+                   directory=None):
     """Gets the velocity fields at a given time-step.
 
     We first read the fluxes from file, then convert into velocity-components.
+
+    Parameters
+    ----------
+    time_step: integer
+      Time-step at which the fluxes are read from file(s).
+    periodic_directions: list of strings, optional
+      Directions that uses periodic boundary conditions; 
+      choices: 'x', 'y', 'z',
+      default: [].
+    solution_directory: string, optional
+      Directory containing the saved time-step folders;
+      default: None.
+
+    Returns
+    -------
+    ux, uy, uz: Field objects
+      Velocity in the x-, y-, and z-directions.
     """
     print('[time-step {}] get velocity fields ...'.format(time_step))
-    fluxes = self.read_fluxes(time_step, periodic_directions=periodic_directions)
+    if not directory:
+      directory = self.directory
+    fluxes = self.read_fluxes(time_step, 
+                              periodic_directions=periodic_directions,
+                              directory=directory)
     dim3 = (len(self.grid) == 3)
     # get stations, cell-widths, and number of cells in x- and y-directions
     x, y = self.grid[:2]
@@ -217,7 +258,9 @@ class BarbaGroupSimulation(Simulation):
       Simulation to subtract.
     field_name: string
       Name of the field to subtract; 
-      choices: 'pressure', 'vorticity', 'x-velocity', 'y-velocity', 'x-flux', 'y-flux'.
+      choices: 'pressure', 'vorticity', 
+               'x-velocity', 'y-velocity', 
+               'x-flux', 'y-flux'.
     label: string, optional
       Name of the output subtracted field;
       default: None (will be <current name>+'-subtracted')
@@ -289,7 +332,7 @@ class BarbaGroupSimulation(Simulation):
                    view=[float('-inf'), float('-inf'), float('inf'), float('inf')],
                    bodies=[],
                    time_increment=None,
-                   save_name=None, 
+                   save_directory=None, save_name=None, fmt='png',
                    colorbar=True,
                    width=8.0, 
                    dpi=100): 
@@ -298,43 +341,63 @@ class BarbaGroupSimulation(Simulation):
     Parameters
     ----------
     field_name: string
-      Name of the field.
-    field_range: list of floats
-      Min, max and number of contours to plot; default: None.
-    filled_contour: boolean
+      Name of the field to plot.
+    field_range: list of floats, optional
+      Min value, max value and number of contours to plot; 
+      default: None.
+    filled_contour: boolean, optional
       Set 'True' to create a filled contour;
       default: True.
-    view: list of floats
+    view: list of floats, optional
       Bottom-left and top-right coordinates of the rectangular view to plot;
       default: the whole domain.
-    bodies: list of Body objects
-      The immersed bodies to add to the figure; default: [] (no immersed body).
+    bodies: list of Body objects, optional
+      The immersed bodies to add to the figure; 
+      default: [] (no immersed body).
     time_increment: float, optional
-      Time-increment used to advance to the simulation;
+      Time-increment used to advance to the simulation.
+      If provided, we display the time-unit in an annotation 
+      on the top-left part of the figure;
       default: None.
-    save_name: string
-      Prefix used to create the images directory and to save the .png files; default: None.
+    save_directory: string, optional
+      Directory where to save the figures;
+      default: None (will be the folder '<simu dir>/images').
+    save_name: string, optional
+      Prefix used to create the images directory and to save the files; 
+      default: None (will be the name of the field).
+    fmt: string, optional
+      Format of the file to save;
+      default: 'png'.
     colorbar: boolean, optional
       Set 'True' to display an horizontal colobar
       at the bottom-left of the figure;
       default: True.
-    width: float
-      Width of the figure (in inches); default: 8.
-    dpi: int
-      Dots per inch (resolution); default: 100
+    width: float, optional
+      Width of the figure (in inches); 
+      default: 8.
+    dpi: integer, optional
+      Dots per inch (resolution); 
+      default: 100
     """
     # set view
     view[0] = (self.grid[0].min() if view[0] == float('-inf') else view[0])
     view[1] = (self.grid[1].min() if view[1] == float('-inf') else view[1])
     view[2] = (self.grid[0].max() if view[2] == float('inf') else view[2])
     view[3] = (self.grid[1].max() if view[3] == float('inf') else view[3])
-    self.fields[field_name].plot_contour(directory=os.path.join(self.directory, 'images'),
-                                         field_range=field_range,
+    if not save_directory:
+      save_directory = os.path.join(self.directory, 'images')
+    folder = '{}_{:.2f}_{:.2f}_{:.2f}_{:.2f}'.format(field_name, *view)
+    save_directory = os.path.join(save_directory, folder)
+    if not os.path.isdir(save_directory):
+      os.makedirs(save_directory) 
+    self.fields[field_name].plot_contour(field_range=field_range,
                                          filled_contour=filled_contour,
                                          view=view,
                                          bodies=bodies,
                                          time_increment=time_increment,
+                                         save_directory=save_directory,
                                          save_name=save_name,
+                                         fmt=fmt,
                                          colorbar=colorbar,
                                          width=width,
                                          dpi=dpi)
@@ -411,7 +474,13 @@ class BarbaGroupSimulation(Simulation):
                               validation_plot_settings=validation_plot_settings)
 
   def get_velocity_cell_centers(self):
-    """Interpolates the staggered velocity field to the cell-centers of the mesh."""
+    """Interpolates the staggered velocity field to the cell-centers of the mesh.
+
+    Returns
+    -------
+    u, v, w: Field objects
+      Velocity at cell-centers in the x-, y-, and z-directions.
+    """
     dim3 = 'z-velocity' in self.fields.keys()
     x_centers = self.fields['y-velocity'].x[1:-1] 
     y_centers = self.fields['x-velocity'].y[1:-1]
@@ -467,11 +536,12 @@ class BarbaGroupSimulation(Simulation):
       Name of the field to write; choices: 'velocity', 'pressure'.
     time_step: integer
       Time-step to write.
-    view: list of floats
+    view: list of floats, optional
       Bottom-left and top-right coordinates of the rectangular view to write;
       default: the whole domain.
-    stride: integer
-      Stride at which the field is written; default: 1.
+    stride: integer, optional
+      Stride at which the field is written; 
+      default: 1.
     """
     print('[info] writing the {} field into .vtk file ...'.format(field_name))
     dim3 = (len(self.grid) == 3)

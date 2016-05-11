@@ -1,4 +1,4 @@
-# file: cuibmSimulation.py
+# file: simulation.py
 # author: Olivier Mesnard (mesnardo@gwu.edu)
 # description: Implementation of the class `CuIBMSimulation`.
 
@@ -34,23 +34,24 @@ class CuIBMSimulation(BarbaGroupSimulation):
                                           software='cuibm', 
                                           **kwargs)
 
-  def read_grid(self, file_name='grid'):
+  def read_grid(self, file_path=None):
     """Reads the computational grid from file.
     
     Parameters
     ----------
-    file_name: string
-      Name of the file containing nodal stations of the grid along each direction;
-      default: 'grid'.
+    file_path: string, optional
+      Path of the file containing grid stations along each direction;
+      default: None.
     """
-    print('[info] reading grid from file ...'),
-    grid_file = os.path.join(self.directory, file_name)
+    print('[info] reading grid ...'),
+    if not file_path:
+      file_path = os.path.join(self.directory, 'grid')
     # test if file written in binary format
     textchars = bytearray({7,8,9,10,12,13,27} | set(range(0x20, 0x100)) - {0x7f})
     is_binary_string = lambda bytes: bool(bytes.translate(None, textchars))
-    binary_format = is_binary_string(open(grid_file, 'rb').read(1024))
+    binary_format = is_binary_string(open(file_path, 'rb').read(1024))
     if binary_format:
-      with open(grid_file, 'rb') as infile:
+      with open(file_path, 'rb') as infile:
         # x-direction
         nx = struct.unpack('i', infile.read(4))[0]
         x = numpy.array(struct.unpack('d'*(nx+1), infile.read(8*(nx+1))))
@@ -58,7 +59,7 @@ class CuIBMSimulation(BarbaGroupSimulation):
         ny = struct.unpack('i', infile.read(4))[0]
         y = numpy.array(struct.unpack('d'*(ny+1), infile.read(8*(ny+1))))
     else:
-      with open(grid_file, 'r') as infile:
+      with open(file_path, 'r') as infile:
         data = numpy.loadtxt(infile, dtype=numpy.float64)
         # x-direction
         nx = int(data[0])
@@ -86,43 +87,52 @@ class CuIBMSimulation(BarbaGroupSimulation):
     """
     if not file_path:
       file_path = os.path.join(self.directory, 'forces')
-    print('[info] reading forces from file {} ...'.format(file_path)),
+    print('[info] reading forces ...'),
     with open(file_path, 'r') as infile:
       data = numpy.loadtxt(infile, dtype=numpy.float64, usecols=usecols, 
                            unpack=True)
     times = data[0]
     if not labels:
       labels = ['f_x', 'f_y'] # default labels
+    self.forces = [] # reset forces if already present
     for index, values in enumerate(data[1:]):
       self.forces.append(Force(times, values, label=labels[index]))
     print('done')
 
-  def read_fluxes(self, time_step, **kwargs):
+  def read_fluxes(self, time_step, directory=None, **kwargs):
     """Reads the flux fields from file at a given time-step.
 
     Parameters
     ----------
     time_step: integer
       Time-step at which to read the fluxes.
+    directory: string, optional
+      Directory containing the saved time-step folders;
+      default: None.
+
+    Returns
+    -------
+    qx, qy: Field objects
+      Fluxes in the x- and y-directions.
     """
     print('[time-step {}] reading fluxes from file ...'.format(time_step)),
     # get grid-stations and number of cells along each direction
     x, y = self.grid
     nx, ny = x.size-1, y.size-1
     # read fluxes from file
-    flux_file_path = os.path.join(self.directory, 
-                                  '{:0>7}'.format(time_step), 
-                                  'q')
+    if not directory:
+      directory = self.directory
+    file_path = os.path.join(directory, '{:0>7}'.format(time_step), 'q')
     # test if file written in binary format
     textchars = bytearray({7,8,9,10,12,13,27} | set(range(0x20, 0x100)) - {0x7f})
     is_binary_string = lambda bytes: bool(bytes.translate(None, textchars))
-    binary_format = is_binary_string(open(flux_file_path, 'rb').read(1024))
+    binary_format = is_binary_string(open(file_path, 'rb').read(1024))
     if binary_format:
-      with open(flux_file_path, 'rb') as infile:
+      with open(file_path, 'rb') as infile:
         nq = struct.unpack('i', infile.read(4))[0]
         q = numpy.array(struct.unpack('d'*nq, infile.read(8*nq)))
     else:
-      with open(flux_file_path, 'r') as infile:
+      with open(file_path, 'r') as infile:
         nq = int(infile.readline())
         q = numpy.loadtxt(infile, dtype=numpy.float64)
     # set flux Field objects
@@ -140,32 +150,40 @@ class CuIBMSimulation(BarbaGroupSimulation):
     print('done')
     return qx, qy
 
-  def read_pressure(self, time_step):
+  def read_pressure(self, time_step, directory=None, **kwargs):
     """Reads pressure field from solution file at given time-step.
     
     Parameters
     ----------
     time_step: integer
       Time-step at which to read the pressure field.
+    directory: string, optional
+      Directory containing the saved time-step folders;
+      default: None.
+
+    Returns
+    -------
+    p: Field object
+      The pressure field.
     """
-    print('[time-step {}] reading pressure field from file ...'.format(time_step)),
+    print('[time-step {}] reading pressure from file ...'.format(time_step)),
     # get info about mesh-grid
     x, y = self.grid
     nx, ny = x.size-1, y.size-1
     # read pressure from file
-    lambda_file_path = os.path.join(self.directory, 
-                                    '{:0>7}'.format(time_step),
-                                    'lambda')
+    if not directory:
+      directory = self.directory
+    file_path = os.path.join(directory, '{:0>7}'.format(time_step), 'lambda')
     # test if file written in binary format
     textchars = bytearray({7,8,9,10,12,13,27} | set(range(0x20, 0x100)) - {0x7f})
     is_binary_string = lambda bytes: bool(bytes.translate(None, textchars))
-    binary_format = is_binary_string(open(lambda_file_path, 'rb').read(1024))
+    binary_format = is_binary_string(open(file_path, 'rb').read(1024))
     if binary_format:
-      with open(lambda_file_path, 'rb') as infile:
+      with open(file_path, 'rb') as infile:
         nlambda = struct.unpack('i', infile.read(4))[0]
         p = numpy.array(struct.unpack('d'*nlambda, infile.read(8*nlambda)))[:nx*ny]
     else:
-      with open(lambda_file_path, 'r') as infile:
+      with open(file_path, 'r') as infile:
         nlambda = int(infile.readline())
         p = numpy.loadtxt(infile, dtype=numpy.float64)[:nx*ny]
     # set pressure Field object

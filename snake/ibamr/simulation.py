@@ -1,4 +1,4 @@
-# file: ibamrSimulation.py
+# file: simulation.py
 # author: Olivier Mesnard (mesnardo@gwu.edu)
 # description: Implementation of the class `IBAMRSimulation`.
 
@@ -29,9 +29,9 @@ class IBAMRSimulation(Simulation):
       Directory of the simulation;
       default: present working directory.
     """
-    super(IBAMRSimulation, self).__init__(description=description, 
+    super(IBAMRSimulation, self).__init__(software='ibamr',
+                                          description=description, 
                                           directory=directory, 
-                                          software='ibamr', 
                                           **kwargs)
 
   def read_forces(self, file_path=None, labels=None):

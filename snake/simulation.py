@@ -1,6 +1,6 @@
-# file: Simulation.py
+# file: simulation.py
 # author: Olivier Mesnard (mesnardo@gwu.edu)
-# description: Information related to a simulation.
+# description: Implementation of the class `Simulation`.
 
 
 import os
@@ -9,12 +9,6 @@ import sys
 import numpy
 from matplotlib import pyplot
 import pandas
-try:
-  style_path = os.path.join(os.environ['SNAKE'], 'snake', 
-                            'styles', 'mesnardo.mplstyle')
-  pyplot.style.use(style_path)
-except:
-  pass
 
 from .field import Field
 from .force import Force
@@ -22,41 +16,48 @@ from .force import Force
 
 class Simulation(object):
   """Simulation manager."""
-  def __init__(self, description=None, directory=os.getcwd(), software=None, **kwargs):
-    """Registers the simulations.
+  def __init__(self, 
+               software,
+               description=None, 
+               directory=os.getcwd(), 
+               **kwargs):
+    """Registers a simulation.
 
     Parameters
     ----------
-    description: string
-      Description of the simulation; default: None.
-    directory: string
-      Directory of the simulation; default: current working directory.
     software: string
-      Name of the software used for the simulation; default: None.
+      Name of the software used for the simulation; 
+      choices: cuibm, petibm, ibamr, openfoam.
+    description: string, optional
+      Description of the simulation; 
+      default: None.
+    directory: string, optional
+      Directory of the simulation; 
+      default: <current working directory>.
     **kwargs: dictionary
       Other attributes to create.
     """
-    try:
-      self.description = description.replace('_', ' ')
-    except:
-      self.description = description
+    if description:
+      description = description.replace('_', ' ')
+    self.description = description
     self.directory = directory
-    self.software = software
+    self.software = software.lower()
+    # set extra arguments
     for key, value in kwargs.iteritems():
       setattr(self, key, value)
-    self.print_registration()
-    self.derive_class()
+    self._print_registration()
     self.fields = {}
     self.forces = []
+    self._derive_class()
 
-  def print_registration(self):
-    """Prints global details of the simulation"""
-    print('[info] registering simulation ...')
-    print('\t- directory: {}'.format(self.directory))
+  def _print_registration(self):
+    """Prints global info of the simulation."""
+    print('\n[info] registering simulation ...')
     print('\t- description: {}'.format(self.description))
     print('\t- software: {}'.format(self.software))
+    print('\t- directory: {}\n'.format(self.directory))
 
-  def derive_class(self):
+  def _derive_class(self):
     """Finds the appropriate child class based on the software used."""
     if self.software == 'cuibm':
       from .cuibm.simulation import CuIBMSimulation
@@ -72,31 +73,37 @@ class Simulation(object):
       self.__class__ = IBAMRSimulation
     else:
       print('[error] software indicated: {}'.format(self.software))
-      print('[error] simulation type should be one of the followings: '
+      print('[error] should be one of the followings: '
             'cuibm, petibm, openfoam, or ibamr')
       sys.exit(0)
 
-  def get_mean_forces(self, limits=(0.0, float('inf')), last_period=False, order=5):
+  def get_mean_forces(self, 
+                      limits=(0.0, float('inf')), 
+                      last_period=False, 
+                      order=5):
     """Computes the time-averaged forces (or force-coefficients).
 
     Parameters
     ----------
     limits: 2-list of floats, optional
       Time-limits used to compute the mean; 
-      default: [0.0, +inf].
+      default: (0.0, +inf).
     last_period: boolean, optional
-      Set 'True' if only the last period define the time-limits; 
+      Set 'True' to compute the mean over the last period of the signal;
       default: False.
     order: integer, optional
       Number of neighboring points used to define an extremum; 
       default: 5.
     """
     for index, force in enumerate(self.forces):
-      self.forces[index].get_mean(limits=limits, last_period=last_period, order=order)
+      self.forces[index].get_mean(limits=limits, 
+                                  last_period=last_period, 
+                                  order=order)
 
   def get_strouhal(self, 
                    L=1.0, U=1.0, 
-                   limits=(0.0, float('inf')), order=5, 
+                   limits=(0.0, float('inf')), 
+                   order=5, 
                    index=1):
     """Computes the Strouhal number based on the frequency of the force signal.
 
@@ -123,10 +130,13 @@ class Simulation(object):
   def plot_forces(self, 
                   indices=None, labels=None,
                   display_coefficients=False, coefficient=1.0,
-                  limits=[0.0, float('inf'), 0.0, float('inf')],
-                  save_name=None, show=False,
-                  display_extrema=False, order=5, display_guides=False, fill_between=False,
-                  other_simulations=[], other_coefficients=[]):
+                  limits=(0.0, float('inf'), 0.0, float('inf')),
+                  style=None,
+                  save_directory=None, save_name=None, fmt='png', dpi=100,
+                  display_extrema=False, order=5, 
+                  display_guides=False, fill_between=False,
+                  other_simulations=[], other_coefficients=[],
+                  show=False):
     """Displays the forces into a figure.
 
     Parameters
@@ -143,15 +153,24 @@ class Simulation(object):
     coefficient: float, optional
       scale coefficient to convert a force in a force coefficient; 
       default: 1.0.
-    limits: 4-list of floats, optional
-      Limits of the axes [xmin, xmax, ymin, ymax]; 
-      default: [0.0, +inf, 0.0, +inf].
+    limits: 4-tuple of floats, optional
+      Limits of the axes (xmin, xmax, ymin, ymax); 
+      default: (0.0, +inf, 0.0, +inf).
+    style: string, optional
+      Path of the style-sheet to use for the figure;
+      default: None.
+    save_directory: string, optional
+      Directory where to save the figure;
+      default: None.
     save_name: string, optional
       Name of the .PNG file to save; 
       default: None (does not save).
-    show: boolean, optional
-      Set 'True' to display the figure; 
-      default: False.
+    fmt: string, optional
+      Format of the file to save;
+      default: 'png'.
+    dpi: integer, optional
+      Dots per inch (resolution);
+      default: 100.
     display_extrema: boolean, optional
       Set 'True' to emphasize the extrema of the curves; 
       default: False.
@@ -170,6 +189,9 @@ class Simulation(object):
     other_coefficients: list of floats, optional
       Scale coefficients for each other simulation; 
       default: [].
+    show: boolean, optional
+      Set 'True' to display the figure; 
+      default: False.
     """
     if not (save_name or show):
       return
@@ -183,11 +205,20 @@ class Simulation(object):
       assert isinstance(other_coefficients, (list, tuple))
     except:
       other_coefficients = [other_coefficients]
-    print('[info] plotting forces ...')
+    print('\n[info] plotting forces ...')
+    if style:
+      try:
+        pyplot.style.use(style)
+      except:
+        try:
+          pyplot.style.use(os.path.join(os.environ['SNAKE'], 'snake', 'styles',
+                                        style+'.mplstyle'))
+        except:
+          pass
     fig, ax = pyplot.subplots(figsize=(8, 6))
     color_cycle = ax._get_lines.prop_cycler
     ax.grid(True, zorder=0)
-    ax.set_xlabel('time')
+    ax.set_xlabel('time-unit')
     ax.set_ylabel('force coefficients' if display_coefficients else 'forces')
     if not labels:
       labels = (['$C_d$', '$C_l$', '$C_m$'] if display_coefficients
@@ -256,11 +287,16 @@ class Simulation(object):
     legend.set_zorder(20) # put legend on top
     ax.axis(limits)
     if save_name:
-      images_directory = '{}/images'.format(self.directory)
-      print('[info] saving figure {}.png in directory {} ...'.format(save_name, images_directory))
-      if not os.path.isdir(images_directory):
-        os.makedirs(images_directory)
-      pyplot.savefig('{}/{}.png'.format(images_directory, save_name))
+      if not save_directory:
+        save_directory = os.path.join(self.directory, 'images')
+      if not os.path.isdir(save_directory):
+        os.makedirs(save_directory)
+      print('[info] saving figure {}.{} in directory {} ...'
+            ''.format(save_name, fmt, save_directory))
+      pyplot.savefig(os.path.join(save_directory, '.'.join([save_name, fmt])),
+                     dpi=dpi,
+                     bbox_inches='tight',
+                     format=fmt)
     if show:
       print('[info] displaying figure ...')
       pyplot.show()

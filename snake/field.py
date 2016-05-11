@@ -1,10 +1,9 @@
-# file: Field.py
+# file: field.py
 # author: Olivier Mesnard (mesnardo@gwu.edu)
 # description: Implementation of the class `Field`.
 
 
 import os
-
 
 import numpy
 from matplotlib import pyplot, cm
@@ -32,7 +31,7 @@ class Field(object):
     self.x, self.y = x, y
     self.values = values
 
-  def subtract(self, other, label=None):
+  def subtract(self, other, label=None, atol=1.0E-12):
     """Subtract a given field to the current one.
 
     Parameters
@@ -42,11 +41,13 @@ class Field(object):
     label: string, optional
       Label of the Field object to create;
       default: None (will be <current label>).
+    atol: float, optional
+      Absolute-tolerance to define if two grid nodes have the same location;
+      default: 1.0E-12.
     """
     if not label:
       label = self.label
     # check the two solutions share the same grid
-    atol = 1.0E-12
     assert numpy.allclose(self.x, other.x, atol=atol)
     assert numpy.allclose(self.y, other.y, atol=atol)
     assert self.values.shape == other.values.shape
@@ -337,11 +338,13 @@ class Field(object):
   def plot_contour(self, 
                    field_range=None, 
                    filled_contour=True,
-                   view=[float('-inf'), float('-inf'), float('inf'), float('inf')],
+                   view=[float('-inf'), float('-inf'), 
+                         float('inf'), float('inf')],
                    bodies=[],
                    time_increment=None,
                    save_name=None,
-                   directory=os.getcwd(),
+                   save_directory=os.getcwd(),
+                   fmt='png',
                    colorbar=True, 
                    width=8.0, 
                    dpi=100): 
@@ -367,9 +370,12 @@ class Field(object):
     save_name: string, optional
       Prefix used to create the images directory and to save the .png files; 
       default: None.
-    directory: string, optional
+    save_directory: string, optional
       Directory where to save the image; 
-      default: current directory.
+      default: '<current directory>'.
+    fmt: string, optional
+      Format of the file to save;
+      default: 'png'.
     colorbar: boolean, optional
       Set 'True' to display an horizontal colorbar 
       at the bottom-left of the figure;
@@ -384,19 +390,11 @@ class Field(object):
     if abs(self.values.min()-self.values.max()) <= 1.0E-06:
       print('[warning] uniform field; plot contour skipped!')
       return
-    # create images directory
-    save_name = (self.label if not save_name else save_name)
-    folder = '{}_{:.2f}_{:.2f}_{:.2f}_{:.2f}'.format(save_name, *view)
-    images_directory = os.path.join(directory, folder)
-    if not os.path.isdir(images_directory):
-      print('[info] creating images directory: {} ...'.format(images_directory))
-      os.makedirs(images_directory)
     # convert bodies in list if single body provided
     try:
       assert isinstance(bodies, (list, tuple))
     except:
       bodies = [bodies]
-
     print('[info] plotting the {} contour ...'.format(self.label))
     height = width*(view[3]-view[1])/(view[2]-view[0])
     fig, ax = pyplot.subplots(figsize=(width, height), dpi=dpi)
@@ -441,7 +439,11 @@ class Field(object):
     ax.set_ylim(view[1::2])
     ax.set_aspect('equal')
     # save image
-    image_file_name = '{}{:0>7}.png'.format(self.label, self.time_step)
-    image_path = os.path.join(images_directory, image_file_name)
-    pyplot.savefig(image_path, dpi=dpi, bbox_inches='tight', pad_inches=0)
+    save_name = (self.label if not save_name else save_name)
+    file_path = os.path.join(save_directory, '{}{:0>7}.{}'.format(save_name,
+                                                                  self.time_step,
+                                                                  fmt))
+    pyplot.savefig(file_path, 
+                   dpi=dpi, bbox_inches='tight', pad_inches=0,
+                   format=fmt)
     pyplot.close()

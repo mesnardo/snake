@@ -1,4 +1,4 @@
-# file: openfoamSimulation.py
+# file: simulation.py
 # author: Olivier Mesnard (mesnardo@gwu.edu)
 # description: Implementation of the class `OpenFOAMSimulation`.
 
@@ -29,9 +29,9 @@ class OpenFOAMSimulation(Simulation):
       Directory of the simulation;
       default: present working directory.
     """
-    super(OpenFOAMSimulation, self).__init__(description=description, 
+    super(OpenFOAMSimulation, self).__init__(software='openfoam',
+                                             description=description, 
                                              directory=directory, 
-                                             software='openfoam', 
                                              **kwargs)
 
   def read_forces(self, 
@@ -141,7 +141,7 @@ class OpenFOAMSimulation(Simulation):
     """
     print('[info] computing the mean CFL number ...')
     mask = numpy.where(numpy.logical_and(self.cfl['times'] >= limits[0],
-                                         self.cfl['values'] <= limits[1]))[0]
+                                         self.cfl['times'] <= limits[1]))[0]
     self.cfl['mean'] = {'start': self.cfl['times'][mask[0]],
                         'end': self.cfl['times'][mask[-1]],
                         'value': self.cfl['values'].mean()}
@@ -154,7 +154,8 @@ class OpenFOAMSimulation(Simulation):
   def plot_maximum_cfl(self, 
                        display_extrema=False, order=5, 
                        limits=(0.0, float('inf'), 0.0, float('inf')),
-                       save_name=None,
+                       save_directory=None, save_name=None, fmt='png',
+                       style='mesnardo',
                        show=False):
     """Plots the instantaneous maximum CFL number.
 
@@ -176,18 +177,25 @@ class OpenFOAMSimulation(Simulation):
     directory: string, optional
       Directory of the simulation; 
       default: <current directory>.
+    save_directory: string, optional
+      Directory where to save the figure;
+      default: None (will be '<simulation directory>/images').
     save_name: string, optional
-      Name of the .PNG file to save; 
+      Name of the file to save; 
       default: None (does not save).
+    fmt: string, optional
+      Format to save the figure;
+      default: 'png'.
+    style: string, optional
+      Name of the .mplstyle file that contains to the style.
+      The file should be located in the folder 'snake/styles';
+      default: 'mesnardo'.
     show: boolean, optional
       Set 'True' to display the figure; 
       default: False.
     """
     print('[info] plotting cfl ...')
-    try:
-      pyplot.style.use('{}/styles/mesnardo.mplstyle'.format(os.environ['SNAKE']))
-    except:
-      pass
+    pyplot.style.use(os.environ['SNAKE'], 'snake', 'styles', style+'.mplstyle')
     fig, ax = pyplot.subplots(figsize=(8, 6))
     color_cycle = ax._get_lines.prop_cycler
     color = next(color_cycle)['color']
@@ -209,11 +217,14 @@ class OpenFOAMSimulation(Simulation):
                  c=color, marker='o', zorder=10)
     ax.axis(limits)
     if save_name:
-      images_directory = os.path.join(self.directory, 'images')
-      print('[info] saving figure in directory {} ...'.format(images_directory))
-      if not os.path.isdir(images_directory):
-        os.makedirs(images_directory)
-      pyplot.savefig(os.path.join(images_directory, save_name + '.png'))
+      if not save_directory:
+        save_directory = os.path.join(self.directory, 'images')
+      print('[info] saving figure in directory {} ...'.format(save_directory))
+      if not os.path.isdir(save_directory):
+        os.makedirs(save_directory)
+      pyplot.savefig(os.path.join(save_directory, save_name+'.'+fmt),
+                     bbox_inches='tight',
+                     format=fmt)
     if show:
       print('[info] displaying figure ...')
       pyplot.show()

@@ -1,4 +1,4 @@
-# file: PetIBMSimulation.py
+# file: simulation.py
 # author: Olivier Mesnard (mesnardo@gwu.edu)
 # description: Implementation of the class `PetIBMSimulation`.
 
@@ -8,8 +8,11 @@ import sys
 
 import numpy
 
-sys.path.append(os.path.join(os.environ['PETSC_DIR'], 'bin', 'pythonscripts'))
-import PetscBinaryIO
+try:
+  sys.path.append(os.path.join(os.environ['PETSC_DIR'], 'bin', 'pythonscripts'))
+  import PetscBinaryIO
+except:
+  pass
 
 from ..barbaGroupSimulation import BarbaGroupSimulation
 from ..field import Field
@@ -32,23 +35,24 @@ class PetIBMSimulation(BarbaGroupSimulation):
       Directory of the simulation;
       default: present working directory.
     """
-    super(PetIBMSimulation, self).__init__(description=description, 
+    super(PetIBMSimulation, self).__init__(software='petibm',
+                                           description=description, 
                                            directory=directory, 
-                                           software='petibm', 
                                            **kwargs)
 
-  def read_grid(self, file_name='grid.txt'):
-    """Reads the coordinates from the file grid.txt.
+  def read_grid(self, file_path=None):
+    """Reads the grid from the file containing the grid nodes.
 
     Parameters
     ----------
-    file_name: string
-      Name of file containing grid-node stations along each direction; 
-      default: 'grid.txt'.
+    file_path: string, optional
+      Path of the file containing grid-node stations along each direction; 
+      default: None.
     """
     print('[info] reading the grid ...'),
-    grid_path = os.path.join(self.directory, file_name)
-    with open(grid_path, 'r') as infile:
+    if not file_path:
+      file_path = os.path.join(self.directory, 'grid.txt')
+    with open(file_path, 'r') as infile:
       n_cells = numpy.array([int(n) for n in infile.readline().strip().split()])
       coords = numpy.loadtxt(infile, dtype=numpy.float64)
     self.grid = numpy.array(numpy.split(coords, numpy.cumsum(n_cells[:-1]+1)))
@@ -68,7 +72,7 @@ class PetIBMSimulation(BarbaGroupSimulation):
     """
     if not file_path:
       file_path = os.path.join(self.directory, 'forces.txt')
-    print('[info] reading forces from file {} ...'.format(file_path)),
+    print('[info] reading forces ...'),
     with open(file_path, 'r') as infile:
       data = numpy.loadtxt(infile, dtype=numpy.float64, unpack=True)
     times = data[0]
@@ -78,7 +82,7 @@ class PetIBMSimulation(BarbaGroupSimulation):
       self.forces.append(Force(times, values, label=labels[index]))
     print('done')
 
-  def read_fluxes(self, time_step, periodic_directions=[]):
+  def read_fluxes(self, time_step, periodic_directions=[], **kwargs):
     """Reads the flux fields at a given time-step.
 
     Parameters
@@ -88,6 +92,11 @@ class PetIBMSimulation(BarbaGroupSimulation):
     periodic_directions: list of strings, optional
       Directions that have periodic boundary conditions; 
       default: [].
+
+    Returns
+    -------
+    qx, qy, qz: Field objects
+      Fluxes in the x-, y-, and z-directions.
     """
     print('[time-step {}] reading fluxes from files ...'.format(time_step)),
     dim3 = (len(self.grid) == 3)
@@ -152,13 +161,18 @@ class PetIBMSimulation(BarbaGroupSimulation):
       print('done')
       return qx, qy
 
-  def read_pressure(self, time_step):
+  def read_pressure(self, time_step, **kwargs):
     """Reads the pressure field from file given the time-step.
 
     Parameters
     ----------
     time_step: integer
       Time-step at which the field will be read.
+
+    Returns
+    -------
+    p: Field object
+      The pressure field.
     """
     print('[time-step {}] reading pressure field ...'.format(time_step)),
     dim3 = (len(self.grid) == 3)
