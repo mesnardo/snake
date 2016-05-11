@@ -129,8 +129,10 @@ class DecayingVortices(object):
 
   def plot_fields(self, time_step, 
                   view=[float('-inf'), float('-inf'), float('inf'), float('inf')], 
-                  directory=os.getcwd()+'/images',
-                  save_name='analytical'):
+                  save_directory=os.path.join(os.getcwd(), 'images'),
+                  save_name='analytical',
+                  fmt='png',
+                  dpi=100):
     """Plots the velocity and pressure fields.
 
     Parameters
@@ -140,22 +142,32 @@ class DecayingVortices(object):
     view: 4-list of floats, optional
       Bottom-left and top-right coordinates of the view to plot;
       default: entire domain.
-    directory: string, optional
+    save_directory: string, optional
       Directory where to save the images;
-      default: <current directory>/images.
+      default: '<current directory>/images'.
     save_name: string, optional
       Prefix of the folder name that will contain the .png files;
       default: 'analytical'.
+    fmt: string, optional
+      Format of the files to save;
+      default: 'png'.
+    dpi: integer, optional
+      Dots per inch (resolution);
+      default: 100.
     """
     for name, field in self.fields.iteritems():
       self.fields[name].time_step = time_step
-      field.plot_contour(directory=directory, view=view, save_name=save_name)
+      field.plot_contour(view=view, 
+                         save_directory=save_directory,
+                         save_name=save_name,
+                         fmt=fmt,
+                         dpi=dpi)
 
   def write_fields_petsc_format(self, x, y, time, Re, amplitude,
                                 periodic_directions=None, 
-                                directory=os.getcwd()):
-    """Computes and writes velocity and pressure fields into PETSc-readable files.
-    The files are saved in the sub-folder 0000000.
+                                save_directory=None):
+    """Computes and writes velocity and pressure fields 
+    into PETSc-readable files.
 
     Parameters
     ----------
@@ -167,12 +179,12 @@ class DecayingVortices(object):
       The Reynolds number.
     amplitude: float
       The amplitude of the vortices.
-    periodic_directions: list of strings
+    periodic_directions: list of strings, optional
       Directions with periodic condition at the ends;
       default: None
-    directory: string
+    save_directory: string, optional
       Directory of the simulation;
-      default: current directory.
+      default: None.
     """
     # create flux fields on staggered grid
     n_xu = x.size - (1 if 'x' in periodic_directions else 2)
@@ -184,23 +196,23 @@ class DecayingVortices(object):
     qy = ( self.get_velocity(xv, yv, float(time), float(Re), float(amplitude))[1].values
           *numpy.outer(numpy.ones(n_yv), x[1:]-x[:-1]) )
     # create directory where to save files
-    directory = '{}/{:0>7}'.format(directory, 0)
-    if not os.path.isdir(directory):
-      print('[info] creating directory: {} ...'.format(directory))
-      os.makedirs(directory)
+    if not save_directory:
+      save_directory = os.path.join(os.getcwd(), '0000000')
+    if not os.path.isdir(save_directory):
+      os.makedirs(save_directory)
     sys.path.append(os.path.join(os.environ['PETSC_DIR'], 'bin', 'pythonscripts'))
     import PetscBinaryIO
     # write fluxes
     vec = qx.flatten().view(PetscBinaryIO.Vec)
-    file_path = '{}/qx.dat'.format(directory)
-    print('[info] writing fluxes in x-direction in file {} ...'.format(file_path))
+    file_path = os.path.join(save_directory, 'qx.dat')
+    print('[info] writing fluxes in x-direction in file ...')
     PetscBinaryIO.PetscBinaryIO().writeBinaryFile(file_path, [vec,])
     vec = qy.flatten().view(PetscBinaryIO.Vec)
-    file_path = '{}/qy.dat'.format(directory)
-    print('[info] writing fluxes in y-direction in file {} ...'.format(file_path))
+    file_path = os.path.join(save_directory, 'qy.dat')
+    print('[info] writing fluxes in y-direction in file ...')
     PetscBinaryIO.PetscBinaryIO().writeBinaryFile(file_path, [vec,])
     # write pressure -- pressure field set to zero everywhere
     vec = numpy.zeros((y.size-1, x.size-1)).flatten().view(PetscBinaryIO.Vec)
-    file_path = '{}/phi.dat'.format(directory)
-    print('[info] writing pressure in file {} ...'.format(file_path))
+    file_path = os.path.join(save_directory, 'phi.dat')
+    print('[info] writing pressure in file ...')
     PetscBinaryIO.PetscBinaryIO().writeBinaryFile(file_path, [vec,])
