@@ -1,4 +1,4 @@
-# file:setup.py
+# file: setup.py
 # author: Olivier Mesnard (mesnardo@gwu.edu)
 # description: Setup.
 
