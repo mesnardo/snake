@@ -56,12 +56,12 @@ class Segment(object):
 
   def print_parameters(self):
     """Prints the parameters of the segment."""
-    print('[info] printing parameters of segment ...')
+    print('\n[info] printing parameters of segment ...')
     print('\tlimits: [{}, {}]'.format(self.start, self.end))
     print('\treal limits: [{}, {}]'.format(self.vertices[0], self.vertices[-1]))
     print('\tstretching ratio: {}'.format(self.stretch_ratio))
     print('\taspect ratio: {}'.format(self.aspect_ratio))
-    print('\tnumber of divisions: {}'.format(self.nb_divisions))
+    print('\tnumber of divisions: {}\n'.format(self.nb_divisions))
 
   def get_vertices(self, reverse=False):
     """Computes the vertices of the segment.
