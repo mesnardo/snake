@@ -146,7 +146,7 @@ class BarbaGroupSimulation(Simulation):
       The vorticity field. 
     """
     time_step = self.fields['x-velocity'].time_step
-    print('[time-step {}] computing the vorticity field ...'.format(time_step)),
+    print('[time-step {}] computing the vorticity field ...'.format(time_step))
     u, v = self.fields['x-velocity'], self.fields['y-velocity']
     mask_x = numpy.where(numpy.logical_and(u.x > v.x[0], u.x < v.x[-1]))[0]
     mask_y = numpy.where(numpy.logical_and(v.y > u.y[0], v.y < u.y[-1]))[0]
@@ -157,7 +157,6 @@ class BarbaGroupSimulation(Simulation):
           / numpy.outer(numpy.ones(yw.size), v.x[1:]-v.x[:-1])
         - (u.values[1:, mask_x] - u.values[:-1, mask_x])
           / numpy.outer(u.y[1:]-u.y[:-1], numpy.ones(xw.size)) )
-    print('done')
     return Field(label='vorticity',
                  time_step=time_step,
                  x=xw, y=yw, 
@@ -188,8 +187,6 @@ class BarbaGroupSimulation(Simulation):
       Velocity in the x-, y-, and z-directions.
     """
     print('[time-step {}] get velocity fields ...'.format(time_step))
-    if not directory:
-      directory = self.directory
     fluxes = self.read_fluxes(time_step, 
                               periodic_directions=periodic_directions,
                               directory=directory)
@@ -334,6 +331,7 @@ class BarbaGroupSimulation(Simulation):
                    time_increment=None,
                    save_directory=None, save_name=None, fmt='png',
                    colorbar=True,
+                   style=None,
                    width=8.0, 
                    dpi=100): 
     """Plots and saves the field.
@@ -372,6 +370,9 @@ class BarbaGroupSimulation(Simulation):
       Set 'True' to display an horizontal colobar
       at the bottom-left of the figure;
       default: True.
+    style: string, optional
+      Path of the Matplotlib style-sheet to use;
+      default: None.
     width: float, optional
       Width of the figure (in inches); 
       default: 8.
@@ -384,12 +385,28 @@ class BarbaGroupSimulation(Simulation):
     view[1] = (self.grid[1].min() if view[1] == float('-inf') else view[1])
     view[2] = (self.grid[0].max() if view[2] == float('inf') else view[2])
     view[3] = (self.grid[1].max() if view[3] == float('inf') else view[3])
+    # create save directory if necessary
     if not save_directory:
       save_directory = os.path.join(self.directory, 'images')
     folder = '{}_{:.2f}_{:.2f}_{:.2f}_{:.2f}'.format(field_name, *view)
     save_directory = os.path.join(save_directory, folder)
     if not os.path.isdir(save_directory):
-      os.makedirs(save_directory) 
+      os.makedirs(save_directory)
+    # load matplotlib style if provided and not already loaded
+    if style and not hasattr(self, 'style_loaded'):
+      from matplotlib import pyplot
+      try:
+        pyplot.style.use(style)
+      except:
+        try:
+          pyplot.style.use(os.path.join(os.environ['SNAKE'], 'snake', 'styles',
+                                        style+'.mplstyle'))
+        except:
+          print('[warning] could not load the matplotlib style-sheet {}'
+                ''.format(style))
+          pass
+      self.style_loaded = True
+    # plot contour
     self.fields[field_name].plot_contour(field_range=field_range,
                                          filled_contour=filled_contour,
                                          view=view,
