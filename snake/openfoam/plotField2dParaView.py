@@ -9,6 +9,7 @@ import sys
 import argparse
 
 import numpy
+import paraview
 from paraview.simple import *
 
 sys.path.append(os.environ['SNAKE'])
@@ -69,6 +70,7 @@ def plot_field_contours(field_name,
                         times=(0, 0, 0),
                         width=800,
                         colormap_path=None):
+  print('Paraview: \n{}\n'.format(paraview.__path__))
   openfoam_file_name = '{}.OpenFOAM'.format(os.path.basename(os.path.normpath(directory)))
   reader = PV4FoamReader(FileName=os.path.join(directory, openfoam_file_name))
   print('[info] plotting {} field ...'.format(field_name))
