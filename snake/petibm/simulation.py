@@ -78,6 +78,7 @@ class PetIBMSimulation(BarbaGroupSimulation):
     times = data[0]
     if not labels:
       labels = ['f_x', 'f_z', 'f_z'] # default labels
+    self.forces = []
     for index, values in enumerate(data[1:]):
       self.forces.append(Force(times, values, label=labels[index]))
     print('done')

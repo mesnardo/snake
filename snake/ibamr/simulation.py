@@ -52,6 +52,7 @@ class IBAMRSimulation(Simulation):
     with open(file_path, 'r') as infile:
       times, force_x, force_y = numpy.loadtxt(infile, dtype=float, 
                                               usecols=(0, 4, 5), unpack=True)
+    self.forces = []
     self.forces.append(Force(times, force_x, '$F_x$'))
     self.forces.append(Force(times, force_y, '$F_y$'))
     print('done')
