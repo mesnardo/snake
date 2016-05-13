@@ -9,7 +9,10 @@ import re
 import argparse
 import collections
 
-import numpy
+try:
+  import numpy
+except:
+  pass
 
 try:
   from IPython.display import HTML, Image, display
