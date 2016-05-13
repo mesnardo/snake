@@ -29,9 +29,9 @@ class CuIBMSimulation(BarbaGroupSimulation):
       Directory of the simulation;
       default: present working directory.
     """
-    super(CuIBMSimulation, self).__init__(description=description, 
-                                          directory=directory, 
-                                          software='cuibm', 
+    super(CuIBMSimulation, self).__init__(software='cuibm',
+                                          description=description, 
+                                          directory=directory,  
                                           **kwargs)
 
   def read_grid(self, file_path=None):
@@ -43,7 +43,7 @@ class CuIBMSimulation(BarbaGroupSimulation):
       Path of the file containing grid stations along each direction;
       default: None.
     """
-    print('[info] reading grid ...'),
+    print('[info] reading grid ...')
     if not file_path:
       file_path = os.path.join(self.directory, 'grid')
     # test if file written in binary format
@@ -68,7 +68,7 @@ class CuIBMSimulation(BarbaGroupSimulation):
         ny = int(data[0])
         y = data[1:]
     self.grid = x, y
-    print('done')
+    print('\tgrid-size: {}x{}'.format(x.size-1, y.size-1))
 
   def read_forces(self, file_path=None, labels=None, usecols=(0, 1, 2)):
     """Reads forces from files.
@@ -87,7 +87,7 @@ class CuIBMSimulation(BarbaGroupSimulation):
     """
     if not file_path:
       file_path = os.path.join(self.directory, 'forces')
-    print('[info] reading forces ...'),
+    print('[info] reading forces ...')
     with open(file_path, 'r') as infile:
       data = numpy.loadtxt(infile, dtype=numpy.float64, usecols=usecols, 
                            unpack=True)
@@ -97,7 +97,6 @@ class CuIBMSimulation(BarbaGroupSimulation):
     self.forces = [] # reset forces if already present
     for index, values in enumerate(data[1:]):
       self.forces.append(Force(times, values, label=labels[index]))
-    print('done')
 
   def read_fluxes(self, time_step, directory=None, **kwargs):
     """Reads the flux fields from file at a given time-step.
@@ -115,7 +114,7 @@ class CuIBMSimulation(BarbaGroupSimulation):
     qx, qy: Field objects
       Fluxes in the x- and y-directions.
     """
-    print('[time-step {}] reading fluxes from file ...'.format(time_step)),
+    print('[time-step {}] reading fluxes from file ...'.format(time_step))
     # get grid-stations and number of cells along each direction
     x, y = self.grid
     nx, ny = x.size-1, y.size-1
@@ -147,7 +146,6 @@ class CuIBMSimulation(BarbaGroupSimulation):
                x=0.5*(x[:-1]+x[1:]), 
                y=y[1:-1], 
                values=q[offset:].reshape(ny-1, nx))
-    print('done')
     return qx, qy
 
   def read_pressure(self, time_step, directory=None, **kwargs):
@@ -166,7 +164,7 @@ class CuIBMSimulation(BarbaGroupSimulation):
     p: Field object
       The pressure field.
     """
-    print('[time-step {}] reading pressure from file ...'.format(time_step)),
+    print('[time-step {}] reading pressure from file ...'.format(time_step))
     # get info about mesh-grid
     x, y = self.grid
     nx, ny = x.size-1, y.size-1
@@ -192,5 +190,4 @@ class CuIBMSimulation(BarbaGroupSimulation):
               x=0.5*(x[:-1]+x[1:]), 
               y=0.5*(y[:-1]+y[1:]), 
               values=p.reshape(nx, ny))
-    print('done')
     return p
