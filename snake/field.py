@@ -395,7 +395,8 @@ class Field(object):
       assert isinstance(bodies, (list, tuple))
     except:
       bodies = [bodies]
-    print('[info] plotting the {} contour ...'.format(self.label))
+    print('[time-step {}] plotting the {} contour ...'.format(self.time_step,
+                                                              self.label))
     height = width*(view[3]-view[1])/(view[2]-view[0])
     fig, ax = pyplot.subplots(figsize=(width, height), dpi=dpi)
     ax.tick_params(axis='x', labelbottom='off')
@@ -403,12 +404,12 @@ class Field(object):
     # create filled contour
     if field_range:
       levels = numpy.linspace(*field_range)
-      print('[info] min={}, max={}'.format(self.values.min(), self.values.max()))
+      print('\tmin={}, max={}'.format(self.values.min(), self.values.max()))
       colorbar_ticks = numpy.linspace(field_range[0], field_range[1], 5)
       colorbar_format = '%.01f'
     else:
       levels = numpy.linspace(self.values.min(), self.values.max(), 101)
-      print('min={}, max={}, steps={}'.format(levels[0], levels[-1], levels.size))
+      print('\tmin={}, max={}, steps={}'.format(levels[0], levels[-1], levels.size))
       colorbar_ticks = numpy.linspace(self.values.min(), self.values.max(), 3)
       colorbar_format= '%.04f'
     color_map = {'pressure': cm.jet, 'vorticity': cm.RdBu_r,
