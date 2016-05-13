@@ -74,6 +74,7 @@ def check_version():
   script_version = '2.8.2'
   tested_versions = ['2.8.2', '2.10.2']
   current_version = Version()
+  print('VisIt version: {}\n'.format(Version()))
   if current_version not in tested_versions:
     print('[warning] You are using VisIt-{}'.format(current_version))
     print('[warning] This script was created with VisIt-{}.'.format(script_version))
