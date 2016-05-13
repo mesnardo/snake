@@ -97,6 +97,7 @@ class OpenFOAMSimulation(Simulation):
       times = numpy.append(times, t)
       force_x, force_y = numpy.append(force_x, fx), numpy.append(force_y, fy)
     # set Force objects
+    self.forces = []
     self.forces.append(Force(times, force_x, label=labels[0]))
     self.forces.append(Force(times, force_y, label=labels[1]))
 
