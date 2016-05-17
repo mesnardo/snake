@@ -1,7 +1,7 @@
 # Snake
 
 A collection of Python modules used to post-process the numerical solution
-of simulations run with one of the following code:
+of simulations run with one of the following codes:
 * [PetIBM](https://github.com/barbagroup/PetIBM)
 * [cuIBM](https://github.com/barbaGroup/cuIBM)
 * [IBAMR](https://github.com/IBAMR/IBAMR)
@@ -13,7 +13,7 @@ Installation:
 
 
 Some of the Python modules call the environment variable `$SNAKE` defined as the local directory of this repository.
-The variable can set by adding the following line to your `.bashrc` 
+The variable can be set by adding the following line to your `.bashrc` 
 or `.bash_profile` file:
 
 	> export SNAKE="/path/to/the/git/repository"
