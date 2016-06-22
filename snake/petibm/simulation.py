@@ -5,6 +5,7 @@
 
 import os
 import sys
+import struct
 
 import numpy
 
@@ -51,12 +52,30 @@ class PetIBMSimulation(BarbaGroupSimulation):
     """
     print('[info] reading the grid ...'),
     if not file_path:
-      file_path = os.path.join(self.directory, 'grid.txt')
-    with open(file_path, 'r') as infile:
-      n_cells = numpy.array([int(n) for n in infile.readline().strip().split()])
-      coords = numpy.loadtxt(infile, dtype=numpy.float64)
-    self.grid = numpy.array(numpy.split(coords, numpy.cumsum(n_cells[:-1]+1)))
-    print('done')
+      file_path = os.path.join(self.directory, 'grid.dat')
+    # test if file written in binary format
+    textchars = bytearray({7,8,9,10,12,13,27} | set(range(0x20, 0x100)) - {0x7f})
+    is_binary_string = lambda bytes: bool(bytes.translate(None, textchars))
+    binary_format = is_binary_string(open(file_path, 'rb').read(1024))
+    if binary_format:
+      with open(file_path, 'rb') as infile:
+        # x-direction
+        nx = struct.unpack('i', infile.read(4))[0]
+        x = numpy.array(struct.unpack('d'*(nx+1), infile.read(8*(nx+1))))
+        # y-direction
+        ny = struct.unpack('i', infile.read(4))[0]
+        y = numpy.array(struct.unpack('d'*(ny+1), infile.read(8*(ny+1))))
+    else:
+      with open(file_path, 'r') as infile:
+        data = numpy.loadtxt(infile, dtype=numpy.float64)
+        # x-direction
+        nx = int(data[0])
+        x, data = data[1:nx+2], data[nx+2:]
+        # y-direction
+        ny = int(data[0])
+        y = data[1:]
+    self.grid = x, y
+    print('\tgrid-size: {}x{}'.format(nx, ny))
 
   def read_forces(self, file_path=None, labels=None):
     """Reads forces from files.
