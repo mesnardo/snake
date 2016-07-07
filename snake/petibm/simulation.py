@@ -50,7 +50,7 @@ class PetIBMSimulation(BarbaGroupSimulation):
       Path of the file containing grid-node stations along each direction; 
       default: None.
     """
-    print('[info] reading the grid ...'),
+    print('[info] reading the grid ...')
     if not file_path:
       file_path = os.path.join(self.directory, 'grid.dat')
     # test if file written in binary format
@@ -65,17 +65,13 @@ class PetIBMSimulation(BarbaGroupSimulation):
         # y-direction
         ny = struct.unpack('i', infile.read(4))[0]
         y = numpy.array(struct.unpack('d'*(ny+1), infile.read(8*(ny+1))))
+        self.grid = x, y
     else:
       with open(file_path, 'r') as infile:
-        data = numpy.loadtxt(infile, dtype=numpy.float64)
-        # x-direction
-        nx = int(data[0])
-        x, data = data[1:nx+2], data[nx+2:]
-        # y-direction
-        ny = int(data[0])
-        y = data[1:]
-    self.grid = x, y
-    print('\tgrid-size: {}x{}'.format(nx, ny))
+        n_cells = numpy.array([int(n) for n in infile.readline().strip().split()])
+        coords = numpy.loadtxt(infile, dtype=numpy.float64)
+      self.grid = numpy.array(numpy.split(coords, numpy.cumsum(n_cells[:-1]+1)))
+    print('\tgrid-size: {}x{}'.format(self.grid[0].size-1, self.grid[0].size-1))
 
   def read_forces(self, file_path=None, labels=None):
     """Reads forces from files.
