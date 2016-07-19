@@ -11,6 +11,12 @@ from snake import miscellaneous
 from snake.simulation import Simulation
 from snake.body import Body
 
+from matplotlib import pyplot
+pyplot.style.use(os.path.join(os.environ['SNAKE'],
+                              'snake',
+                              'styles',
+                              'mesnardo.mplstyle'))
+
 
 def parse_command_line():
   """Parses the command-line."""
@@ -138,6 +144,6 @@ def main(args):
 
 if __name__ == '__main__':
   print('\n[{}] START\n'.format(os.path.basename(__file__)))
-  args = parser_command_line()
+  args = parse_command_line()
   main(args)
   print('\n[{}] END\n'.format(os.path.basename(__file__)))
