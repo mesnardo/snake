@@ -43,7 +43,7 @@ def parse_command_line():
   parser.add_argument('--validation-data', dest='validation_data_path',
                       type=str, 
                       default=('{}/resources/validationData/'
-                               'ghia_et_al_1982_lid_driven_cavity.dat'.format(os.environ['SCRIPTS'])),
+                               'ghia_et_al_1982_lid_driven_cavity.dat'.format(os.environ['SNAKE'])),
                       help='path of the validation data file')
   parser.add_argument('--no-show', dest='show',
                       action='store_false',
@@ -123,20 +123,28 @@ def main(args):
   save_directory = os.path.join(simulation.directory, 'images')
   if not os.path.isdir(save_directory):
     os.makedirs(save_directory)
-  simulation.x_velocity.plot_vertical_gridline_values(0.5,
+  simulation.fields['x-velocity'].plot_vertical_gridline_values(0.5,
                               plot_settings=plot_settings,
                               plot_limits=[0.0, 1.0, -0.75, 1.25],
                               save_directory=save_directory,
                               show=args.show,
                               validation_data=(u.y, u.values),
-                              validation_plot_settings=validation_plot_settings)
-  simulation.y_velocity.plot_horizontal_gridline_values(0.5,
+                              validation_plot_settings=validation_plot_settings,
+                              style=os.path.join(os.environ['SNAKE'],
+                                                 'snake', 
+                                                 'styles', 
+                                                 'mesnardo.mplstyle'))
+  simulation.fields['y-velocity'].plot_horizontal_gridline_values(0.5,
                               plot_settings=plot_settings,
                               plot_limits=[0.0, 1.0, -0.75, 1.25],
                               save_directory=save_directory,
                               show=args.show,
                               validation_data=(v.x, v.values),
-                              validation_plot_settings=validation_plot_settings)
+                              validation_plot_settings=validation_plot_settings,
+                              style=os.path.join(os.environ['SNAKE'],
+                                                 'snake', 
+                                                 'styles', 
+                                                 'mesnardo.mplstyle'))
 
 
 if __name__ == '__main__':
