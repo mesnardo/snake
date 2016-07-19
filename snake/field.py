@@ -199,7 +199,8 @@ class Field(object):
                                     save_directory=None,
                                     show=False,
                                     validation_data=None,
-                                    validation_plot_settings={}):
+                                    validation_plot_settings={},
+                                    style=None):
     """Plots the field values along a group of vertical gridlines.
 
     Parameters
@@ -230,8 +231,13 @@ class Field(object):
       Contains optional arguments to call pyplot.plot function 
       for the validation data;
       default: empty dictionary.
+    style: string, optional
+      Path of a Matplotlib style-sheet;
+      default: None.
     """
     print('[info] plotting field values along vertical gridline(s) ...'),
+    if style:
+      pyplot.style.use(style)
     fig, ax = pyplot.subplots(figsize=(6, 6))
     ax.grid(True, zorder=0)
     ax.set_xlabel('y-coordinate', fontsize=16)
@@ -244,7 +250,7 @@ class Field(object):
         mask = numpy.where(numpy.logical_and(y >= boundaries[0], 
                                              y <= boundaries[1]))[0]
         y, u = y[mask], u[mask]
-      ax.plot(y, u, label='x={}'.format(x_target), **plot_settings)
+      ax.plot(y, u, **plot_settings)
     if validation_data != None:
       y, u = validation_data
       if all(boundaries):
@@ -258,8 +264,7 @@ class Field(object):
     if save_directory and os.path.isdir(save_directory):
       file_name = '{}VerticalGridline{:0>7}.png'.format(self.label, 
                                                         self.time_step)
-      pyplot.savefig(os.path.join(save_directory, file_name)
-                                  )
+      pyplot.savefig(os.path.join(save_directory, file_name))
     if show:
       pyplot.show()
     print('done')
@@ -271,7 +276,8 @@ class Field(object):
                                       save_directory=None,
                                       show=False,
                                       validation_data=None,
-                                      validation_plot_settings={}):
+                                      validation_plot_settings={},
+                                      style=None):
     """Plots the field values along a group of horizontal gridlines.
 
     Parameters
@@ -302,8 +308,13 @@ class Field(object):
       Contains optional arguments to call pyplot.plot function 
       for the validation data;
       default: empty dictionary.
+    style: string, optional
+      Path of a Matplotlib style-sheet;
+      default: None.
     """
     print('[info] plotting field values along horizontal gridline(s) ...'),
+    if style:
+      pyplot.style.use(style)
     fig, ax = pyplot.subplots(figsize=(6, 6))
     ax.grid(True, zorder=0)
     ax.set_xlabel('x-coordinate', fontsize=16)
@@ -316,7 +327,7 @@ class Field(object):
         mask = numpy.where(numpy.logical_and(x >= boundaries[0], 
                                              x <= boundaries[1]))[0]
         x, u = x[mask], u[mask]
-      ax.plot(x, u, label='y={}'.format(y_target), **plot_settings)
+      ax.plot(x, u, **plot_settings)
     if validation_data != None:
       x, u = validation_data
       if all(boundaries):
