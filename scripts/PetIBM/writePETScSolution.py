@@ -14,15 +14,17 @@ from snake import miscellaneous
 def parse_command_line():
   """Parses the command-line."""
   print('[info] parsing the command-line ...'),
-  # create parser
   parser = argparse.ArgumentParser(description='Creates and writes initial fields '
                                                'in PETSc-readable files',
                         formatter_class= argparse.ArgumentDefaultsHelpFormatter)
-  # fill parser with arguments
   parser.add_argument('--directory', dest='directory', 
-                      type=str, default=os.getcwd(), 
+                      type=str, 
+                      default=os.getcwd(), 
                       help='directory of the simulation')
-  # arguments about grid
+  parser.add_argument('--time-step', dest='time_step',
+                      type=int,
+                      default=0,
+                      help='time-step identifier of the solution to write')
   parser.add_argument('--bottom-left', '-bl', dest='bottom_left', 
                       type=float, nargs=2, 
                       default=[float('-inf'), float('-inf')],
@@ -63,13 +65,14 @@ def main(args):
   # create nodal stations along each direction
   grid = [numpy.linspace(args.bottom_left[i], args.top_right[i], args.n_cells[i]+1) 
           for i in range(len(args.n_cells))]
-  from library.solutions.dispatcher import dispatcher
+  from snake.solutions.dispatcher import dispatcher
   SolutionClass = dispatcher[args.solution[0]]
   arguments = grid + args.solution[1:]
   solution = SolutionClass(*arguments)
+  save_directory = os.path.join(args.directory, '{:0>7}'.format(args.time_step))
   solution.write_fields_petsc_format(*arguments,
                                      periodic_directions=args.periodic_directions,
-                                     directory=args.directory)
+                                     save_directory=save_directory)
 
 
 if __name__ == '__main__':

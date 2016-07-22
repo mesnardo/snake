@@ -165,7 +165,7 @@ def plot_coefficients_vs_angles(simulations, validation,
   # numerical data
   for description, series in simulations.iteritems():
     ax.scatter([simulation.angle for simulation in series],
-               [coefficient*simulation.force_x.values[-1] for simulation in series],
+               [coefficient*simulation.forces[0].values[-1] for simulation in series],
                label='{} - {}'.format(software_labels[series[0].software], description),
                marker=next(markers), s=80,
                facecolors='none', 
@@ -194,7 +194,7 @@ def plot_coefficients_vs_angles(simulations, validation,
   # numerical data
   for description, series in simulations.iteritems():
     ax.scatter([simulation.angle for simulation in series],
-               [coefficient*simulation.force_y.values[-1] for simulation in series],
+               [coefficient*simulation.forces[1].values[-1] for simulation in series],
                label='{} - {}'.format(software_labels[series[0].software], description),
                marker=next(markers), s=80,
                facecolors='none', 

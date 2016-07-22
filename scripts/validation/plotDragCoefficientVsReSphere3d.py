@@ -41,7 +41,7 @@ def parse_command_line():
                       type=str, 
                       default=('{}/resources/validationData/'
                                'roos_willmarth_1971_sphere_dragCoefficient.dat'
-                               ''.format(os.environ['SCRIPTS'])),
+                               ''.format(os.environ['SNAKE'])),
                       help='path of the validation data file')
   parser.add_argument('--limits', dest='plot_limits', 
                       type=float, nargs=4, 
@@ -125,7 +125,7 @@ def plot_drag_coefficient(simulations,
   ax.set_xlabel('Reynolds number', fontsize=16)
   ax.set_ylabel('drag coefficient', fontsize=16)
   ax.plot([simu.re for simu in simulations], 
-          [1.0/(numpy.pi*0.5**2)*simu.force_x.values[-1] for simu in simulations], 
+          [1.0/(numpy.pi*0.5**2)*simu.forces[0].values[-1] for simu in simulations], 
           **kwargs_data)
   if validation:
     ax.plot(validation.re, 

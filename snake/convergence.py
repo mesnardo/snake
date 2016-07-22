@@ -257,6 +257,13 @@ def plot_asymptotic_ranges(simulations, orders, mask,
   field_names = orders.keys()
   coarse, medium, fine = simulations
   ratio = coarse.get_grid_spacing()/medium.get_grid_spacing()
+  images_directory=os.path.join(save_directory,
+                                '_'.join(['gci',
+                                          coarse.description,
+                                          medium.description,
+                                          fine.description]))
+  if not os.path.isdir(images_directory):
+    os.makedirs(images_directory)
   for name in field_names:
     grid = [mask.fields[name].x, mask.fields[name].y]
     field = get_asymptotic_range(coarse.fields[name],
@@ -268,12 +275,7 @@ def plot_asymptotic_ranges(simulations, orders, mask,
     field.plot_contour(field_range=(0.0, 2.0, 101),
                        view=[coarse.grid[0][0], coarse.grid[1][0],
                              coarse.grid[0][-1], coarse.grid[1][-1]],
-                       style=style,
-                       save_directory=os.path.join(directory,
-                                                   '_'.join(['gci',
-                                                             coarse.description,
-                                                             medium.description,
-                                                             fine.description])))
+                       save_directory=images_directory)
 
 
 def get_asymptotic_range(coarse, medium, fine, order, ratio, grid):

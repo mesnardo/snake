@@ -1,4 +1,4 @@
-# file: plotDragCoefficientsCylinder2d.py
+# file: plotDragCoefficientCylinder2d.py
 # author: Olivier Mesnard (mesnardo@gwu.edu)
 # description: Plots the instantaneous drag coefficient and compares to 
 #              numerical results from Koumoutsakos and Leonard (1995).
@@ -76,7 +76,7 @@ class KoumoutsakosLeonard1995(object):
     print('[info] reading drag coefficients from Koumoutsakos and Leonard (1995) ...'),
     with open(path, 'r') as infile:
       times, drag = numpy.loadtxt(infile, dtype=float, comments='#', unpack=True)
-    self.force_x = Force(0.5*times, drag)
+    self.cd = Force(0.5*times, drag)
     print('done')
 
 
@@ -112,8 +112,9 @@ def plot_drag_coefficients(simulation, validation_data,
   style_path = os.path.join(os.environ['SNAKE'], 'snake', 'styles',
                             'mesnardo.mplstyle')
   pyplot.style.use(style_path)
-  kwargs_data = {'label': simulation.description,
-                 'color': '#336699', 'linestyle': '-', 'linewidth': 2,
+  software_name = {'petibm': 'PetIBM', 'cuibm': 'cuIBM'}
+  kwargs_data = {'label': software_name[args.software],
+                 'color': '#336699', 'linestyle': '-', 'linewidth': 3,
                  'zorder': 10}
   kwargs_validation_data = {'label': validation_data.description,
                             'color': '#993333', 'linewidth': 0,
@@ -125,11 +126,11 @@ def plot_drag_coefficients(simulation, validation_data,
   ax.grid(True, zorder=0)
   ax.set_xlabel('non-dimensional time')
   ax.set_ylabel('drag coefficient')
-  ax.plot(simulation.force_x.times, 
-          2.0*simulation.force_x.values, 
+  ax.plot(simulation.forces[0].times, 
+          2.0*simulation.forces[0].values, 
           **kwargs_data)
-  ax.plot(validation_data.force_x.times, 
-          validation_data.force_x.values, 
+  ax.plot(validation_data.cd.times, 
+          validation_data.cd.values, 
           **kwargs_validation_data)
   ax.axis(limits)
   ax.legend()
@@ -149,7 +150,7 @@ def main(args):
   simulation = Simulation(directory=args.directory, 
                           description=args.description,
                           software=args.software)
-  simulation.read_forces(display_coefficients=True)
+  simulation.read_forces()
 
   validation_data = KoumoutsakosLeonard1995()
   validation_data.read_drag(args.validation_data_path)

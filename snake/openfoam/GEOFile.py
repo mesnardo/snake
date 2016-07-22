@@ -87,7 +87,7 @@ class Domain(object):
 
 
 class Body(object):
-  def __init__(self, name='body', domain, levels=0):
+  def __init__(self, domain, levels=0, name='body'):
     self.name = name
     self.ref_length = domain.ref_length/2.0**levels
 
@@ -124,7 +124,7 @@ class Body(object):
 
 
 class Box(object):
-  def __init__(self, index, bottom_left=[-1.0, -1.0], top_right=[1.0, 1.0], levels=0, domain_ref_length):
+  def __init__(self, index, bottom_left=[-1.0, -1.0], top_right=[1.0, 1.0], levels=0, domain_ref_length=1.0):
     self.index = index
     self.bottom_left, self.top_right = bottom_left, top_right
     self.ref_length_in, self.ref_left_out = get_reference_lengths()
