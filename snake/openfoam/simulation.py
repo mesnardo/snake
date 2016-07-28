@@ -196,7 +196,10 @@ class OpenFOAMSimulation(Simulation):
       default: False.
     """
     print('[info] plotting cfl ...')
-    pyplot.style.use(os.environ['SNAKE'], 'snake', 'styles', style+'.mplstyle')
+    pyplot.style.use(os.path.join(os.environ['SNAKE'], 
+                                  'snake', 
+                                  'styles', 
+                                  style+'.mplstyle'))
     fig, ax = pyplot.subplots(figsize=(8, 6))
     color_cycle = ax._get_lines.prop_cycler
     color = next(color_cycle)['color']
