@@ -55,6 +55,16 @@ def parse_command_line():
                       type=str,
                       default=None,
                       help='path of the colormap file to use')
+  parser.add_argument('--mesh', dest='display_mesh',
+                      action='store_true',
+                      help='displays the mesh (Surface with Edges)')
+  parser.add_argument('--no-scalar-bar', dest='display_scalar_bar',
+                      action='store_false',
+                      help='does not display the scalar bar')
+  parser.add_argument('--no-time-text', dest='display_time_text',
+                      action='store_false',
+                      help='does not display the time-unit')
+  parser.set_defaults(display_scalar_bar=True, display_time_text=True)
   # parse given options file
   parser.add_argument('--options', 
                       type=open, action=miscellaneous.ReadOptionsFromFile,
@@ -69,7 +79,10 @@ def plot_field_contours(field_name,
                         view=(-2.0, -2.0, 2.0, 2.0), 
                         times=(0, 0, 0),
                         width=800,
-                        colormap_path=None):
+                        colormap_path=None,
+                        display_scalar_bar=True,
+                        display_time_text=True,
+                        display_mesh=False):
   print('Paraview: \n{}\n'.format(paraview.__path__))
   openfoam_file_name = '{}.OpenFOAM'.format(os.path.basename(os.path.normpath(directory)))
   reader = PV4FoamReader(FileName=os.path.join(directory, openfoam_file_name))
@@ -98,26 +111,33 @@ def plot_field_contours(field_name,
   PVLookupTable = edit_colormap(field_name, field_range, 
                                 colormap_path=colormap_path)
   # add a scalar bar
-  scalar_bar = add_scalar_bar(field_name, PVLookupTable)
-  # update view
-  render_view.Representations.append(scalar_bar)
+  if display_scalar_bar:
+    scalar_bar = add_scalar_bar(field_name, PVLookupTable)
+    # update view
+    render_view.Representations.append(scalar_bar)
   # show field
   data_representation = Show()
+  if display_mesh:
+    data_representation.Representation = 'Surface With Edges'
+    data_representation.AmbientColor = [0.0, 0.0, 0.0]
+    data_representation.EdgeColor = [0.0, 0.0, 0.0]
   data_representation.ColorArrayName = variable_names[field_name]
   data_representation.LookupTable = PVLookupTable
   data_representation.ColorAttributeType = 'CELL_DATA'
   # add text to view
-  text = Text()
-  data_representation_3 = Show()
-  data_representation_3.FontSize = 12
-  data_representation_3.TextScaleMode = 2
-  data_representation_3.Position = [0.02, 0.9]  # 0.0, 0.0: bottom-left
-  data_representation_3.Color = [0.0, 0.0, 0.0]
+  if display_time_text:
+    text = Text()
+    data_representation_3 = Show()
+    data_representation_3.FontSize = 12
+    data_representation_3.TextScaleMode = 2
+    data_representation_3.Position = [0.02, 0.9]  # 0.0, 0.0: bottom-left
+    data_representation_3.Color = [0.0, 0.0, 0.0]
   # plot and save requested contours
   for time in times:
     print('[info] creating view at {} time-units ...'.format(time))
     render_view.ViewTime = time
-    text.Text = 'time = {}'.format(time)
+    if display_time_text:
+      text.Text = 'time = {}'.format(time)
     WriteImage(os.path.join(images_directory,
                             '{}{:06.2f}.png'.format(field_name, time)))
 
@@ -205,7 +225,10 @@ def main(args):
                       view=args.view, 
                       times=args.times,
                       width=args.width,
-                      colormap_path=args.colormap_path)
+                      colormap_path=args.colormap_path,
+                      display_scalar_bar=args.display_scalar_bar,
+                      display_time_text=args.display_time_text,
+                      display_mesh=args.display_mesh)
 
 
 if __name__ == '__main__':
