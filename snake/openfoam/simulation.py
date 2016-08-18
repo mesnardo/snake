@@ -239,7 +239,10 @@ class OpenFOAMSimulation(Simulation):
                                    view=(-2.0, -2.0, 2.0, 2.0), 
                                    times=(0, 0, 0),
                                    width=800,
-                                   colormap=None):
+                                   colormap=None,
+                                   display_scalar_bar=True,
+                                   display_time_text=True,
+                                   display_mesh=False):
     """Plots the contour of a given field using ParaView.
 
     Parameters
@@ -262,6 +265,15 @@ class OpenFOAMSimulation(Simulation):
     colormap: string, optional
       Name of the Matplotlib colormap to use;
       default: None.
+    display_scalar_bar: boolean, optional
+      Displays the scalar bar;
+      default: True.
+    display_time_text: boolean, optional
+      Displays the time-unit in the top-left corner;
+      default: True.
+    display_mesh: boolean, optional
+      Displays the mesh (Surface with Edges);
+      default: False
     """
     args = {}
     args['--directory'] = self.directory
@@ -270,6 +282,12 @@ class OpenFOAMSimulation(Simulation):
     args['--times'] = '{} {} {}'.format(*times)
     args['--view'] = '{} {} {} {}'.format(*view)
     args['--width'] = str(width)
+    if display_mesh:
+      args['--mesh'] = ''
+    if not display_scalar_bar:
+      args['--no-scalar-bar'] = ''
+    if not display_time_text:
+      args['--no-time-text'] = ''
     if colormap:
       from matplotlib import cm
       with open(colormap+'.dat', 'w') as outfile:
@@ -289,3 +307,26 @@ class OpenFOAMSimulation(Simulation):
     os.system('pvbatch {} {}'.format(script, arguments))
     if colormap:
       os.remove(colormap+'.dat')
+
+  def plot_mesh_paraview(self, 
+                         view=(-2.0, -2.0, 2.0, 2.0), 
+                         width=800):
+    """Plots the mesh (black lines on white background) using ParaView.
+
+    Parameters
+    ----------.
+    view: 4-tuple of floats, optional
+      Bottom-left and top-right coordinates of the view to display;
+      default: (-2.0, -2.0, 2.0, 2.0).
+    width: integer, optional
+      Width (in pixels) of the figure;
+      default: 800.
+    """
+    args = {}
+    args['--directory'] = self.directory
+    args['--view'] = '{} {} {} {}'.format(*view)
+    args['--width'] = str(width)
+    script = os.path.join(os.environ['SNAKE'], 'snake', 'openfoam',
+                          'plotMesh2dParaView.py')
+    arguments = ' '.join([key+' '+value for key, value in args.iteritems()])
+    os.system('pvbatch {} {}'.format(script, arguments))
