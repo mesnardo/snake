@@ -1,7 +1,6 @@
-# file: dispatcher.py
-# author: Olivier Mesnard (mesnardo@gwu.edu)
-# description: Contains definition of classes for analytical solutions.
-
+"""
+Dictionary to convert a string into a class.
+"""
 
 from decayingVortices import DecayingVortices
 from movingVortices import MovingVortices

@@ -1,7 +1,6 @@
-# file: convergence.py
-# author: Olivier Mesnard (mesnardo@gwu.edu)
-# description: Functions related to a convergence study.
-
+"""
+Implementation of the functions related to grid-convergence study.
+"""
 
 import os
 
@@ -12,8 +11,9 @@ from field import Field
 
 
 def get_exact_solution(simulations, mask, *arguments):
-  """Gets the exact solution on the finest grid available.
-  If no analytical solution is available, the solution on the finest grid is 
+  """
+  Gets the exact solution on the finest grid available.
+  If no analytical solution is available, the solution on the finest grid is
   considered to be exact.
 
   Parameters
@@ -21,10 +21,10 @@ def get_exact_solution(simulations, mask, *arguments):
   simulations: dictionary of (string, Simulation object) items
     Solutions on grids with constant refinement ratio.
   mask: string
-    Key of the dictionary simulations to define the simulation 
+    Key of the dictionary simulations to define the simulation
     whose grid will be used to compute the analytical solution.
   arguments:
-    Arguments for the analytical plug-in 
+    Arguments for the analytical plug-in
     (arguments of the __init__ method of the class).
 
   Returns
@@ -51,13 +51,14 @@ def plot_grid_convergence(simulations, exact,
                           mask=None,
                           field_names=None,
                           norms=None,
-                          save_directory=os.path.join(os.getcwd(), 'images'), 
-                          save_name=None, 
+                          save_directory=os.path.join(os.getcwd(), 'images'),
+                          save_name=None,
                           fmt='png',
                           dpi=100,
                           style=None,
                           show=False):
-  """Plots the grid-convergence in a log-log figure.
+  """
+  Plots the grid-convergence in a log-log figure.
 
   Parameters
   ----------
@@ -88,7 +89,7 @@ def plot_grid_convergence(simulations, exact,
     Path of the Matplotlib style-sheet to use;
     default: None.
   show: boolean, optional
-    Set 'True' if you want to display the figure; 
+    Set 'True' if you want to display the figure;
     default: False.
   """
   print('[info] plotting the grid convergence ...')
@@ -96,9 +97,11 @@ def plot_grid_convergence(simulations, exact,
     pyplot.style.use(style)
   except:
     try:
-      pyplot.style.use(os.environ['SNAKE'], 'snake', 'styles', 
-                       style+'.mplstyle')
-    except: 
+      pyplot.style.use(os.environ['SNAKE'],
+                       'snake',
+                       'styles',
+                       style + '.mplstyle')
+    except:
       pass
   fig, ax = pyplot.subplots(figsize=(6, 6))
   ax.grid(True, zorder=0)
@@ -108,13 +111,16 @@ def plot_grid_convergence(simulations, exact,
   norm_labels = {'L2': '$L_2$', 'Linf': '$L_\infty$'}
   for field_name in field_names:
     for norm in norms:
-      differences = [case.get_difference(exact, field_name, mask=mask, norm=norm) 
-                     for case in simulations]  
+      differences = [case.get_difference(exact, field_name,
+                                         mask=mask,
+                                         norm=norm)
+                     for case in simulations]
       ax.plot(grid_spacings, differences,
-              label='{} - {}-norm'.format(field_name, norm_labels[norm]), 
-              marker='o', zorder=10)
+              label='{} - {}-norm'.format(field_name, norm_labels[norm]),
+              marker='o',
+              zorder=10)
   ax.legend()
-  ax.set_xlim(0.1*min(grid_spacings), 10.0*max(grid_spacings))
+  ax.set_xlim(0.1 * min(grid_spacings), 10.0 * max(grid_spacings))
   pyplot.xscale('log')
   pyplot.yscale('log')
   ax.axis('equal')
@@ -124,9 +130,9 @@ def plot_grid_convergence(simulations, exact,
     if not os.path.isdir(save_directory):
       os.makedirs(save_directory)
     time_step = simulations[0].fields[field_names[0]].time_step
-    pyplot.savefig(os.path.join(save_directory, 
-                                '{}{:0>7}.{}'.format(save_name, 
-                                                     time_step, 
+    pyplot.savefig(os.path.join(save_directory,
+                                '{}{:0>7}.{}'.format(save_name,
+                                                     time_step,
                                                      fmt)),
                    bbox_inches='tight',
                    dpi=dpi,
@@ -140,8 +146,9 @@ def plot_grid_convergence(simulations, exact,
 def get_observed_orders(simulations, field_names, mask,
                         save_directory=os.getcwd(),
                         save_name='observedOrders'):
-  """Computes the observed orders of convergence using the solution on three grids
-  with constant grid refinement ratio.
+  """
+  Computes the observed orders of convergence using the solution 
+  on three grids with constant grid refinement ratio.
 
   Parameters
   ----------
@@ -152,10 +159,10 @@ def get_observed_orders(simulations, field_names, mask,
   mask: Simulation object
     Simulation whose grids are used as a mask to restrict the solutions.
   save_directory: string, optional
-    Directory where to save the file; 
+    Directory where to save the file;
     default: <current directory>.
   save_name: string, optional
-    Prefix of the name of the .dat files to save; 
+    Prefix of the name of the .dat files to save;
     default: 'observedOrders'.
 
   Returns
@@ -167,8 +174,8 @@ def get_observed_orders(simulations, field_names, mask,
         'convergence using the grids {} ...'
         ''.format([case.description for case in simulations]))
   coarse, medium, fine = simulations
-  ratio = coarse.get_grid_spacing()/medium.get_grid_spacing()
-  alpha = {} # will contain observed order of convergence
+  ratio = coarse.get_grid_spacing() / medium.get_grid_spacing()
+  alpha = {}  # will contain observed order of convergence
   for name in field_names:
     grid = [mask.fields[name].x, mask.fields[name].y]
     alpha[name] = get_observed_order(coarse.fields[name],
@@ -195,8 +202,9 @@ def get_observed_orders(simulations, field_names, mask,
 
 
 def get_observed_order(coarse, medium, fine, ratio, grid, order=None):
-  """Computes the observed order of convergence
-  using the solution on three consecutive grids with constant refinement ratio.
+  """
+  Computes the observed order of convergence using the solution on three
+  consecutive grids with constant refinement ratio.
 
   Parameters
   ----------
@@ -204,7 +212,7 @@ def get_observed_order(coarse, medium, fine, ratio, grid, order=None):
     Solutions on three consecutive grids restricted on the coarsest grid.
   ratio: float
     Grid-refinement ratio.
-  grid: 2-list of 1d arrays of floats
+  grid: 2-list of 1D arrays of floats
     Nodal stations in each direction used to restrict a solution.
   order: non-zero integer, inf, -inf, 'fro', 'nuc', optional
     Order of the norm;
@@ -221,18 +229,19 @@ def get_observed_order(coarse, medium, fine, ratio, grid, order=None):
   medium = medium.restriction(grid)
   # restrict fine solution onto grid
   fine = fine.restriction(grid)
-  # observed order of convergence
-  p = (  numpy.log(  numpy.linalg.norm(medium.values - coarse.values, ord=order) 
-                   / numpy.linalg.norm(fine.values - medium.values, ord=order)  )
-       / numpy.log(ratio)  )
-  return p
+  # return observed order of convergence
+  return (numpy.log(numpy.linalg.norm(medium.values - coarse.values,
+                                      ord=order)
+                    / numpy.linalg.norm(fine.values - medium.values,
+                                        ord=order))
+          / numpy.log(ratio))
 
 
-def plot_asymptotic_ranges(simulations, orders, mask, 
-                           save_directory=os.path.join(os.getcwd(), 'images'),
-                           style='mesnardo'):
-  """Computes and plots the asymptotic range fields 
-  using the grid convergence index and given the observed orders of convergence.
+def plot_asymptotic_ranges(simulations, orders, mask,
+                           save_directory=os.path.join(os.getcwd(), 'images')):
+  """
+  Computes and plots the asymptotic range fields using the grid convergence
+  index and given the observed orders of convergence.
 
   References
   ----------
@@ -243,7 +252,7 @@ def plot_asymptotic_ranges(simulations, orders, mask,
   simulations: 3-list of Simulation objects.
     The three cases to use.
   orders: dictionary of (string, float) items
-    Contains the observed order of convergence of each flow variable considered.
+    Contains the observed order of convergence of each flow variable.
   mask: Simulation  object
     Case whose grids are used to restrict the other (finer) solutions.
   save_directory: string, optional
@@ -256,12 +265,12 @@ def plot_asymptotic_ranges(simulations, orders, mask,
   """
   field_names = orders.keys()
   coarse, medium, fine = simulations
-  ratio = coarse.get_grid_spacing()/medium.get_grid_spacing()
-  images_directory=os.path.join(save_directory,
-                                '_'.join(['gci',
-                                          coarse.description,
-                                          medium.description,
-                                          fine.description]))
+  ratio = coarse.get_grid_spacing() / medium.get_grid_spacing()
+  images_directory = os.path.join(save_directory,
+                                  '_'.join(['gci',
+                                            coarse.description,
+                                            medium.description,
+                                            fine.description]))
   if not os.path.isdir(images_directory):
     os.makedirs(images_directory)
   for name in field_names:
@@ -279,10 +288,11 @@ def plot_asymptotic_ranges(simulations, orders, mask,
 
 
 def get_asymptotic_range(coarse, medium, fine, order, ratio, grid):
-  """Computes the asymptotic range field using the grid convergence index.
+  """
+  Computes the asymptotic range field using the grid convergence index.
 
-  The three solutions are in the asymptotic range if the field returned contains
-  values that are close to 1.0.
+  The three solutions are in the asymptotic range if the field returned
+  contains values that are close to 1.0.
 
   References
   ----------
@@ -296,7 +306,7 @@ def get_asymptotic_range(coarse, medium, fine, order, ratio, grid):
     Observed order of convergence.
   ratio: float
     Grid refinement ratio between the two consecutive grids.
-  grid: 2-list of 1d arrays of floats
+  grid: 2-list of 1D arrays of floats
     Nodal stations in each direction used to restrict the fields.
 
   Returns
@@ -304,16 +314,19 @@ def get_asymptotic_range(coarse, medium, fine, order, ratio, grid):
   asymptotic_range: Field object
     The asymptotic range as a Field.
   """
-  gci_23 = get_grid_convergence_index(coarse, medium, order, ratio, grid, Fs=1.25)
-  gci_12 = get_grid_convergence_index(medium, fine, order, ratio, grid, Fs=1.25)
+  gci_23 = get_grid_convergence_index(coarse, medium, order, ratio, grid,
+                                      Fs=1.25)
+  gci_12 = get_grid_convergence_index(medium, fine, order, ratio, grid,
+                                      Fs=1.25)
   return Field(x=grid[0], y=grid[1],
-               values=gci_23.values/(gci_12.values*ratio**order),
+               values=gci_23.values / (gci_12.values * ratio**order),
                time_step=coarse.time_step,
-               label='asymptotic-range-'+coarse.label)
+               label='asymptotic-range-' + coarse.label)
 
 
 def get_grid_convergence_index(coarse, fine, order, ratio, grid, Fs=1.25):
-  """Computes the Grid Convergence Index using the solution obtained on two grids,
+  """
+  Computes the Grid Convergence Index using the solution obtained on two grids,
   coarse and fine, with a constant grid refinement ratio.
 
   Choose 3.0 as a safety factor, if only two grids were used to estimate the
@@ -331,7 +344,7 @@ def get_grid_convergence_index(coarse, fine, order, ratio, grid, Fs=1.25):
     Observed order of convergence.
   ratio: float
     Grid refinement ratio between the two grids.
-  grid: 2-list of 1d arrays of floats
+  grid: 2-list of 1D arrays of floats
     Nodal stations in each direction used to restrict the fields.
   Fs: float, optional
     Safety factor;
@@ -344,14 +357,16 @@ def get_grid_convergence_index(coarse, fine, order, ratio, grid, Fs=1.25):
   """
   coarse = coarse.restriction(grid)
   fine = fine.restriction(grid)
-  # remove small field values to avoid large estimations in the relative difference
+  # remove small field values to avoid large estimations
+  # in the relative difference
   tolerance = 1.0E-06
-  mask = numpy.logical_or(numpy.absolute(coarse.values) < tolerance, 
+  mask = numpy.logical_or(numpy.absolute(coarse.values) < tolerance,
                           numpy.absolute(fine.values) < tolerance)
   coarse.values[mask], fine.values[mask] = None, None
   # compute relative differences
-  relative_differences = numpy.absolute((coarse.values-fine.values)/fine.values)
+  relative_differences = numpy.absolute((coarse.values - fine.values)
+                                        / fine.values)
   return Field(x=grid[0], y=grid[1],
-               values=Fs*relative_differences/(ratio**order-1.0)*100.0,
+               values=Fs * relative_differences / (ratio**order - 1.0) * 100.0,
                time_step=coarse.time_step,
-               label='GCI-'+coarse.label)
+               label='GCI-' + coarse.label)
