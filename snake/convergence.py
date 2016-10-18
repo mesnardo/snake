@@ -93,16 +93,8 @@ def plot_grid_convergence(simulations, exact,
     default: False.
   """
   print('[info] plotting the grid convergence ...')
-  try:
+  if style:
     pyplot.style.use(style)
-  except:
-    try:
-      pyplot.style.use(os.environ['SNAKE'],
-                       'snake',
-                       'styles',
-                       style + '.mplstyle')
-    except:
-      pass
   fig, ax = pyplot.subplots(figsize=(6, 6))
   ax.grid(True, zorder=0)
   ax.set_xlabel('grid-spacing')
