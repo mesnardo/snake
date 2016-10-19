@@ -159,12 +159,12 @@ class Field(object):
     indices = numpy.where(numpy.abs(self.x-x) <= 1.0E-06)[0]
     if indices.size == 0:
       i = numpy.where(self.x > x)[0][0]
-      return ( (abs(self.x[i]-x)*self.values[:, i-1]
-               +abs(self.x[i-1]-x)*self.values[:, i])
-              /abs(self.x[i]-self.x[i-1]) )
+      return (self.y, (abs(self.x[i]-x)*self.values[:, i-1]
+                       +abs(self.x[i-1]-x)*self.values[:, i])
+                       /abs(self.x[i]-self.x[i-1]) )
     else:
       i = indices[0]
-      return self.values[:, i]
+      return self.y, self.values[:, i]
 
   def get_horizontal_gridline_values(self, y):
     """Returns field values along an horizontal gridline defined by its y-position.
@@ -185,12 +185,12 @@ class Field(object):
     indices = numpy.where(numpy.abs(self.y-y) <= 1.0E-06)[0]
     if indices.size == 0:
       j = numpy.where(self.y > y)[0][0]
-      return ( (abs(self.y[j]-y)*self.values[j-1, :]
-               +abs(self.y[j-1]-y)*self.values[j, :])
-              /abs(self.y[j]-self.y[j-1]) )
+      return (self.y, (abs(self.y[j]-y)*self.values[j-1, :]
+                       +abs(self.y[j-1]-y)*self.values[j, :])
+                       /abs(self.y[j]-self.y[j-1]) )
     else:
       j = indices[0]
-      return self.values[j, :]
+      return self.x, self.values[j, :]
 
   def plot_vertical_gridline_values(self, x,
                                     boundaries=(None, None),
@@ -245,7 +245,7 @@ class Field(object):
     if not isinstance(x, (list, tuple)):
       x = [x]
     for x_target in x:
-      y, u = self.y, self.get_vertical_gridline_values(x_target)
+      y, u = self.get_vertical_gridline_values(x_target)
       if all(boundaries):
         mask = numpy.where(numpy.logical_and(y >= boundaries[0], 
                                              y <= boundaries[1]))[0]
@@ -322,7 +322,7 @@ class Field(object):
     if not isinstance(y, (list, tuple)):
       y = [y]
     for y_target in y:
-      x, u = self.x, self.get_horizontal_gridline_values(y_target)
+      x, u = self.get_horizontal_gridline_values(y_target)
       if all(boundaries):
         mask = numpy.where(numpy.logical_and(x >= boundaries[0], 
                                              x <= boundaries[1]))[0]
