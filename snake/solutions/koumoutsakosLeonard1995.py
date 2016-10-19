@@ -4,7 +4,7 @@ instantaneous drag coefficients of an impulsively-started 2D cylinder for
 Reynolds numbers 40, 550, and 3000.
 
 The drag coefficient data files are located in the folder
-`resources/validationData` of the snake package.
+`resources/results` of the snake package.
 
 _References:_
 * Koumoutsakos, P., & Leonard, A. (1995).
@@ -64,7 +64,7 @@ class KoumoutsakosLeonard1995(object):
                    'cylinder_dragCoefficientRe{}.dat'.format(Re))
       file_path = os.path.join(os.environ['SNAKE'],
                                'resources',
-                               'validationData',
+                               'results',
                                file_name)
     with open(file_path, 'r') as infile:
       times, drag = numpy.loadtxt(infile,

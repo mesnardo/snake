@@ -52,7 +52,7 @@ class GhiaEtAl1982(object):
     if not file_path:
       file_path = os.path.join(os.environ['SNAKE'],
                                'resources',
-                               'validationData',
+                               'results',
                                'ghia_et_al_1982_lid_driven_cavity.dat')
     Re = str(int(round(Re)))
     # column indices in file with experimental results

@@ -4,7 +4,7 @@ steady-state force coefficients of an inclined flat-plate with aspect-ratio 2
 at Reynolds number 100 for angles of attack between 0 and 90 degrees.
 
 The force coefficient data files are located in the folder
-`resources/validationData` of the snake package.
+`resources/results` of the snake package.
 
 _References:_
 * Taira, K., Dickson, W. B., Colonius,
