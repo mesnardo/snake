@@ -10,43 +10,6 @@ from matplotlib import pyplot
 from field import Field
 
 
-def get_exact_solution(simulations, mask, *arguments):
-  """
-  Gets the exact solution on the finest grid available.
-  If no analytical solution is available, the solution on the finest grid is
-  considered to be exact.
-
-  Parameters
-  ----------
-  simulations: dictionary of (string, Simulation object) items
-    Solutions on grids with constant refinement ratio.
-  mask: string
-    Key of the dictionary simulations to define the simulation
-    whose grid will be used to compute the analytical solution.
-  arguments:
-    Arguments for the analytical plug-in
-    (arguments of the __init__ method of the class).
-
-  Returns
-  -------
-  exact: SolutionClass object
-    Contains the exact solution.
-  """
-  if arguments:
-    from solutions.dispatcher import dispatcher
-    SolutionClass = dispatcher[arguments[0]]
-    # compute analytical solution
-    exact = SolutionClass(simulations[mask].grid[0],
-                          simulations[mask].grid[1],
-                          *arguments[1:])
-  else:
-    # assume finest grid contains exact solution if no analytical solution
-    finest = simulations.keys()[-1]
-    exact = simulations[finest]
-    del simulations[finest]
-  return exact
-
-
 def plot_grid_convergence(simulations, exact,
                           mask=None,
                           field_names=None,
@@ -65,7 +28,7 @@ def plot_grid_convergence(simulations, exact,
   simulations: list of Simulation objects
     List of the cases to include in the figure.
   exact: Solution or Simulation object
-    The exact solution; 
+    The exact solution;
     either the solution on the finest grid or a Solution object.
   mask: Simulation object, optional
     Simulation whose grids are used to restrict the solution;
