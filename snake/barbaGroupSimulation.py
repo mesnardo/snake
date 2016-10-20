@@ -16,6 +16,7 @@ class BarbaGroupSimulation(Simulation):
   Contains info about a BarbaGroup simulation.
   Inherits from the class `Simulation`.
   """
+
   def __init__(self, software,
                description=None,
                directory=os.getcwd(),

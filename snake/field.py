@@ -13,6 +13,7 @@ class Field(object):
   """
   Contains information about a field (pressure for example).
   """
+
   def __init__(self, x=None, y=None, values=None, time_step=None, label=None):
     """
     Initializes the field by its grid and its values.

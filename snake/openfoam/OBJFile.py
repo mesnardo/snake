@@ -12,6 +12,7 @@ class Vertex(object):
   """
   Contains info about a vertex.
   """
+
   def __init__(self, index, x, y, z=0.0):
     """
     Initializes a vertex by its coordinates and its index in the mesh.
@@ -34,6 +35,7 @@ class Face(object):
   """
   Contains info about a face.
   """
+
   def __init__(self, vertex1, vertex2, vertex3):
     """
     Defines a face by its vertices.
@@ -154,10 +156,10 @@ class Box2d(OBJFile):
     nx, ny = self.x.size, self.y.size
     lower_faces = numpy.empty((nx - 1) * (ny - 1), dtype=object)
     upper_faces = numpy.empty((nx - 1) * (ny - 1), dtype=object)
-    for j in xrange(ny - 1):
-      for i in xrange(nx - 1):
+    for j in range(ny - 1):
+      for i in range(nx - 1):
         lower_faces[j * (nx - 1) + i] = Face(self.vertices[j * nx + i],
-                                             self.vertices[j * nx  + (i + 1)],
+                                             self.vertices[j * nx + (i + 1)],
                                              self.vertices[(j + 1) * nx + i])
         upper_faces[j * (nx - 1) + i] = Face(self.vertices[(j + 1) * nx + (i + 1)],
                                              self.vertices[(j + 1) * nx + i],
@@ -202,6 +204,7 @@ class Body2d(OBJFile):
   """
   Contains information about the body OBJ file.
   """
+
   def __init__(self, file_path,
                name=None,
                extrusion_limits=[0.0, 1.0]):
@@ -275,13 +278,13 @@ class Body2d(OBJFile):
                                          self.name))
     with open(outfile_path, 'w') as outfile:
       outfile.write(header)
-      for i in xrange(self.x.size):
+      for i in range(self.x.size):
         for z in self.extrusion_limits[::-1]:
           outfile.write('v {} {} {}\n'.format(self.x[i], self.y[i], z))
           # rotated geometry required by Nikos to run their code
           # outfile.write('v {} {} {}\n'.format(self.y[i], z, self.x[i]))
       outfile.write('g {}\n'.format(self.name))
-      for i in xrange(1, self.x.size):
+      for i in range(1, self.x.size):
         outfile.write('f {} {} {}\n'.format(2 * i, 2 * i - 1, 2 * i + 1))
         outfile.write('f {} {} {}\n'.format(2 * i + 1, 2 * (i + 1), 2 * i))
       outfile.write('f {} {} {}\n'.format(2 * self.x.size,

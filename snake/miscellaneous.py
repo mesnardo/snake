@@ -23,6 +23,7 @@ class RedirectOutput(object):
   """
   Context manager to redirect `stdout` to a given file.
   """
+
   def __init__(self, stdout=''):
     self.stdout = stdout
 
@@ -40,6 +41,7 @@ class ReadOptionsFromFile(argparse.Action):
   """
   Container to read parameters from file.
   """
+
   def __call__(self, parser, namespace, values, option_string=None):
     """
     Fills the name-space with parameters read in file.

@@ -17,6 +17,7 @@ class CuIBMSimulation(BarbaGroupSimulation):
   Contains info about a cuIBM simulation.
   Inherits from the class BarbaGroupSimulation.
   """
+
   def __init__(self, description=None, directory=os.getcwd(), **kwargs):
     """
     Initializes by calling the parent constructor.

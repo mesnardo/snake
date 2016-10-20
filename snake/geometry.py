@@ -14,6 +14,7 @@ class Point(object):
   """
   Contains information about a point.
   """
+
   def __init__(self, x, y, z=None):
     """
     Initializes the position of the point.
@@ -563,6 +564,7 @@ class Line(Geometry2d):
   """
   Contains information about a line.
   """
+
   def __init__(self, start=Point(0.0, 0.0), length=1.0,
                n=None, ds=None):
     """
@@ -608,6 +610,7 @@ class Circle(Geometry2d):
   """
   Contains information about a circular geometry.
   """
+
   def __init__(self, center=Point(0.0, 0.0), radius=0.5,
                n=None, ds=None):
     """
@@ -654,6 +657,7 @@ class Rectangle(Geometry2d):
   """
   Contains information about a rectangle.
   """
+
   def __init__(self,
                bottom_left=Point(0.0, 0.0), top_right=Point(1.0, 1.0),
                nx=None, ny=None, ds=None):
@@ -770,6 +774,7 @@ class Sphere(Geometry3d):
   """
   Contains information about a spherical geometry.
   """
+
   def __init__(self, center=Point(0.0, 0.0, 0.0), radius=0.5,
                n=None, ds=None):
     """

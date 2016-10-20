@@ -9,6 +9,7 @@ class Body(object):
   """
   Contains information about an immersed body.
   """
+
   def __init__(self, file_path=None, label=None):
     """
     Reads the body coordinates from given file.

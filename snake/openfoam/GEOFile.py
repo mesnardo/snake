@@ -25,7 +25,7 @@ class GEOFile(object):
 
   def define_refinement_boxes(self, boxes_info=[]):
     n_boxes = len(boxes_info) / 5
-    for i in xrange(n_boxes):
+    for i in range(n_boxes):
       bottom_left = boxes_info[i], boxes_info[i + 1]
       top_right = boxes_info[i + 2], boxes_info[i + 3]
       levels = boxes_info[i + 4]
@@ -133,13 +133,13 @@ class Body(object):
       outfile.write('cl_body = {};\n'.format(self.ref_length))
       # points
       outfile.write('// body points\n')
-      for i in xrange(self.n):
+      for i in range(self.n):
         outfile.write('Point({}) = {{}, {}, 0.0};\n'.format(counter + i + 1,
                                                             self.x[i],
                                                             self.y[i]))
       # lines
       outfile.write('// body lines\n')
-      for i in xrange(self.n - 1):
+      for i in range(self.n - 1):
         outfile.write('Line({0}) = {{0}, {1}};\n'.format(counter + i + 1,
                                                          counter + i + 2))
       outfile.write('Line({0}) = {{0}, {1}};\n'.format(counter + self.n,
@@ -148,7 +148,7 @@ class Body(object):
       outfile.write('// body line-loop\n')
       outfile.write('Line Loop(1) = {{}};\n'
                     ''.format(', '.join([str(counter + i + 1)
-                                         for i in xrange(self.n)])))
+                                         for i in range(self.n)])))
 
 
 class Box(object):

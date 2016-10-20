@@ -24,6 +24,7 @@ class KoumoutsakosLeonard1995(object):
   """
   Container to store results from Koumoutsakos and Leonard (1995).
   """
+
   def __init__(self, file_path=None, Re=None):
     """
     Initializes.

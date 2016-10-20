@@ -18,6 +18,7 @@ class GhiaEtAl1982(object):
   """
   Container to store results from Ghia et al. (1982).
   """
+
   def __init__(self, Re=None, file_path=None):
     """
     Initialization.

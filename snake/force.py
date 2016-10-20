@@ -10,6 +10,7 @@ class Force(object):
   """
   Contains info about a force.
   """
+
   def __init__(self, times, values, label=None):
     """
     Initializes the force with given values.

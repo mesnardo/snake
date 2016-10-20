@@ -14,6 +14,7 @@ class Simulation(object):
   """
   Simulation manager.
   """
+
   def __init__(self,
                software,
                description=None,

@@ -15,6 +15,7 @@ class IBAMRSimulation(Simulation):
   Contains info about a IBAMR simulation.
   Inherits from class Simulation.
   """
+
   def __init__(self, description=None, directory=os.getcwd(), **kwargs):
     """
     Initializes by calling the parent constructor.

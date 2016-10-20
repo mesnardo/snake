@@ -16,6 +16,7 @@ class Segment(object):
   """
   Contains information about a segment.
   """
+
   def __init__(self, data=None, vertices=None):
     """
     Creates the segment vertices.
@@ -282,6 +283,7 @@ class GridLine(object):
   """
   Contains information about a gridline.
   """
+
   def __init__(self, data=None, vertices=None, label=None):
     """
     Creates a gridline from provided YAML data or vertices.
@@ -402,6 +404,7 @@ class CartesianStructuredMesh(object):
   """
   Contains info related to a Cartesian structured mesh (stretched or uniform).
   """
+
   def __init__(self):
     """
     Instantiates an empty mesh.
