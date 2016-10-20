@@ -1,7 +1,6 @@
-# file: simulation_test.py
-# author: Olivier Mesnard (mesnardo@gwu.edu)
-# description: Tests for the class `PetIBMSimulation`.
-
+"""
+Tests for the class `PetIBMSimulation`.
+"""
 
 import sys
 import os
@@ -24,9 +23,12 @@ class PetIBMSimulationTest(object):
     print('\nPetIBMSimulation.read_grid() ...')
     x, y = numpy.linspace(0.0, 10.0, 11), numpy.linspace(-1.0, 1.0, 101)
     with open('grid_test.txt', 'w') as outfile:
-      outfile.write('{}\t{}\n'.format(x.size-1, y.size-1)) # write number of cells
-      numpy.savetxt(outfile, x, fmt='%.6f') # write cell-boundaries in x-direction
-      numpy.savetxt(outfile, y, fmt='%.6f') # write cell-boundaries in y-direction
+      # write number of cells
+      outfile.write('{}\t{}\n'.format(x.size - 1, y.size - 1))
+      # write cell-boundaries in x-direction
+      numpy.savetxt(outfile, x, fmt='%.6f')
+      # write cell-boundaries in y-direction
+      numpy.savetxt(outfile, y, fmt='%.6f')
     # call method to test
     self.simulation.read_grid(file_name='grid_test.txt')
     os.system('rm -f grid_test.txt')
@@ -38,25 +40,27 @@ class PetIBMSimulationTest(object):
     print('\nPetIBMSimulation.read_velocity() ...')
     x, y = numpy.linspace(0.0, 10.0, 11), numpy.linspace(-1.0, 1.0, 101)
     # create flux fields on staggered grid
-    xu, yu = x[1: -1], 0.5*(y[:-1]+y[1:])
+    xu, yu = x[1: -1], 0.5 * (y[:-1] + y[1:])
     u = numpy.random.rand(yu.size, xu.size)
-    qx = u*numpy.outer(y[1:]-y[:-1], numpy.ones(xu.size))
-    xv, yv = 0.5*(x[:-1]+x[1:]), y[1: -1]
+    qx = u * numpy.outer(y[1:] - y[:-1], numpy.ones(xu.size))
+    xv, yv = 0.5 * (x[:-1] + x[1:]), y[1: -1]
     v = numpy.random.rand(yv.size, xv.size)
-    qy = v*numpy.outer(numpy.ones(yv.size), x[1:]-x[:-1])
+    qy = v * numpy.outer(numpy.ones(yv.size), x[1:] - x[:-1])
     # create directory where to save files
     directory = '{}/{:0>7}'.format(os.getcwd(), 0)
     if not os.path.isdir(directory):
       os.makedirs(directory)
-    sys.path.append(os.path.join(os.environ['PETSC_DIR'], 'bin', 'pythonscripts'))
+    sys.path.append(os.path.join(os.environ['PETSC_DIR'],
+                                 'bin',
+                                 'pythonscripts'))
     import PetscBinaryIO
     # write fluxes
     vec = qx.flatten().view(PetscBinaryIO.Vec)
     file_path = '{}/qx.dat'.format(directory)
-    PetscBinaryIO.PetscBinaryIO().writeBinaryFile(file_path, [vec,])
+    PetscBinaryIO.PetscBinaryIO().writeBinaryFile(file_path, [vec, ])
     vec = qy.flatten().view(PetscBinaryIO.Vec)
     file_path = '{}/qy.dat'.format(directory)
-    PetscBinaryIO.PetscBinaryIO().writeBinaryFile(file_path, [vec,])
+    PetscBinaryIO.PetscBinaryIO().writeBinaryFile(file_path, [vec, ])
     # call method to test
     self.simulation.read_velocity(0)
     os.system('rm -rf 0000000')
@@ -72,25 +76,28 @@ class PetIBMSimulationTest(object):
     print('\nPetIBMSimulation.read_pressure() ...')
     x, y = numpy.linspace(0.0, 10.0, 11), numpy.linspace(-1.0, 1.0, 101)
     # create pressure field
-    xp, yp = 0.5*(x[:-1]+x[1:]), 0.5*(y[:-1]+y[1:])
+    xp, yp = 0.5 * (x[:-1] + x[1:]), 0.5 * (y[:-1] + y[1:])
     p = numpy.random.rand(yp.size, xp.size)
     # create directory where to save files
     directory = '{}/{:0>7}'.format(os.getcwd(), 0)
     if not os.path.isdir(directory):
       os.makedirs(directory)
-    sys.path.append(os.path.join(os.environ['PETSC_DIR'], 'bin', 'pythonscripts'))
+    sys.path.append(os.path.join(os.environ['PETSC_DIR'],
+                                 'bin',
+                                 'pythonscripts'))
     import PetscBinaryIO
     # write fluxes
     vec = p.flatten().view(PetscBinaryIO.Vec)
     file_path = '{}/phi.dat'.format(directory)
-    PetscBinaryIO.PetscBinaryIO().writeBinaryFile(file_path, [vec,])
+    PetscBinaryIO.PetscBinaryIO().writeBinaryFile(file_path, [vec, ])
     # call method to test
     self.simulation.read_pressure(0)
     os.system('rm -rf 0000000')
     assert numpy.allclose(p, self.simulation.pressure.values, atol=1.0E-06)
     assert numpy.allclose(xp, self.simulation.pressure.x, atol=1.0E-06)
-    assert numpy.allclose(yp, self.simulation.pressure.y, atol=1.0E-06) 
+    assert numpy.allclose(yp, self.simulation.pressure.y, atol=1.0E-06)
     print('ok')
+
 
 if __name__ == '__main__':
   test = PetIBMSimulationTest()
