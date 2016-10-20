@@ -102,7 +102,7 @@ def get_observed_orders(simulations, field_names, mask,
                         save_directory=os.getcwd(),
                         save_name='observedOrders'):
   """
-  Computes the observed orders of convergence using the solution 
+  Computes the observed orders of convergence using the solution
   on three grids with constant grid refinement ratio.
 
   Parameters

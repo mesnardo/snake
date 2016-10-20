@@ -1,11 +1,8 @@
-# file: simulation.py
-# author: Olivier Mesnard (mesnardo@gwu.edu)
-# description: Implementation of the class `IBAMRSimulation`.
-
+"""
+Implementation of the class `IBAMRSimulation`.
+"""
 
 import os
-import sys
-import math
 
 import numpy
 
@@ -14,11 +11,13 @@ from ..force import Force
 
 
 class IBAMRSimulation(Simulation):
-  """Contains info about a IBAMR simulation.
+  """
+  Contains info about a IBAMR simulation.
   Inherits from class Simulation.
   """
   def __init__(self, description=None, directory=os.getcwd(), **kwargs):
-    """Initializes by calling the parent constructor.
+    """
+    Initializes by calling the parent constructor.
 
     Parameters
     ----------
@@ -27,19 +26,20 @@ class IBAMRSimulation(Simulation):
       default: None.
     directory: string, optional
       Directory of the simulation;
-      default: present working directory.
+      default: <current working directory>.
     """
     super(IBAMRSimulation, self).__init__(software='ibamr',
-                                          description=description, 
-                                          directory=directory, 
+                                          description=description,
+                                          directory=directory,
                                           **kwargs)
 
   def read_forces(self, file_path=None, labels=None):
-    """Reads forces from files.
+    """
+    Reads forces from files.
 
     Parameters
     ----------
-    relative_file_path: string
+    file_path: string, optional
       Path of the file containing the forces;
       default: None.
     labels: list of strings, optional
@@ -47,19 +47,23 @@ class IBAMRSimulation(Simulation):
       default: None.
     """
     if not file_path:
-      file_path = os.path.join(self.directory, 'dataIB', 'ib_Drag_force_struct_no_0')
+      file_path = os.path.join(self.directory,
+                               'dataIB',
+                               'ib_Drag_force_struct_no_0')
     print('[info] reading forces from {} ...'.format(file_path)),
     with open(file_path, 'r') as infile:
-      times, force_x, force_y = numpy.loadtxt(infile, dtype=float, 
-                                              usecols=(0, 4, 5), unpack=True)
+      times, force_x, force_y = numpy.loadtxt(infile,
+                                              dtype=float,
+                                              usecols=(0, 4, 5),
+                                              unpack=True)
     self.forces = []
     self.forces.append(Force(times, force_x, '$F_x$'))
     self.forces.append(Force(times, force_y, '$F_y$'))
     print('done')
 
   def write_visit_summary_files(self, time_steps):
-    """Writes summary files for Visit 
-    with list of sub-directories to look into.
+    """
+    Writes summary files for Visit with list of sub-directories to look into.
 
     Parameters
     ----------
@@ -67,15 +71,18 @@ class IBAMRSimulation(Simulation):
       Staring and and ending time_steps followed by the time-step increment.
     """
     print('[info] writing summary files for VisIt ...'),
-    time_steps = numpy.arange(time_steps[0], time_steps[1]+1, time_steps[2])
+    time_steps = numpy.arange(time_steps[0], time_steps[1] + 1, time_steps[2])
     # list of SAMRAI files to VisIt
-    dumps_visit = numpy.array([os.path.join('visit_dump.{0:05}'.format(time_step),
-                                            'summary.samrai')
-                               for time_step in time_steps])
+    dumps_visit_list = [os.path.join('visit_dump.{0:05}'.format(time_step),
+                                     'summary.samrai')
+                        for time_step in time_steps]
+    dumps_visit = numpy.array(dumps_visit_list)
     # list of SILO file to VisIt
-    lag_data_visit = numpy.array([os.path.join('lag_data.cycle_{:06d}'.format(time_step),
-                                               'lag_data.cycle_{:06d}.summary.silo'.format(time_step))
-                                  for time_step in time_steps])
+    lag_visit_list = [os.path.join('lag_data.cycle_{:06d}'.format(time_step),
+                                   'lag_data.cycle_{:06d}.summary.silo'
+                                   ''.format(time_step))
+                      for time_step in time_steps]
+    lag_data_visit = numpy.array(lag_visit_list)
     # write files
     with open(os.path.join(self.directory, 'dumps.visit'), 'w') as outfile:
       numpy.savetxt(outfile, dumps_visit, fmt='%s')
@@ -84,13 +91,14 @@ class IBAMRSimulation(Simulation):
     print('done')
 
   def plot_field_contours_visit(self, field_name,
-                                field_range, 
+                                field_range,
                                 body=None,
                                 solution_folder='numericalSolution',
                                 states=(0, 20000, 1),
-                                view=(-2.0, -2.0, 2.0, 2.0), 
+                                view=(-2.0, -2.0, 2.0, 2.0),
                                 width=800):
-    """Plots the contour of a given field using VisIt.
+    """
+    Plots the contour of a given field using VisIt.
 
     Parameters
     ----------
@@ -113,7 +121,7 @@ class IBAMRSimulation(Simulation):
       default: (-2.0, -2.0, 2.0, 2.0).
     width: integer, optional
       Width (in pixels) of the figure;
-      default: 800. 
+      default: 800.
     """
     args = {}
     args['--directory'] = self.directory
@@ -125,17 +133,21 @@ class IBAMRSimulation(Simulation):
     args['--states'] = '{} {} {}'.format(*states)
     args['--view'] = '{} {} {} {}'.format(*view)
     args['--width'] = str(width)
-    script = os.path.join(os.environ['SNAKE'], 'snake', 'ibamr', 
+    script = os.path.join(os.environ['SNAKE'],
+                          'snake',
+                          'ibamr',
                           'plotField2dVisIt.py')
-    arguments = ' '.join([key+' '+value for key, value in args.iteritems()])
+    arguments = ' '.join([key + ' ' + value
+                          for key, value in args.iteritems()])
     os.system('visit -nowin -cli -s {} {}'.format(script, arguments))
 
-  def compute_mean_number_cells_visit(self, 
+  def compute_mean_number_cells_visit(self,
                                       solution_folder='numericalSolution',
                                       states=(0, 20000, 1),
                                       time_limits=(0.0, float('inf'))):
-    """Computes the number of a cells, on average, 
-    in the AMR mesh at requested states.
+    """
+    Computes the number of a cells, on average, in the AMR mesh at requested
+    states.
 
     Parameters
     ----------
@@ -154,7 +166,10 @@ class IBAMRSimulation(Simulation):
     args['--solution-folder'] = solution_folder
     args['--states'] = '{} {} {}'.format(*states)
     args['--time-limits'] = '{} {}'.format(*time_limits)
-    script = os.path.join(os.environ['SNAKE'], 'snake', 'ibamr', 
+    script = os.path.join(os.environ['SNAKE'],
+                          'snake',
+                          'ibamr',
                           'getNumberCellsVisIt.py')
-    arguments = ' '.join([key+' '+value for key, value in args.iteritems()])
+    arguments = ' '.join([key + ' ' + value
+                          for key, value in args.iteritems()])
     os.system('visit -nowin -cli -s {} {}'.format(script, arguments))

@@ -1,8 +1,6 @@
-# file: cartesianMesh.py
-# author: Olivier Mesnard (mesnardo@gwu.edu)
-# description: Implementation of the class `CartesianStructuredMesh` 
-#              and its sub-classes.
-
+"""
+Implementation of the class `CartesianStructuredMesh` and its sub-classes.
+"""
 
 import os
 import sys
@@ -15,9 +13,12 @@ import yaml
 
 
 class Segment(object):
-  """Contains information about a segment."""
+  """
+  Contains information about a segment.
+  """
   def __init__(self, data=None, vertices=None):
-    """Creates the segment vertices.
+    """
+    Creates the segment vertices.
 
     Parameters
     ----------
@@ -32,14 +33,17 @@ class Segment(object):
       self.create_from_yaml_data(data)
     elif numpy.all(vertices):
       self.create_from_vertices(vertices)
-    self.nb_divisions = self.vertices.size-1
+    self.nb_divisions = self.vertices.size - 1
 
   def create_from_vertices(self, vertices):
-    """"Stores vertices."""
+    """
+    Stores vertices.
+    """
     self.vertices = vertices
 
   def create_from_yaml_data(self, data):
-    """Creates vertices from provided YAML data.
+    """
+    Creates vertices from provided YAML data.
 
     Parameters
     ----------
@@ -48,23 +52,28 @@ class Segment(object):
     """
     self.start, self.end = data['start'], data['end']
     self.width = data['width']
-    self.stretch_ratio = self.get_stretch_ratio(self.width,
-                                                stretch_ratio=data['stretchRatio'], 
-                                                aspect_ratio=data['aspectRatio'],
-                                                precision=data['precision'])
+    ratio = self.get_stretch_ratio(self.width,
+                                   stretch_ratio=data['stretchRatio'],
+                                   aspect_ratio=data['aspectRatio'],
+                                   precision=data['precision'])
+    self.stretch_ratio = ratio
     self.vertices = self.get_vertices(reverse=data['reverse'])
 
   def print_parameters(self):
-    """Prints the parameters of the segment."""
+    """
+    Prints the parameters of the segment.
+    """
     print('\n[info] printing parameters of segment ...')
     print('\tlimits: [{}, {}]'.format(self.start, self.end))
-    print('\treal limits: [{}, {}]'.format(self.vertices[0], self.vertices[-1]))
+    print('\treal limits: [{}, {}]'.format(self.vertices[0],
+                                           self.vertices[-1]))
     print('\tstretching ratio: {}'.format(self.stretch_ratio))
     print('\taspect ratio: {}'.format(self.aspect_ratio))
     print('\tnumber of divisions: {}\n'.format(self.nb_divisions))
 
   def get_vertices(self, reverse=False):
-    """Computes the vertices of the segment.
+    """
+    Computes the vertices of the segment.
 
     Parameters
     ----------
@@ -77,35 +86,38 @@ class Segment(object):
     vertices: 1D array of floats
       The vertices of the segment.
     """
-    length = abs(self.end-self.start)
+    length = abs(self.end - self.start)
     width = self.width
     ratio = self.stretch_ratio
-    if abs(ratio-1.0) < 1.0E-06:
+    if abs(ratio - 1.0) < 1.0E-06:
       # uniform discretization
       self.aspect_ratio = 1.0
-      if abs(int(round(length/width))-length/width) > 1.0E-12:
+      if abs(int(round(length / width)) - length / width) > 1.0E-12:
         print('[error] uniform discretization: '
-              'length of the segment should be a multiple of the width provided')
+              'length of the segment should be a multiple of the width '
+              'provided')
         sys.exit(0)
-      return numpy.arange(self.start, self.end+width/2.0, width)
+      return numpy.arange(self.start, self.end + width / 2.0, width)
     # stretched discretization
-    n = int(round(math.log(1.0-length/width*(1.0-ratio))/math.log(ratio)))
+    n = int(round(math.log(1.0 - length / width * (1.0 - ratio))
+                  / math.log(ratio)))
     widths = numpy.empty(n, dtype=numpy.float64)
     widths[0], widths[1:] = width, ratio
     widths = numpy.cumprod(widths)
     # compute the aspect ratio
-    self.aspect_ratio = widths[-1]/widths[0]
+    self.aspect_ratio = widths[-1] / widths[0]
     # return the vertices
     if reverse:
       # inverse the stretching ratio and reverse the widths
-      self.stretch_ratio = 1.0/ratio
-      return numpy.insert(self.end-numpy.cumsum(widths), 0, self.end)[::-1]
+      self.stretch_ratio = 1.0 / ratio
+      return numpy.insert(self.end - numpy.cumsum(widths), 0, self.end)[::-1]
     else:
-      return numpy.insert(self.start+numpy.cumsum(widths), 0, self.start)
+      return numpy.insert(self.start + numpy.cumsum(widths), 0, self.start)
 
-  def get_stretch_ratio(self, width, 
+  def get_stretch_ratio(self, width,
                         stretch_ratio=1.0, aspect_ratio=1.0, precision=6):
-    """Computes the optimal stretching ratio given a targeted stretching ratio 
+    """
+    Computes the optimal stretching ratio given a targeted stretching ratio
     or a targeted aspect ratio.
 
     Parameters
@@ -128,22 +140,23 @@ class Segment(object):
       The optimal stretching ratio.
     """
     # if stretching ratio provided
-    if abs(stretch_ratio-1.0) > 1.0E-06:
-      return self.compute_optimal_stretch_ratio(width, stretch_ratio, 
+    if abs(stretch_ratio - 1.0) > 1.0E-06:
+      return self.compute_optimal_stretch_ratio(width, stretch_ratio,
                                                 precision=precision)
     # if aspect ratio provided
-    elif abs(aspect_ratio-1.0) > 1.0E-06:
+    elif abs(aspect_ratio - 1.0) > 1.0E-06:
       ratio = self.compute_stretch_ratio(width, aspect_ratio,
                                          precision=precision)
-      return self.compute_optimal_stretch_ratio(width, ratio, 
+      return self.compute_optimal_stretch_ratio(width, ratio,
                                                 precision=precision)
     # uniform discretization
     else:
       return 1.0
 
-  def compute_stretch_ratio(self, width, aspect_ratio, 
+  def compute_stretch_ratio(self, width, aspect_ratio,
                             precision=6):
-    """Computes the stretching ratio provided the a targeted aspect ratio 
+    """
+    Computes the stretching ratio provided the a targeted aspect ratio
     between the first and last divisions of the segment.
 
     Parameters
@@ -161,12 +174,13 @@ class Segment(object):
     ratio: float
       The stretching ratio.
     """
-    length = abs(self.end-self.start)
+    length = abs(self.end - self.start)
     current_precision = 1
     ratio = 2.0
     while current_precision < precision:
-        n = int(round(math.log(1.0-length/width*(1.0-ratio))/math.log(ratio)))
-        candidate_aspect_ratio = ratio**(n-1)
+        n = int(round(math.log(1.0 - length / width * (1.0 - ratio))
+                      / math.log(ratio)))
+        candidate_aspect_ratio = ratio**(n - 1)
         if candidate_aspect_ratio < aspect_ratio:
             ratio += (0.1)**current_precision
             current_precision += 1
@@ -174,9 +188,10 @@ class Segment(object):
             ratio -= (0.1)**current_precision
     return ratio
 
-  def compute_optimal_stretch_ratio_old(self, width, ratio, 
+  def compute_optimal_stretch_ratio_old(self, width, ratio,
                                         precision=6):
-    """***DEPRECATED***
+    """
+    ***DEPRECATED***
     Computes the optimal stretching ratio provided a targeted one.
 
     Parameters
@@ -194,12 +209,13 @@ class Segment(object):
     ratio: float
       The optimal stretching ratio.
     """
-    length = abs(self.end-self.start)
+    length = abs(self.end - self.start)
     precision_ratio = abs(Decimal(str(ratio)).as_tuple().exponent)
     while precision_ratio < precision:
       try:
-        n = int(round(math.log(1.0-(1.0-ratio)*length/width)/math.log(ratio)))
-        candidate_length = width*(1.0-ratio**n)/(1.0-ratio)
+        n = int(round(math.log(1.0 - (1.0 - ratio) * length / width)
+                      / math.log(ratio)))
+        candidate_length = width * (1.0 - ratio**n) / (1.0 - ratio)
       except:
         candidate_length = 0.0
       if candidate_length < length:
@@ -209,9 +225,10 @@ class Segment(object):
         ratio -= (0.1)**precision_ratio
     return ratio
 
-  def compute_optimal_stretch_ratio(self, width, ratio, 
+  def compute_optimal_stretch_ratio(self, width, ratio,
                                     precision=6):
-    """Computes the optimal stretching ratio provided a targeted one.
+    """
+    Computes the optimal stretching ratio provided a targeted one.
 
     Parameters
     ----------
@@ -229,14 +246,17 @@ class Segment(object):
       The optimal stretching ratio.
     """
     def geometric_sum(a, r, n):
-      """Computes the sum of the geometric progression."""
-      return a*(1.0-r**n)/(1.0-r)
-    length = abs(self.end-self.start)
+      """
+      Computes the sum of the geometric progression.
+      """
+      return a * (1.0 - r**n) / (1.0 - r)
+    length = abs(self.end - self.start)
     precision_ratio = abs(Decimal(str(ratio)).as_tuple().exponent)
-    while precision_ratio < precision:      
-      n = int(math.log(1.0-(1.0-ratio)*length/width)/math.log(ratio))
+    while precision_ratio < precision:
+      n = int(math.log(1.0 - (1.0 - ratio) * length / width)
+              / math.log(ratio))
       deviation_inf = abs(length - geometric_sum(width, ratio, n))
-      deviation_sup = abs(length - geometric_sum(width, ratio, n+1))
+      deviation_sup = abs(length - geometric_sum(width, ratio, n + 1))
       precision_ratio += 1
       if deviation_inf < deviation_sup:
         ratio += 0.1**precision_ratio
@@ -245,10 +265,11 @@ class Segment(object):
     return ratio
 
   def generate_yaml_info(self):
-    """Generates a dictionary with segment's information ready for YAML.
+    """
+    Generates a dictionary with segment's information ready for YAML.
 
-    The dictionary contains the end, the number of divisions, and the stretching
-    ratio of the segment.
+    The dictionary contains the end, the number of divisions, and the
+    stretching ratio of the segment.
     """
     info = {}
     info['end'] = self.end
@@ -258,9 +279,12 @@ class Segment(object):
 
 
 class GridLine(object):
-  """Contains information about a gridline."""
+  """
+  Contains information about a gridline.
+  """
   def __init__(self, data=None, vertices=None, label=None):
-    """Creates a gridline from provided YAML data or vertices.
+    """
+    Creates a gridline from provided YAML data or vertices.
 
     Parameters
     ----------
@@ -283,7 +307,8 @@ class GridLine(object):
     self.nb_divisions = sum(segment.nb_divisions for segment in self.segments)
 
   def create_from_vertices(self, vertices):
-    """Defines the gridline from provided vertices as a single segment.
+    """
+    Defines the gridline from provided vertices as a single segment.
 
     Parameters
     ----------
@@ -294,7 +319,8 @@ class GridLine(object):
     self.segments.append(Segment(vertices=vertices))
 
   def create_from_yaml_data(self, data):
-    """Initializes the gridline parameters and computes its vertices.
+    """
+    Initializes the gridline parameters and computes its vertices.
 
     A gridline is defined as a sequence of uniform and/or stretched segments.
 
@@ -308,8 +334,9 @@ class GridLine(object):
     self.end = data['subDomains'][-1]['end']
     for index, node in enumerate(data['subDomains']):
       # store starting point
-      data['subDomains'][index]['start'] = (data['start'] if index == 0
-                                            else data['subDomains'][index-1]['end'])
+      start = (data['start'] if index == 0
+               else data['subDomains'][index - 1]['end'])
+      data['subDomains'][index]['start'] = start
       # set default parameters if not present
       if 'reverse' not in node.keys():
         data['subDomains'][index]['reverse'] = False
@@ -323,7 +350,8 @@ class GridLine(object):
       self.segments.append(Segment(data=node))
 
   def get_vertices(self, precision=6):
-    """Gets the vertices removing the repeated values at boundaries 
+    """
+    Gets the vertices removing the repeated values at boundaries
     between consecutive segments.
 
     Parameters
@@ -337,13 +365,16 @@ class GridLine(object):
     vertices: 1D array of floats
       The vertices along the gridline.
     """
-    return numpy.unique(numpy.concatenate(([numpy.round(segment.vertices, 
-                                                        precision) 
+    return numpy.unique(numpy.concatenate(([numpy.round(segment.vertices,
+                                                        precision)
                                             for segment in self.segments])))
 
   def print_parameters(self):
-    """Prints parameters of the gridline."""
-    print('[info] printing parameters of the gridline {} ...'.format(self.label))
+    """
+    Prints parameters of the gridline.
+    """
+    print('[info] printing parameters of the gridline '
+          '{} ...'.format(self.label))
     vertices = self.get_vertices()
     print('\tlimits: [{}, {}]'.format(self.start, self.end))
     print('\treal limits: [{}, {}]'.format(vertices[0], vertices[-1]))
@@ -352,7 +383,8 @@ class GridLine(object):
       segment.print_parameters()
 
   def generate_yaml_info(self):
-    """Generates a dictionary with gridline's information ready for YAML.
+    """
+    Generates a dictionary with gridline's information ready for YAML.
 
     The dictionary contains the direction, the start, and segments information
     of the gridline.
@@ -367,16 +399,19 @@ class GridLine(object):
 
 
 class CartesianStructuredMesh(object):
-  """Contains info related to a Cartesian structured mesh 
-  (stretched or uniform).
+  """
+  Contains info related to a Cartesian structured mesh (stretched or uniform).
   """
   def __init__(self):
-    """Instantiates an empty mesh."""
+    """
+    Instantiates an empty mesh.
+    """
     self.gridlines = []
 
   def get_number_cells(self):
-    """Gets the number of divisions along each gridline 
-    and the total number of cells.
+    """
+    Gets the number of divisions along each gridline and the total number of
+    cells.
     """
     nb_divisions = []
     for gridline in self.gridlines:
@@ -384,7 +419,8 @@ class CartesianStructuredMesh(object):
     return reduce(mul, nb_divisions, 1), nb_divisions
 
   def create(self, data):
-    """Creates the gridlines.
+    """
+    Creates the gridlines.
 
     Parameters
     ----------
@@ -404,11 +440,12 @@ class CartesianStructuredMesh(object):
       gridline.print_parameters()
 
   def write(self, file_path, precision=6):
-    """Writes the gridlines into a file.
+    """
+    Writes the gridlines into a file.
 
-    The first line of the file contains the number of divisions 
+    The first line of the file contains the number of divisions
     along each gridline.
-    Then the vertices along each gridline are written in single column 
+    Then the vertices along each gridline are written in single column
     starting with the first gridline.
 
     Parameters
@@ -422,12 +459,13 @@ class CartesianStructuredMesh(object):
     print('[info] writing vertices into {} ...'.format(file_path))
     _, nb_cells_directions = self.get_number_cells()
     with open(file_path, 'w') as outfile:
-      outfile.write('\t'.join(str(nb) for nb in nb_cells_directions)+'\n')
+      outfile.write('\t'.join(str(nb) for nb in nb_cells_directions) + '\n')
       for gridline in self.gridlines:
         numpy.savetxt(outfile, gridline.get_vertices(precision=precision))
 
   def read(self, file_path):
-    """Reads the coordinates from the file.
+    """
+    Reads the coordinates from the file.
 
     Parameters
     ----------
@@ -436,16 +474,19 @@ class CartesianStructuredMesh(object):
     """
     print('[info] reading vertices from {} ...'.format(file_path))
     with open(file_path, 'r') as infile:
-      nb_divisions = numpy.array([int(n) for n in infile.readline().strip().split()])
+      nb_divisions = numpy.array([int(n)
+                                  for n in infile.readline().strip().split()])
       vertices = numpy.loadtxt(infile, dtype=numpy.float64)
-    vertices = numpy.array(numpy.split(vertices, numpy.cumsum(nb_divisions[:-1]+1)))
+    vertices = numpy.array(numpy.split(vertices,
+                                       numpy.cumsum(nb_divisions[:-1] + 1)))
     labels = ['x', 'y', 'z']
     for index, vertices_gridline in enumerate(vertices):
-      self.gridlines.append(GridLine(vertices=vertices_gridline, 
+      self.gridlines.append(GridLine(vertices=vertices_gridline,
                                      label=labels[index]))
 
   def read_yaml_file(self, file_path):
-    """Parses the YAML file.
+    """
+    Parses the YAML file.
 
     Parameters
     ----------
@@ -462,8 +503,9 @@ class CartesianStructuredMesh(object):
       return yaml.load(infile)
 
   def write_yaml_file(self, file_path):
-    """Writes a YAML readable file with information 
-    about the Cartesian structured mesh.
+    """
+    Writes a YAML readable file with information about the Cartesian structured
+    mesh.
 
     Parameters
     ----------
@@ -477,6 +519,6 @@ class CartesianStructuredMesh(object):
     nb_cells, nb_cells_directions = self.get_number_cells()
     with open(file_path, 'w') as outfile:
       outfile.write('# {}\n'.format(os.path.basename(file_path)))
-      outfile.write('# {} = {}\n\n'.format('x'.join(str(nb) for nb in nb_cells_directions), 
-                                         nb_cells))
+      n_cells_string = 'x'.join(str(nb) for nb in nb_cells_directions)
+      outfile.write('# {} = {}\n\n'.format(n_cells_string, nb_cells))
       outfile.write(yaml.dump(data, default_flow_style=False))

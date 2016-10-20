@@ -1,13 +1,11 @@
-# file: miscellaneous.py
-# author: Olivier Mesnard (mesnardo@gwu.edu)
-# brief: Contains diverse functions and classes.
-
+"""
+Contains diverse functions and classes.
+"""
 
 import os
 import sys
 import re
 import argparse
-import collections
 
 try:
   import numpy
@@ -22,7 +20,9 @@ except ImportError:
 
 
 class RedirectOutput(object):
-  """Context manager to redirect stdout to a given file."""
+  """
+  Context manager to redirect `stdout` to a given file.
+  """
   def __init__(self, stdout=''):
     self.stdout = stdout
 
@@ -37,36 +37,44 @@ class RedirectOutput(object):
 
 
 class ReadOptionsFromFile(argparse.Action):
-  """Container to read parameters from file."""
+  """
+  Container to read parameters from file.
+  """
   def __call__(self, parser, namespace, values, option_string=None):
-    """Fills the namespace with parameters read in file."""
+    """
+    Fills the name-space with parameters read in file.
+    """
     with values as infile:
       lines = [element for line in infile.readlines()
-                   for element in line.strip().split()
-                    if not line.startswith('#')]
-      lines = [os.path.expandvars(line) if '$' in line else line 
+               for element in line.strip().split()
+               if not line.startswith('#')]
+      lines = [os.path.expandvars(line) if '$' in line else line
                for line in lines[:]]
     parser.parse_args(lines, namespace)
 
 
 def display_image(figure):
-  """Display figure into the Jupyter-Notebook."""
+  """
+  Display figure into the Jupyter-Notebook.
+  """
   if not os.path.isfile(figure):
     print('Image not available')
   display(Image(figure))
 
 
 def get_images(directory, prefix=None, steps=None):
-  """Returns the list of image paths of interest.
+  """
+  Returns the list of image paths of interest.
 
   Parameters
   ----------
   directory: string
     Directory with images.
-  prefix: string
-    Prefix shared by all images; default: None.
-  steps: list of integers
-    List of time-steps to consider; default: None.
+  prefix: string, optional
+    Prefix shared by all images;default: None.
+  steps: list of integers, optional
+    List of time-steps to consider;
+    default: None.
 
   Returns
   -------
@@ -81,12 +89,12 @@ def get_images(directory, prefix=None, steps=None):
   except:
     check = not steps
   if check:
-    images =  sorted([os.path.join(directory, image) 
-                      for image in os.listdir(directory)])
+    images = sorted([os.path.join(directory, image)
+                     for image in os.listdir(directory)])
   else:
     if not prefix:
-      prefix = re.match(r"([a-z]+)([0-9]+)", 
-                        os.listdir(directory)[0], 
+      prefix = re.match(r"([a-z]+)([0-9]+)",
+                        os.listdir(directory)[0],
                         re.I).groups()[0]
     if all(isinstance(step, int) for step in steps):
       images = [os.path.join(directory, '{}{:0>7}.png'.format(prefix, step))
@@ -98,22 +106,25 @@ def get_images(directory, prefix=None, steps=None):
 
 
 def create_slider(values, description='value'):
-  """Returns the widget slider.
-  
+  """
+  Returns the widget slider.
+
   Parameters
   ----------
   values: list of floats
     Values to store in the widget.
-  description: string
-    A description of the widget; default: 'value'.
+  description: string, optional
+    A description of the widget;
+    default: 'value'.
   """
   return ipywidgets.FloatSlider(description=description, value=values[0],
-                                min=values[0], max=round(values[-1], 2), 
-                                step=values[1]-values[0])
+                                min=values[0], max=round(values[-1], 2),
+                                step=values[1] - values[0])
 
 
 def displayer(directories=[os.getcwd()], time=(), openfoam=False):
-  """Interactively displays multiple images in a Jupyter Notebook with ipywidgets.
+  """
+  Interactively displays multiple images in a Jupyter Notebook with ipywidgets.
 
   Parameters
   ----------
@@ -141,13 +152,14 @@ def displayer(directories=[os.getcwd()], time=(), openfoam=False):
   if not time:
     for directory in directories:
       all_images.append(get_images(directory))
-    slider = create_slider(description='index', values=numpy.arange(len(all_images[0])))
+    slider = create_slider(description='index',
+                           values=numpy.arange(len(all_images[0])))
   else:
-    times = numpy.arange(time[0], time[1]+time[2]/2.0, time[2])
+    times = numpy.arange(time[0], time[1] + time[2] / 2.0, time[2])
     if openfoam:
       steps = times
     else:
-      steps = numpy.rint(times/time[3]).astype(int)
+      steps = numpy.rint(times / time[3]).astype(int)
     for directory in directories:
       all_images.append(get_images(directory, steps=steps))
     slider = create_slider(description='time', values=times)
@@ -156,7 +168,7 @@ def displayer(directories=[os.getcwd()], time=(), openfoam=False):
     if not time:
       index = int(round(tic))
     else:
-      index = numpy.where(numpy.abs(times-tic) <= 1.0E-06)[0][0]
+      index = numpy.where(numpy.abs(times - tic) <= 1.0E-06)[0][0]
     for images in all_images:
       display(Image(filename=images[index]))
 
@@ -164,7 +176,8 @@ def displayer(directories=[os.getcwd()], time=(), openfoam=False):
 
 
 def load_style(file_path):
-  """Loads the style for the Jupyter-Notebook.
+  """
+  Loads the style for the Jupyter-Notebook.
 
   Parameters
   ----------
@@ -172,7 +185,9 @@ def load_style(file_path):
     Path of the .css file.
   """
   if not file_path:
-    file_path = os.path.join(os.environ['SNAKE'], 'snake', 'styles', 
+    file_path = os.path.join(os.environ['SNAKE'],
+                             'snake',
+                             'styles',
                              'mesnardo.css')
-  style = HTML(open(file_path ,'r').read())
+  style = HTML(open(file_path, 'r').read())
   display(style)
