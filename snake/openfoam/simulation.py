@@ -247,6 +247,43 @@ class OpenFOAMSimulation(Simulation):
       pyplot.show()
     pyplot.close()
 
+  def create_matplotlib_colormap(self, colormap_name, file_path=None):
+    """
+    Writes the values of a Matplotlib colormap into a temporary file located in
+    the current working directory.
+    The list of Matplotlib colormaps is available
+    [here](http://matplotlib.org/examples/color/colormaps_reference.html))
+
+    Parameters
+    ----------
+    colormap_name: string
+      Name of the Matplotlib colormap to write into a file.
+    file_path: string, optional
+      Path of the file to write;
+      default: None (will be '<colormap_name>_tmp.dat').
+
+    Returns
+    -------
+    file_path: string
+      Path of the file created.
+    """
+    from matplotlib import cm
+    file_path = os.path.join(os.getcwd(),
+                             colormap_name + '_tmp.dat')
+    print('[info] write colormap {} from Matplotlib into file {} ...'
+          ''.format(colormap_name, file_path))
+    with open(file_path, 'w') as outfile:
+      colormap_object = getattr(cm, colormap_name)
+      try:
+        colors = colormap_object.colors
+      except:
+        colors = []
+        for i in range(colormap_object.N):
+          colors.append(colormap_object(i)[:-1])
+      for color in colors:
+        outfile.write('{}, {}, {}\n'.format(*color))
+    return file_path
+
   def plot_field_contours_paraview(self, field_name,
                                    field_range=(-1.0, 1.0),
                                    view=(-2.0, -2.0, 2.0, 2.0),
@@ -289,41 +326,31 @@ class OpenFOAMSimulation(Simulation):
       Displays the mesh (Surface with Edges);
       default: False
     """
-    args = {}
-    args['--directory'] = self.directory
-    args['--field'] = field_name
-    args['--range'] = '{} {}'.format(*field_range)
-    args['--times'] = '{} {} {}'.format(*times)
-    args['--view'] = '{} {} {} {}'.format(*view)
-    args['--width'] = str(width)
+    # create the command-line parameters
+    arguments = []
+    arguments.append('--directory ' + self.directory)
+    arguments.append('--field ' + field_name)
+    arguments.append('--range {} {}'.format(*field_range))
+    arguments.append('--times {} {} {}'.format(*times))
+    arguments.append('--view {} {} {} {}'.format(*view))
+    arguments.append('--width {}'.format(width))
     if display_mesh:
-      args['--mesh'] = ''
+      arguments.append('--mesh')
     if not display_scalar_bar:
-      args['--no-scalar-bar'] = ''
+      arguments.append('--no-scalar-bar')
     if not display_time_text:
-      args['--no-time-text'] = ''
+      arguments.append('--no-time-text')
     if colormap:
-      from matplotlib import cm
-      with open(colormap + '.dat', 'w') as outfile:
-        colormap_object = getattr(cm, colormap)
-        try:
-          colors = colormap_object.colors
-        except:
-          colors = []
-          for i in range(colormap_object.N):
-            colors.append(colormap_object(i)[:-1])
-        for color in colors:
-          outfile.write('{}, {}, {}\n'.format(*color))
-      args['--colormap'] = colormap + '.dat'
+      colormap_path = self.create_matplotlib_colormap(colormap_name=colormap)
+      arguments.append('--colormap ' + colormap_path)
+    # execute the Python script with pvbatch
     script = os.path.join(os.environ['SNAKE'],
                           'snake',
                           'openfoam',
                           'plotField2dParaView.py')
-    arguments = ' '.join([key + ' ' + value
-                          for key, value in args.iteritems()])
-    os.system('pvbatch {} {}'.format(script, arguments))
+    os.system('pvbatch {} {}'.format(script, ' '.join(arguments)))
     if colormap:
-      os.remove(colormap + '.dat')
+      os.remove(colormap_path)
 
   def plot_mesh_paraview(self,
                          view=(-2.0, -2.0, 2.0, 2.0),
@@ -340,12 +367,11 @@ class OpenFOAMSimulation(Simulation):
       Width (in pixels) of the figure;
       default: 800.
     """
-    args = {}
-    args['--directory'] = self.directory
-    args['--view'] = '{} {} {} {}'.format(*view)
-    args['--width'] = str(width)
+    arguments = []
+    arguments.append('--directory ' + self.directory)
+    arguments.append('--view {} {} {} {}'.format(*view))
+    arguments.append('--width {}'.format(width))
+    # execute the Python script with pvbatch
     script = os.path.join(os.environ['SNAKE'], 'snake', 'openfoam',
                           'plotMesh2dParaView.py')
-    arguments = ' '.join([key + ' ' + value
-                          for key, value in args.iteritems()])
-    os.system('pvbatch {} {}'.format(script, arguments))
+    os.system('pvbatch {} {}'.format(script, ' '.join(arguments)))
