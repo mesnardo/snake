@@ -46,7 +46,7 @@ class BarbaGroupSimulation(Simulation):
                           top_right=[1.0, 1.0],
                           n_cells=[100, 100]):
     """
-    Creates a uniform 2D Cartesian grid.
+    Creates a uniform 2D structured Cartesian grid.
 
     Parameters
     ----------
@@ -83,7 +83,7 @@ class BarbaGroupSimulation(Simulation):
       default: None (all saved time-steps).
     directory: string, optional
       Directory containing the saved time-step folders;
-      default: None.
+      default: None (will use the simulation directory).
     """
     if time_steps_range:
       return range(time_steps_range[0],
@@ -105,7 +105,7 @@ class BarbaGroupSimulation(Simulation):
                   periodic_directions=[],
                   directory=None):
     """
-    Gets the field at a given time-step.
+    Gets the fields at a given time-step.
 
     Parameters
     ----------
@@ -118,11 +118,11 @@ class BarbaGroupSimulation(Simulation):
       Time-step at which the solution is read.
     periodic_directions: list of strings, optional
       Directions that uses periodic boundary conditions;
-      choices: 'x', 'y', 'z',
+      choices: 'x', 'y', 'z';
       default: [].
     directory: string, optional
       Directory containing the saved time-step folders;
-      default: None.
+      default: None (will use the simulation directory).
     """
     # convert field_names in list if single string provided
     try:
@@ -276,71 +276,70 @@ class BarbaGroupSimulation(Simulation):
                'x-flux', 'y-flux'.
     label: string, optional
       Name of the output subtracted field;
-      default: None (will be <current name>+'-subtracted')
+      default: None.
     """
-    if not label:
-      label = field_name + '-subtracted'
     difference = self.fields[field_name].subtract(other.fields[field_name],
                                                   label=label)
-    self.fields[label] = difference
+    self.fields[difference.label] = difference
 
-  def get_difference(self, exact, name, mask=None, norm=None):
+  def get_difference(self, other, field_name, mask=None, norm=None):
     """
-    Returns the difference between a field and an exact solution.
+    Returns the difference in a given norm between a field and another.
 
     Parameters
     ----------
-    exact: Simulation object
-      The exact solution.
-    name: string
+    other: Simulation object
+      The other solution.
+    field_name: string
       Name of the field to use.
-    mask: Simulation object
-      Simulation whose staggered grid arrangement is used to restrict the
-      solutions;
-      default: None.
-    norm: string
+    mask: Simulation object, optional
+      Simulation whose grid will be used to project and compute the difference;
+      default: None (use grid of present simulation).
+    norm: string, optional
       Norm to use to compute the difference;
       default: None.
 
     Returns
     -------
-    error: float
-      The difference between the two fields.
+    difference: float
+      The difference between the two fields in a given norm.
     """
     if mask:
-      mask_field = mask.fields[name]
-    return self.fields[name].get_difference(exact.fields[name],
-                                            mask=mask_field,
-                                            norm=norm)
+      x, y = mask.fields[field_name].x, mask.fields[field_name].y
+    else:
+      x, y = self.fields[field_name].x, self.fields[field_name].y
+    return self.fields[field_name].get_difference(other.fields[field_name],
+                                                  x=x,
+                                                  y=y,
+                                                  norm=norm)
 
-  def get_relative_differences(self, exact, mask, field_names=[]):
+  def get_differences(self, other, field_names, mask=None, norm=None):
     """
-    Computes the relative differences between a list of simulations
-    and an analytical solution for a given list of fields.
+    Returns the difference in a given norm between a field and another.
 
     Parameters
     ----------
-    exact: Analytical object
-      The analytical solution.
-    mask: Simulation object
-      Simulation whose grid is used as a mask.
+    other: Simulation object
+      The other solution.
     field_names: list of strings
-      The fields for which the relative error is computed;
-      default: [].
+      Name of the fields to use.
+    mask: Simulation object, optional
+      Simulation whose grid will be used to project and compute the difference;
+      default: None (use grid of present simulation).
+    norm: string, optional
+      Norm to use to compute the difference;
+      default: None.
 
     Returns
     -------
-    errors: dictionary of (string, float) items
-      Relative difference for each field indicated.
+    differences: dictionary of (string, float) items
+      The difference between the two fields in a given norm,
+      for each requested field.
     """
     errors = {}
-    for name in field_names:
-      name = name.replace('-', '_')
-      grid = [mask.fields[name].x, mask.fields[name].y]
-      error = self.fields[name].get_relative_difference(exact.fields[name],
-                                                        grid)
-      errors[name] = error
-    self.errors = errors
+    for field_name in field_names:
+      errors[field_name] = self.get_difference(other, field_name,
+                                               mask=None, norm=None)
     return errors
 
   def plot_contour(self, field_name,

@@ -11,7 +11,8 @@ from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
 class Field(object):
   """
-  Contains information about a field (pressure for example).
+  Contains information about a 2D field (pressure for example) on a structured
+  Cartesian grid.
   """
 
   def __init__(self, x=None, y=None, values=None, time_step=None, label=None):
@@ -20,27 +21,60 @@ class Field(object):
 
     Parameters
     ----------
-    x, y: Numpy 1D arrays of float
-      Coordinates of the grid-nodes in each direction;
-      default: None, None.
-    values: Numpy 1D array of float
-      Nodal values of the field;
+    x: numpy 1D array of floats, optional
+      Stations along a gridline in the x-direction;
       default: None.
-    time_step: integer
+    y: numpy 1D array of floats, optional
+      Stations along a gridline in the y-direction;
+      default: None.
+    values: numpy 2D array of floats, optional
+      Discrete field values;
+      default: None.
+    time_step: integer, optional
       Time-step;
       default: None.
-    label: string
+    label: string, optional
       Description of the field;
       default: None.
     """
-    self.label = label
-    self.time_step = time_step
+    self.label = None
+    self.x, self.y = None, None
+    self.values = None
+    self.time_step = None
+    if numpy.any(x) and numpy.any(y) and numpy.any(values):
+      self.set(x, y, values, time_step=time_step, label=label)
+
+  def set(self, x, y, values, time_step=None, label=None):
+    """
+    Sets the stations along a gridline in each direction, the field values,
+    the time-step, and the label.
+
+    Parameters
+    ----------
+    x: numpy 1D array of floats
+      Stations along a gridline in the x-direction.
+    y: numpy 1D array of floats
+      Stations along a gridline in the y-direction.
+    values: numpy 2D array of floats
+      Discrete field values.
+    time_step: integer, optional
+      Time-step;
+      default: None.
+    label: string, optional
+      Description of the field;
+      default: None.
+    """
+    assert values.shape == (y.size, x.size)
     self.x, self.y = x, y
     self.values = values
+    self.time_step = time_step
+    self.label = label
 
   def subtract(self, other, label=None, atol=1.0E-12):
     """
-    Subtracts a given field to the current one.
+    Subtracts a given field to the current one (returns 'self' - 'other').
+
+    Note: the other field must be defined on the same grid.
 
     Parameters
     ----------
@@ -48,31 +82,41 @@ class Field(object):
       The field that is subtracted.
     label: string, optional
       Label of the Field object to create;
-      default: None (will be <current label>).
+      default: None (will be '<current label>-subtracted').
     atol: float, optional
       Absolute-tolerance to define if two grid nodes have the same location;
       default: 1.0E-12.
+
+    Returns
+    -------
+    subtracted_field: Field object
+      The subtracted field.
     """
-    if not label:
-      label = self.label
     # check the two solutions share the same grid
     assert numpy.allclose(self.x, other.x, atol=atol)
     assert numpy.allclose(self.y, other.y, atol=atol)
     assert self.values.shape == other.values.shape
+    if not label:
+      label = self.label + '-subtracted'
     return Field(label=label,
                  time_step=self.time_step,
                  x=self.x, y=self.y,
                  values=self.values - other.values)
 
-  def restriction(self, grid, atol=1.0E-12):
+  def restrict(self, x, y, label=None, atol=1.0E-12):
     """
-    Restriction of the field solution onto a coarser grid.
-    Note: all nodes on the coarse grid are present in the fine grid.
+    Restricts the field solution onto a coarser grid.
+    Note: all nodes on the coarser grid are present in the actual grid.
 
     Parameters
     ----------
-    grid: list of 1d arrays of floats
-      Nodal stations in each direction of the coarser grid.
+    x: numpy 1D array of floats
+      Stations along a gridline in the x-direction.
+    y: numpy 1D array of floats
+      Stations along a gridline in the y-direction.
+    label: string, optional
+      Label of the restricted field;
+      default: None (will be '<current label>-restricted').
     atol: float, optional
       Absolute tolerance used to define shared nodes between two grids;
       default: 1.0E-06.
@@ -84,41 +128,48 @@ class Field(object):
     """
     def intersection(a, b, atol=atol):
       return numpy.any(numpy.abs(a - b[:, numpy.newaxis]) <= atol, axis=0)
-    mask_x = intersection(self.x, grid[0], atol=atol)
-    mask_y = intersection(self.y, grid[1], atol=atol)
-    return Field(x=self.x[mask_x], y=self.y[mask_y],
+    mask_x = intersection(self.x, x, atol=atol)
+    mask_y = intersection(self.y, y, atol=atol)
+    if not label:
+      label = self.label + '-restricted'
+    return Field(x=self.x[mask_x],
+                 y=self.y[mask_y],
                  values=numpy.array([self.values[j][mask_x]
                                      for j in xrange(self.y.size)
                                      if mask_y[j]]),
                  time_step=self.time_step,
-                 label=self.label + '-restricted')
+                 label=label)
 
-  def get_difference(self, exact, mask, norm='L2'):
+  def get_difference(self, other, x, y, norm='L2'):
     """
-    Returns the difference between two fields in a given norm.
+    Returns the difference between two fields in a given norm and on a given
+    grid.
+    The grid is defined by its stations along a gridline in the x-direction and
+    its stations along a gridline in the y-direction.
 
     Parameters
     ----------
-    exact: Field object
-      The exact solution to compare with.
-    mask: Field object
-      Field whose grid is used as a mask;
-      default: None.
-    norm: string
-      Norm used;
-      default: L2 (L2-norm).
+    other: Field object
+      The other field used for comparison.
+    x: numpy 1D array of floats
+      Stations along a gridline in the x-direction.
+    y: numpy 1D array of floats
+      Stations along a gridline in the y-direction.
+    norms: string, optional
+      Norm to use;
+      choices: 'L2', 'Linf';
+      default: 'L2'.
 
     Returns
     -------
-    difference: float
-      The difference using the indicated norm.
+    norm: float
+      The difference in the given norm.
     """
     norms = {'L2': None, 'Linf': numpy.inf}
-    grid = [mask.x, mask.y]
-    field_restricted = self.restriction(grid)
-    exact_restricted = exact.restriction(grid)
-    return numpy.linalg.norm(field_restricted.values - exact_restricted.values,
-                             ord=norms[norm])
+    field = self.restrict(x, y)
+    other = other.restrict(x, y)
+    difference = field.substract(other)
+    return numpy.linalg.norm(difference.values, ord=norms[norm])
 
   def get_gridline_values(self, x=None, y=None):
     """
@@ -139,8 +190,8 @@ class Field(object):
 
     Returns
     -------
-    array: 1D array of floats
-      The field values along the gridline.
+    stations, values: two numpy 1D arrays of floats
+      Stations and values along the gridline.
     """
     if (x and y) or not (x or y):
       print('[error] use either x or y keyword arguments '
@@ -165,10 +216,11 @@ class Field(object):
 
     Returns
     -------
-    u: 1D array of floats
-      The (interpolated) field values along the vertical gridline.
+    y, u: two numpy 1D arrays of floats
+      Stations and values along the vertical gridline.
     """
     indices = numpy.where(numpy.abs(self.x - x) <= 1.0E-06)[0]
+    # if no station matches the given value, we interpolate
     if indices.size == 0:
       i = numpy.where(self.x > x)[0][0]
       return (self.y, (abs(self.x[i] - x) * self.values[:, i - 1]
@@ -193,10 +245,11 @@ class Field(object):
 
     Returns
     -------
-    u: 1D array of floats
-      The (interpolated) field values along the horizontal gridline.
+    x, u: two numpy 1D arrays of floats
+      Stations and values along the horizontal gridline.
     """
     indices = numpy.where(numpy.abs(self.y - y) <= 1.0E-06)[0]
+    # if no station matches the given value, we interpolate
     if indices.size == 0:
       j = numpy.where(self.y > y)[0][0]
       return (self.y, (abs(self.y[j] - y) * self.values[j - 1, :]
