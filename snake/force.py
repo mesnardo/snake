@@ -1,5 +1,7 @@
 """
 Implementation of the class `Force`.
+A `Force` object contains information about an instantaneous force
+(e.g., fx or fy).
 """
 
 import numpy
@@ -8,26 +10,52 @@ from scipy import signal
 
 class Force(object):
   """
-  Contains info about a force.
+  Contains info about an instantaneous force.
   """
 
-  def __init__(self, times, values, label=None):
+  def __init__(self, times=None, values=None, label=None):
     """
-    Initializes the force with given values.
+    Initializes the force.
 
     Parameters
     ----------
-    times: Numpy array of float
-      Discrete time.
-    values: Numpy array of float
+    times: numpy 1D array of floats, optional
+      Discrete time values;
+      default: None.
+    values: numpy 1D array of floats, optional
+      Instantaneous values of the force;
+      default: None.
+    label: string, optional
+      Description of the force;
+      default: None.
+    """
+    self.label = None
+    self.times = None
+    self.values = None
+    self.mean = None
+    self.deviations = None
+    self.strouhal = None
+    if numpy.any(times) and numpy.any(values):
+      self.set(times, values, label=label)
+
+  def set(self, times, values, label=None):
+    """
+    Sets the discrete time and values of the instantaneous force, as well as
+    its label.
+
+    Parameters
+    ----------
+    times: numpy 1D array of floats
+      Discrete time values.
+    values: numpy 1D array of floats
       Instantaneous values of the force.
     label: string, optional
       Description of the force;
       default: None.
     """
+    assert times.size == values.size
+    self.times, self.values = times, values
     self.label = label
-    self.times = times
-    self.values = values
 
   def get_mean(self, limits=(0.0, float('inf')), last_period=False, order=5):
     """
@@ -42,15 +70,15 @@ class Force(object):
       If 'True': computes the mean value over the last period;
       default: False.
     order: integer, optional
-      If `last_period=True`: number of neighbors used to define an extreme;
+      If `last_period=True`: number of neighbors used to define an extremum;
       default: 5.
 
     Returns
     -------
-    time_min, time_max: floats
-      The actual temporal limits of the average.
-    mean: float
-      The mean force.
+    mean: dictionary of (string, float) items
+      Keys: - 'value': the mean value;
+            - 'start': the actual starting time value used;
+            - 'end': the actual end time value used.
     """
     if last_period:
       minima, maxima = self.get_extrema(order=order)
