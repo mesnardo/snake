@@ -94,6 +94,42 @@ def plot_field_contours(field_name,
                         display_scalar_bar=True,
                         display_time_text=True,
                         display_mesh=False):
+  """
+    Plots the contour of a given field using ParaView.
+
+    Parameters
+    ----------
+    field_name: string
+      Name of field to plot;
+      choices: vorticity, pressure, x-velocity, y-velocity.
+    field_range: 2-tuple of floats, optional
+      Range of the field to plot (min, max);
+      default: (-1.0, 1.0).
+    directory: string, optional
+      Directory where to save the .png files;
+      default: <current working directory>.
+    view: 4-tuple of floats, optional
+      Bottom-left and top-right coordinates of the view to display;
+      default: (-2.0, -2.0, 2.0, 2.0).
+    times: 3-tuple of floats, optional
+      Time-limits followed by the time-increment to consider;
+      default: (0, 0, 0).
+    width: integer, optional
+      Width (in pixels) of the figure;
+      default: 800.
+    colormap: string, optional
+      Name of the Matplotlib colormap to use;
+      default: None.
+    display_scalar_bar: boolean, optional
+      Displays the scalar bar;
+      default: True.
+    display_time_text: boolean, optional
+      Displays the time-unit in the top-left corner;
+      default: True.
+    display_mesh: boolean, optional
+      Displays the mesh (Surface with Edges);
+      default: False
+    """
   print('Paraview: \n{}\n'.format(paraview.__path__))
   name = os.path.basename(os.path.normpath(directory))
   openfoam_file_name = '{}.OpenFOAM'.format(name)
@@ -111,7 +147,8 @@ def plot_field_contours(field_name,
   if all(times) == 0.0:
     times = numpy.array(reader.TimestepValues)
   else:
-    times = numpy.arange(times[0], times[1] + times[2] / 2.0, times[2])
+    start, end, increment = times
+    times = numpy.arange(start, end + increment / 2.0, increment)
   # create images directory
   view_str = '{:.2f}_{:.2f}_{:.2f}_{:.2f}'.format(*view)
   images_directory = os.path.join(directory, 'images',
