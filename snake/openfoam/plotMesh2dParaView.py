@@ -59,7 +59,7 @@ def plot_mesh(directory=os.getcwd(),
   print('[info] plotting the mesh ...')
   reader.MeshParts = ['front - patch']
   # set view
-  render_view = create_render_view(view=view, width=width)
+  create_render_view(view=view, width=width)
   view_str = '{:.2f}_{:.2f}_{:.2f}_{:.2f}'.format(*view)
   # create images directory
   images_directory = os.path.join(directory, 'images')
