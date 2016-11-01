@@ -178,12 +178,13 @@ def get_observed_order(coarse, medium, fine, ratio, grid, order=None):
   p: float
     The observed order of convergence.
   """
+  x, y = grid
   # restrict coarse solution onto grid
-  coarse = coarse.restrict(grid)
+  coarse = coarse.restrict(x, y)
   # restrict medium solution onto grid
-  medium = medium.restrict(grid)
+  medium = medium.restrict(x, y)
   # restrict fine solution onto grid
-  fine = fine.restrict(grid)
+  fine = fine.restrict(x, y)
   # return observed order of convergence
   return (numpy.log(numpy.linalg.norm(medium.values - coarse.values,
                                       ord=order)
@@ -310,8 +311,9 @@ def get_grid_convergence_index(coarse, fine, order, ratio, grid, Fs=1.25):
   GCI: Field object
     The Grid Convergence Index (in percentage) as a Field.
   """
-  coarse = coarse.restrict(grid)
-  fine = fine.restrict(grid)
+  x, y = grid
+  coarse = coarse.restrict(x, y)
+  fine = fine.restrict(x, y)
   # remove small field values to avoid large estimations
   # in the relative difference
   tolerance = 1.0E-06
@@ -321,7 +323,7 @@ def get_grid_convergence_index(coarse, fine, order, ratio, grid, Fs=1.25):
   # compute relative differences
   relative_differences = numpy.absolute((coarse.values - fine.values)
                                         / fine.values)
-  return Field(x=grid[0], y=grid[1],
+  return Field(x=x, y=y,
                values=Fs * relative_differences / (ratio**order - 1.0) * 100.0,
                time_step=coarse.time_step,
                label='GCI-' + coarse.label)
