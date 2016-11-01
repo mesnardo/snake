@@ -168,7 +168,7 @@ class Field(object):
     norms = {'L2': None, 'Linf': numpy.inf}
     field = self.restrict(x, y)
     other = other.restrict(x, y)
-    difference = field.substract(other)
+    difference = field.subtract(other)
     return numpy.linalg.norm(difference.values, ord=norms[norm])
 
   def get_gridline_values(self, x=None, y=None):
