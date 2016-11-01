@@ -121,8 +121,8 @@ class BarbaGroupSimulation(Simulation):
       choices: 'x', 'y', 'z';
       default: [].
     directory: string, optional
-      Directory containing the saved time-step folders;
-      default: None (will use the simulation directory).
+      Directory containing the numerical solution at given time-step;
+      default: None (will use <simulation-directory>/<time-step>).
     """
     # convert field_names in list if single string provided
     try:
@@ -131,7 +131,7 @@ class BarbaGroupSimulation(Simulation):
     except:
       field_names = [field_names]
     if not directory:
-      directory = self.directory
+      directory = os.path.join(self.directory, '{:0>7}'.format(time_step))
     if 'pressure' in field_names:
       self.fields['pressure'] = self.read_pressure(time_step,
                                                    directory=directory)

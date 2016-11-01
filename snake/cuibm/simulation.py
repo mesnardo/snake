@@ -120,7 +120,7 @@ class CuIBMSimulation(BarbaGroupSimulation):
       Time-step at which to read the fluxes.
     directory: string, optional
       Directory containing the saved time-step folders;
-      default: None.
+      default: None (will be <simulation-directory>/<time-step>).
     **kwargs: dictionary
       Extra keyword-arguments.
 
@@ -135,8 +135,8 @@ class CuIBMSimulation(BarbaGroupSimulation):
     nx, ny = x.size - 1, y.size - 1
     # read fluxes from file
     if not directory:
-      directory = self.directory
-    file_path = os.path.join(directory, '{:0>7}'.format(time_step), 'q')
+      directory = os.path.join(self.directory, '{:0>7}'.format(time_step))
+    file_path = os.path.join(directory, 'q')
     # test if file written in binary format
     textchars = bytearray({7, 8, 9, 10, 12, 13, 27}
                           | set(range(0x20, 0x100)) - {0x7f})
@@ -174,7 +174,7 @@ class CuIBMSimulation(BarbaGroupSimulation):
       Time-step at which to read the pressure field.
     directory: string, optional
       Directory containing the saved time-step folders;
-      default: None.
+      default: None (will be <simulation-directory>/<time-step>).
     **kwargs: dictionary
       Extra keyword-arguments.
 
@@ -189,8 +189,8 @@ class CuIBMSimulation(BarbaGroupSimulation):
     nx, ny = x.size - 1, y.size - 1
     # read pressure from file
     if not directory:
-      directory = self.directory
-    file_path = os.path.join(directory, '{:0>7}'.format(time_step), 'lambda')
+      directory = os.path.join(self.directory, '{:0>7}'.format(time_step))
+    file_path = os.path.join(directory, 'lambda')
     # test if file written in binary format
     textchars = bytearray({7, 8, 9, 10, 12, 13, 27}
                           | set(range(0x20, 0x100)) - {0x7f})

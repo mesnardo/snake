@@ -9,9 +9,7 @@ import struct
 import numpy
 
 try:
-  sys.path.append(os.path.join(os.environ['PETSC_DIR'],
-                               'bin',
-                               'pythonscripts'))
+  sys.path.append(os.path.join(os.environ['PETSC_DIR'], 'bin'))
   import PetscBinaryIO
 except:
   pass
@@ -110,7 +108,10 @@ class PetIBMSimulation(BarbaGroupSimulation):
       self.forces.append(Force(times, values, label=labels[index]))
     print('done')
 
-  def read_fluxes(self, time_step, periodic_directions=[], **kwargs):
+  def read_fluxes(self, time_step,
+                  periodic_directions=[],
+                  directory=None,
+                  **kwargs):
     """
     Reads the flux fields at a given time-step.
 
@@ -121,6 +122,9 @@ class PetIBMSimulation(BarbaGroupSimulation):
     periodic_directions: list of strings, optional
       Directions that have periodic boundary conditions;
       default: [].
+    directory: string, optional
+      Directory where are saved the flux fields;
+      default: None (defined as <simulation-directory>/<time-step>).
 
     Returns
     -------
@@ -129,19 +133,20 @@ class PetIBMSimulation(BarbaGroupSimulation):
     """
     print('[time-step {}] reading fluxes from files ...'.format(time_step)),
     dim3 = (len(self.grid) == 3)
-    # folder with numerical solution
-    folder = os.path.join(self.directory, '{:0>7}'.format(time_step))
+    # directory with numerical solution
+    if not directory:
+      directory = os.path.join(self.directory, '{:0>7}'.format(time_step))
     # read grid-stations and fluxes
     x, y = self.grid[:2]
     nx, ny = x.size - 1, y.size - 1
-    qx_file_path = os.path.join(folder, 'qx.dat')
+    qx_file_path = os.path.join(directory, 'qx.dat')
     qx = PetscBinaryIO.PetscBinaryIO().readBinaryFile(qx_file_path)[0]
-    qy_file_path = os.path.join(folder, 'qy.dat')
+    qy_file_path = os.path.join(directory, 'qy.dat')
     qy = PetscBinaryIO.PetscBinaryIO().readBinaryFile(qy_file_path)[0]
     if dim3:
       z = self.grid[2]
       nz = z.size - 1
-      qz_file_path = os.path.join(folder, 'qz.dat')
+      qz_file_path = os.path.join(directory, 'qz.dat')
       qz = PetscBinaryIO.PetscBinaryIO().readBinaryFile(qz_file_path)[0]
     # create flux Field objects in staggered arrangement
     # reshape fluxes in multi-dimensional arrays
@@ -190,7 +195,7 @@ class PetIBMSimulation(BarbaGroupSimulation):
       print('done')
       return qx, qy
 
-  def read_pressure(self, time_step, **kwargs):
+  def read_pressure(self, time_step, directory=None, **kwargs):
     """
     Reads the pressure field from file given the time-step.
 
@@ -198,6 +203,9 @@ class PetIBMSimulation(BarbaGroupSimulation):
     ----------
     time_step: integer
       Time-step at which the field will be read.
+    directory: string, optional
+      Directory where is saved the pressure field;
+      default: None (set to <simulation-directory>/<time-step>).
 
     Returns
     -------
@@ -212,10 +220,11 @@ class PetIBMSimulation(BarbaGroupSimulation):
     if dim3:
       z = self.grid[2]
       nz = z.size - 1
-    # folder with numerical solution
-    folder = os.path.join(self.directory, '{:0>7}'.format(time_step))
+    # directory with numerical solution
+    if not directory:
+      directory = os.path.join(self.directory, '{:0>7}'.format(time_step))
     # read pressure
-    phi_file_path = os.path.join(folder, 'phi.dat')
+    phi_file_path = os.path.join(directory, 'phi.dat')
     p = PetscBinaryIO.PetscBinaryIO().readBinaryFile(phi_file_path)[0]
     # set pressure Field object
     if dim3:
