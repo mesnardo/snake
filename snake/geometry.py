@@ -251,7 +251,7 @@ class Geometry(object):
 
     Parameters
     ----------
-    center: Point object, optional
+    center: tuple of floats, optional
       Center of rotation;
       default: None.
     roll, yaw, pitch: floats, optional
