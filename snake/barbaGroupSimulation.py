@@ -351,6 +351,7 @@ class BarbaGroupSimulation(Simulation):
                    time_increment=None,
                    save_directory=None, save_name=None, fmt='png',
                    colorbar=True,
+                   cmap=None,
                    style=None,
                    width=8.0,
                    dpi=100):
@@ -391,6 +392,9 @@ class BarbaGroupSimulation(Simulation):
       Set 'True' to display an horizontal colobar
       at the bottom-left of the figure;
       default: True.
+    cmap: string, optional
+      The Matplotlib colormap to use;
+      default: None
     style: string, optional
       Path of the Matplotlib style-sheet to use;
       default: None.
@@ -439,6 +443,7 @@ class BarbaGroupSimulation(Simulation):
                                          save_name=save_name,
                                          fmt=fmt,
                                          colorbar=colorbar,
+                                         cmap=cmap,
                                          width=width,
                                          dpi=dpi)
 

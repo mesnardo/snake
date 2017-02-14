@@ -427,6 +427,7 @@ class Field(object):
                    save_directory=os.getcwd(),
                    fmt='png',
                    colorbar=True,
+                   cmap=None,
                    width=8.0,
                    dpi=100):
     """
@@ -462,6 +463,9 @@ class Field(object):
       Set 'True' to display an horizontal colorbar at the bottom-left of the
       figure;
       default: True.
+    cmap: string, optional
+      The Matplotlib colormap to use;
+      default: None.
     width: float, optional
       Width of the figure (in inches);
       default: 8.
@@ -500,10 +504,12 @@ class Field(object):
                  'x-velocity': cm.RdBu_r, 'y-velocity': cm.RdBu_r}
     X, Y = numpy.meshgrid(self.x, self.y)
     contour_type = ax.contourf if filled_contour else ax.contour
+    if not cmap:
+      cmap = (cm.RdBu_r if self.label not in color_map.keys()
+              else color_map[self.label])
     cont = contour_type(X, Y, self.values,
                         levels=levels, extend='both',
-                        cmap=(cm.RdBu_r if self.label not in color_map.keys()
-                              else color_map[self.label]))
+                        cmap=cmap)
     if colorbar:
       ains = inset_axes(pyplot.gca(), width='30%', height='2%', loc=3)
       cont_bar = fig.colorbar(cont,
