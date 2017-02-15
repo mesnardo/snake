@@ -442,7 +442,7 @@ class CartesianStructuredMesh(object):
     for gridline in self.gridlines:
       gridline.print_parameters()
 
-  def write(self, file_path, precision=6):
+  def write(self, file_path, precision=6, direction='all'):
     """
     Writes the gridlines into a file.
 
@@ -451,6 +451,9 @@ class CartesianStructuredMesh(object):
     Then the vertices along each gridline are written in single column
     starting with the first gridline.
 
+    The last argument allows to output the gridline in one given direction.
+    In that case, the stations are listed in a single column.
+
     Parameters
     ----------
     file_path: string
@@ -458,13 +461,24 @@ class CartesianStructuredMesh(object):
     precision: integer, optional
       Precision at which the vertices will be written;
       default: 6.
+    direction: string, optional
+      Which gridline to write into file;
+      default: 'all' (all directional gridlines).
     """
-    print('[info] writing vertices into {} ...'.format(file_path))
-    _, nb_cells_directions = self.get_number_cells()
+    print('[info] writing gridlines into {} ...'.format(file_path))
     with open(file_path, 'w') as outfile:
-      outfile.write('\t'.join(str(nb) for nb in nb_cells_directions) + '\n')
-      for gridline in self.gridlines:
-        numpy.savetxt(outfile, gridline.get_vertices(precision=precision))
+      if direction == 'all':
+        _, nb_cells_directions = self.get_number_cells()
+        outfile.write('\t'.join(str(nb) for nb in nb_cells_directions) + '\n')
+      if direction in ['x', 'all']:
+        numpy.savetxt(outfile,
+                      self.gridlines[0].get_vertices(precision=precision))
+      if direction in ['y', 'all']:
+        numpy.savetxt(outfile,
+                      self.gridlines[1].get_vertices(precision=precision))
+      if len(self.gridlines) == 3 and direction in ['z', 'all']:
+        numpy.savetxt(outfile,
+                      self.gridlines[2].get_vertices(precision=precision))
 
   def read(self, file_path):
     """
