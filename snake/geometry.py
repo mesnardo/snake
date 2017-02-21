@@ -124,7 +124,7 @@ class Geometry(object):
   """
   dimensions = None
 
-  def __init__(self, points=None, file_path=None, skiprows=1):
+  def __init__(self, points=None, file_path=None, skiprows=0):
     """
     Initializes the geometry with points.
 
@@ -138,7 +138,7 @@ class Geometry(object):
       default=None.
     skiprows: integer, optional
       Index of line to start read;
-      default: 1.
+      default: 0.
     """
     if points:
       self.points = points
@@ -148,7 +148,7 @@ class Geometry(object):
     if self.dimensions or self.points:
       self.get_mass_center()
 
-  def read_from_file(self, file_path, skiprows=1):
+  def read_from_file(self, file_path, skiprows=0):
     """
     Reads the coordinates of the geometry from a file.
 
@@ -158,7 +158,7 @@ class Geometry(object):
       Path of the file that contains list of coordinates.
     skiprows: integer, optional
       Index of line to start read;
-      default: 1.
+      default: 0.
     """
     if not self.dimensions:
       print('\nGet the dimension of the geometry ...')
@@ -377,7 +377,7 @@ class Geometry2d(Geometry):
   """
   dimensions = 2
 
-  def __init__(self, points=None, file_path=None):
+  def __init__(self, points=None, file_path=None, skiprows=0):
     """
     Initializes the geometry.
 
@@ -389,8 +389,14 @@ class Geometry2d(Geometry):
     file_path: string, optional
       Path of the file with coordinates;
       default: None.
+    skiprows: integer, optional
+      The number of rows to skip at the beginning of the file;
+      default: 0.
     """
-    Geometry.__init__(self, points, file_path)
+    Geometry.__init__(self,
+                      points=points,
+                      file_path=file_path,
+                      skiprows=skiprows)
 
   def perimeter(self):
     """
@@ -726,7 +732,7 @@ class Geometry3d(Geometry):
   """
   dimensions = 3
 
-  def __init__(self, points=None, file_path=None):
+  def __init__(self, points=None, file_path=None, skiprows=0):
     """
     Initializes the three-dimensional geometry with points.
 
@@ -738,8 +744,14 @@ class Geometry3d(Geometry):
     file_path: string, optional
       Path of the file with coordinates;
       default: None.
+    skiprows: integer, optional
+      The number of rows to skip at the beginning of the file;
+      default: 0.
     """
-    Geometry.__init__(self, points, file_path)
+    Geometry.__init__(self,
+                      points=points,
+                      file_path=file_path,
+                      skiprows=skiprows)
 
   def plot(self):
     """
