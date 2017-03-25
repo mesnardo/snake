@@ -137,7 +137,7 @@ class MovingVortices(object):
       Dots per inch (resolution);
       default: 100.
     """
-    for name, field in self.fields.iteritems():
+    for name, field in self.fields.items():
       self.fields[name].time_step = time_step
       field.plot_contour(view=view,
                          save_directory=save_directory,

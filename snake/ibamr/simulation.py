@@ -139,7 +139,7 @@ class IBAMRSimulation(Simulation):
                           'ibamr',
                           'plotField2dVisIt.py')
     arguments = ' '.join([key + ' ' + value
-                          for key, value in args.iteritems()])
+                          for key, value in args.items()])
     os.system('visit -nowin -cli -s {} {}'.format(script, arguments))
 
   def compute_mean_number_cells_visit(self,
@@ -172,5 +172,5 @@ class IBAMRSimulation(Simulation):
                           'ibamr',
                           'getNumberCellsVisIt.py')
     arguments = ' '.join([key + ' ' + value
-                          for key, value in args.iteritems()])
+                          for key, value in args.items()])
     os.system('visit -nowin -cli -s {} {}'.format(script, arguments))

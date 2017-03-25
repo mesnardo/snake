@@ -43,7 +43,7 @@ class Simulation(object):
     self.directory = directory
     self.software = software.lower()
     # set extra arguments
-    for key, value in kwargs.iteritems():
+    for key, value in kwargs.items():
       setattr(self, key, value)
     self._print_registration()
     self.fields = {}
