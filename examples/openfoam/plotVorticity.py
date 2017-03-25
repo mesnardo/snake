@@ -1,8 +1,7 @@
-# file: plotVorticity.py
-# author: Olivier Mesnard (mesnardo@gwu.edu)
-# description: Plots the 2D vorticity field.
-# Run this script from the simulation directory.
-
+"""
+Plots the 2D vorticity field from a OpenFOAM simulation at given times using
+the visualization software ParaView.
+"""
 
 from snake.openfoam.simulation import OpenFOAMSimulation
 
