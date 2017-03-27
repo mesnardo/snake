@@ -1,14 +1,13 @@
-# file: version.py
-# author: Olivier Mesnard (mesnardo@gwu.edu)
-# description: Set up the version.
-
+"""
+Sets up the version.
+"""
 
 import os
 
 
 _version_major = 0
-_version_minor = 1
-_version_micro = '2'
+_version_minor = 2
+_version_micro = '0'
 _version_extra = ''
 
 # construct full version string
@@ -30,16 +29,18 @@ description = 'snake: post-processing tools for the flying-snake simulations'
 long_description = """
 Snake
 =====
-Snake is a collection of Python modules used to post-process the numerical 
+Snake is a collection of Python modules used to post-process the numerical
 solution of flying-snake simulations using one of the following software:
 
-  * [cuIBM](https://github.com/barbagroup/cuIBM): 
+  * [cuIBM](https://github.com/barbagroup/cuIBM):
     a GPU-based immersed boundary method code;
   * [PetIBM](https://github.com/barbagroup/PetIBM):
     a parallel immersed boundary method code;
   * [IBAMR](https://github.com/IBAMR/IBAMR):
-    an adaptive and distributed-memory parallel implementation of the immersed boundary (IB) method;
-  * IcoFOAM: the incompressible laminar solver of [OpenFOAM](http://www.openfoam.org/).
+    an adaptive and distributed-memory parallel implementation of the immersed
+    boundary (IB) method;
+  * IcoFOAM: the incompressible laminar solver of
+    [OpenFOAM](http://www.openfoam.org/).
 
 License
 =======

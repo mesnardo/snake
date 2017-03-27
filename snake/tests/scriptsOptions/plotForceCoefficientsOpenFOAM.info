@@ -1,9 +1,0 @@
---software openfoam
---directory $SCRIPTS/tests/openfoamSimulation
---display-coefficients
---average 32.0 64.0
---strouhal 5 64.0
---limits 0.0 80.0 0.0 3.0
---extrema --order 200
---save-name forceCoefficients
---no-show

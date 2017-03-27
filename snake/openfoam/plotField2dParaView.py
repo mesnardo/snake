@@ -1,8 +1,7 @@
-# file: plotField2dParaView.py
-# author: Olivier Mesnard (mesnardo@gwu.edu)
-# description: Plots the 2D solution from an OpenFOAM simulation using ParaView.
-# cli: pvbatch plotField2dParaView.py <arguments>
-
+"""
+Plots the 2D solution from an OpenFOAM simulation using ParaView.
+cli: pvbatch plotField2dParaView.py <arguments>
+"""
 
 import os
 import sys
@@ -17,38 +16,49 @@ from snake import miscellaneous
 
 
 def parse_command_line():
-  """Parses the command-line."""
+  """
+  Parses the command-line.
+  """
   print('[info] parsing command-line...'),
   # create the parser
-  parser = argparse.ArgumentParser(description='Plots the vorticity field with ParaFOAM',
-                                   formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+  formatter_class = argparse.ArgumentDefaultsHelpFormatter
+  parser = argparse.ArgumentParser(description='Plots the vorticity field '
+                                               'with ParaFOAM',
+                                   formatter_class=formatter_class)
   # fill the parser with arguments
-  parser.add_argument('--directory', dest='directory', 
-                      type=str, 
+  parser.add_argument('--directory',
+                      dest='directory',
+                      type=str,
                       default=os.getcwd(),
                       help='directory of the OpenFOAM simulation')
-  parser.add_argument('--field', dest='field_name',
+  parser.add_argument('--field',
+                      dest='field_name',
                       type=str,
-                      choices=['vorticity', 'pressure', 'x-velocity', 'y-velocity'],
+                      choices=['vorticity', 'pressure',
+                               'x-velocity', 'y-velocity'],
                       help='name of the field to plot')
-  parser.add_argument('--range', dest='field_range',
-                      type=float, nargs=2, 
+  parser.add_argument('--range',
+                      dest='field_range',
+                      type=float, nargs=2,
                       default=(-1.0, 1.0),
                       metavar=('min', 'max'),
                       help='range of the field to plot')
-  parser.add_argument('--times', dest='times',
-                      type=float, nargs=3, 
+  parser.add_argument('--times',
+                      dest='times',
+                      type=float, nargs=3,
                       default=(0, 0, 0),
                       metavar=('min', 'max', 'increment'),
                       help='times to plot')
-  parser.add_argument('--view', dest='view',
+  parser.add_argument('--view',
+                      dest='view',
                       type=float, nargs=4,
                       default=(-2.0, -2.0, 2.0, 2.0),
                       metavar=('x-bl', 'y-bl', 'x-tr', 'y-tr'),
                       help='bottom-left coordinates followed by top-right '
                            'coordinates of the view to display')
-  parser.add_argument('--width', dest='width',
-                      type=int, 
+  parser.add_argument('--width',
+                      dest='width',
+                      type=int,
                       default=800,
                       help='figure width in pixels')
   parser.add_argument('--colormap', dest='colormap_path',
@@ -66,25 +76,63 @@ def parse_command_line():
                       help='does not display the time-unit')
   parser.set_defaults(display_scalar_bar=True, display_time_text=True)
   # parse given options file
-  parser.add_argument('--options', 
-                      type=open, action=miscellaneous.ReadOptionsFromFile,
+  parser.add_argument('--options',
+                      type=open,
+                      action=miscellaneous.ReadOptionsFromFile,
                       help='path of the file with options to parse')
   print('done')
   return parser.parse_args()
 
 
-def plot_field_contours(field_name, 
+def plot_field_contours(field_name,
                         field_range=(-1.0, 1.0),
                         directory=os.getcwd(),
-                        view=(-2.0, -2.0, 2.0, 2.0), 
+                        view=(-2.0, -2.0, 2.0, 2.0),
                         times=(0, 0, 0),
                         width=800,
                         colormap_path=None,
                         display_scalar_bar=True,
                         display_time_text=True,
                         display_mesh=False):
+  """
+    Plots the contour of a given field using ParaView.
+
+    Parameters
+    ----------
+    field_name: string
+      Name of field to plot;
+      choices: vorticity, pressure, x-velocity, y-velocity.
+    field_range: 2-tuple of floats, optional
+      Range of the field to plot (min, max);
+      default: (-1.0, 1.0).
+    directory: string, optional
+      Directory where to save the .png files;
+      default: <current working directory>.
+    view: 4-tuple of floats, optional
+      Bottom-left and top-right coordinates of the view to display;
+      default: (-2.0, -2.0, 2.0, 2.0).
+    times: 3-tuple of floats, optional
+      Time-limits followed by the time-increment to consider;
+      default: (0, 0, 0).
+    width: integer, optional
+      Width (in pixels) of the figure;
+      default: 800.
+    colormap: string, optional
+      Name of the Matplotlib colormap to use;
+      default: None.
+    display_scalar_bar: boolean, optional
+      Displays the scalar bar;
+      default: True.
+    display_time_text: boolean, optional
+      Displays the time-unit in the top-left corner;
+      default: True.
+    display_mesh: boolean, optional
+      Displays the mesh (Surface with Edges);
+      default: False
+    """
   print('Paraview: \n{}\n'.format(paraview.__path__))
-  openfoam_file_name = '{}.OpenFOAM'.format(os.path.basename(os.path.normpath(directory)))
+  name = os.path.basename(os.path.normpath(directory))
+  openfoam_file_name = '{}.OpenFOAM'.format(name)
   reader = PV4FoamReader(FileName=os.path.join(directory, openfoam_file_name))
   print('[info] plotting {} field ...'.format(field_name))
   variable_names = {'vorticity': 'vorticity',
@@ -99,7 +147,8 @@ def plot_field_contours(field_name,
   if all(times) == 0.0:
     times = numpy.array(reader.TimestepValues)
   else:
-    times = numpy.arange(times[0], times[1]+times[2]/2.0, times[2])
+    start, end, increment = times
+    times = numpy.arange(start, end + increment / 2.0, increment)
   # create images directory
   view_str = '{:.2f}_{:.2f}_{:.2f}_{:.2f}'.format(*view)
   images_directory = os.path.join(directory, 'images',
@@ -108,7 +157,7 @@ def plot_field_contours(field_name,
     os.makedirs(images_directory)
   print('[info] .png files will be saved in: {}'.format(images_directory))
   # edit colormap
-  PVLookupTable = edit_colormap(field_name, field_range, 
+  PVLookupTable = edit_colormap(field_name, field_range,
                                 colormap_path=colormap_path)
   # add a scalar bar
   if display_scalar_bar:
@@ -143,12 +192,12 @@ def plot_field_contours(field_name,
 
 
 def create_render_view(view=(-2.0, -2.0, 2.0, 2.0), width=800):
-  center = [0.5*(view[0]+view[2]), 0.5*(view[1]+view[3])]
-  h = 1.0 + 0.5*abs(view[3]-view[1])
-  height = int(width*abs(view[3]-view[1])/abs(view[2]-view[0]))
+  center = [0.5 * (view[0] + view[2]), 0.5 * (view[1] + view[3])]
+  h = 1.0 + 0.5 * abs(view[3] - view[1])
+  height = int(width * abs(view[3] - view[1]) / abs(view[2] - view[0]))
   render_view = GetRenderView()
   render_view.ViewSize = [width, height]
-  Render() # needed
+  Render()  # needed
   render_view.CenterAxesVisibility = 0
   render_view.OrientationAxesVisibility = 0
   render_view.CameraPosition = [center[0], center[1], h]
@@ -161,22 +210,22 @@ def create_render_view(view=(-2.0, -2.0, 2.0, 2.0), width=800):
   return render_view
 
 
-def edit_colormap(field_name, field_range, 
+def edit_colormap(field_name, field_range,
                   colormap_path=None):
   mode = {'vorticity': {'variable': 'vorticity',
-                        'vectormode': 'Component', 
+                        'vectormode': 'Component',
                         'vectorcomponent': 2,
-                        'colorspace': 'Diverging'}, 
+                        'colorspace': 'Diverging'},
           'x-velocity': {'variable': 'U',
-                         'vectormode': 'Component', 
+                         'vectormode': 'Component',
                          'vectorcomponent': 0,
-                         'colorspace': 'Diverging'}, 
+                         'colorspace': 'Diverging'},
           'y-velocity': {'variable': 'U',
-                         'vectormode': 'Component', 
+                         'vectormode': 'Component',
                          'vectorcomponent': 1,
-                         'colorspace': 'Diverging'}, 
+                         'colorspace': 'Diverging'},
           'pressure': {'variable': 'p',
-                       'vectormode': 'Magnitude', 
+                       'vectormode': 'Magnitude',
                        'vectorcomponent': 0,
                        'colorspace': 'HSV'}, }
   min_range, max_range = round(field_range[0], 2), round(field_range[1], 2)
@@ -184,45 +233,45 @@ def edit_colormap(field_name, field_range,
     RGBPoints = []
     with open(colormap_path, 'r') as infile:
       data = infile.readlines()
-    increment = abs(max_range-min_range)/(len(data)-1)
+    increment = abs(max_range - min_range) / (len(data) - 1)
     for i, d in enumerate(data):
       r, g, b = d.strip().split(',')
-      RGBPoints.append(min_range + i*increment)
+      RGBPoints.append(min_range + i * increment)
       RGBPoints.append(float(r))
       RGBPoints.append(float(g))
       RGBPoints.append(float(b))
   else:
     RGBPoints = [min_range, 0.0, 0.0, 1.0, max_range, 1.0, 0.0, 0.0]
-  return GetLookupTableForArray(mode[field_name]['variable'], 
-                                mode[field_name]['vectorcomponent']+1, 
-                                RGBPoints=RGBPoints, 
-                                VectorMode=mode[field_name]['vectormode'], 
-                                VectorComponent=mode[field_name]['vectorcomponent'], 
+  return GetLookupTableForArray(mode[field_name]['variable'],
+                                mode[field_name]['vectorcomponent'] + 1,
+                                RGBPoints=RGBPoints,
+                                VectorMode=mode[field_name]['vectormode'],
+                                VectorComponent=mode[field_name]['vectorcomponent'],
                                 NanColor=[0.0, 0.0, 0.0],
-                                ColorSpace=mode[field_name]['colorspace'], 
-                                ScalarRangeInitialized=1.0, 
+                                ColorSpace=mode[field_name]['colorspace'],
+                                ScalarRangeInitialized=1.0,
                                 LockScalarRange=1)
 
 
 def add_scalar_bar(field_name, PVLookupTable):
-  return CreateScalarBar(ComponentTitle='', 
-                         Title='',  
-                         Enabled=1, 
-                         LabelFontSize=10, 
+  return CreateScalarBar(ComponentTitle='',
+                         Title='',
+                         Enabled=1,
+                         LabelFontSize=10,
                          LabelColor=[0.0, 0.0, 0.0],
                          LookupTable=PVLookupTable,
-                         TitleFontSize=10, 
-                         TitleColor=[0.0, 0.0, 0.0], 
+                         TitleFontSize=10,
+                         TitleColor=[0.0, 0.0, 0.0],
                          Orientation='Horizontal',
                          Position=[0.04, 0.1],
                          Position2=[0.2, 0.1])
 
 
 def main(args):
-  plot_field_contours(args.field_name, 
-                      field_range=args.field_range, 
+  plot_field_contours(args.field_name,
+                      field_range=args.field_range,
                       directory=args.directory,
-                      view=args.view, 
+                      view=args.view,
                       times=args.times,
                       width=args.width,
                       colormap_path=args.colormap_path,

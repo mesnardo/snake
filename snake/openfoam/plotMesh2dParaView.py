@@ -1,14 +1,12 @@
-# file: plotMesh2dParaView.py
-# author: Olivier Mesnard (mesnardo@gwu.edu)
-# description: Plots the 2D grid using ParaView.
-# cli: pvbatch plotMesh2dParaView.py <arguments>
-
+"""
+Plots the 2D grid using ParaView.
+cli: pvbatch plotMesh2dParaView.py <arguments>
+"""
 
 import os
 import sys
 import argparse
 
-import numpy
 import paraview
 from paraview.simple import *
 
@@ -20,41 +18,48 @@ def parse_command_line():
   """Parses the command-line."""
   print('[info] parsing command-line...'),
   # create the parser
+  formatter_class = argparse.ArgumentDefaultsHelpFormatter
   parser = argparse.ArgumentParser(description='Plots the mesh with ParaFOAM',
-                                   formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+                                   formatter_class=formatter_class)
   # fill the parser with arguments
-  parser.add_argument('--directory', dest='directory', 
-                      type=str, 
+  parser.add_argument('--directory',
+                      dest='directory',
+                      type=str,
                       default=os.getcwd(),
                       help='directory of the OpenFOAM simulation')
-  parser.add_argument('--view', dest='view',
-                      type=float, nargs=4,
+  parser.add_argument('--view',
+                      dest='view',
+                      type=float,
+                      nargs=4,
                       default=(-2.0, -2.0, 2.0, 2.0),
                       metavar=('x-bl', 'y-bl', 'x-tr', 'y-tr'),
                       help='bottom-left coordinates followed by top-right '
                            'coordinates of the view to display')
-  parser.add_argument('--width', dest='width',
-                      type=int, 
+  parser.add_argument('--width',
+                      dest='width',
+                      type=int,
                       default=800,
                       help='figure width in pixels')
   # parse given options file
-  parser.add_argument('--options', 
-                      type=open, action=miscellaneous.ReadOptionsFromFile,
+  parser.add_argument('--options',
+                      type=open,
+                      action=miscellaneous.ReadOptionsFromFile,
                       help='path of the file with options to parse')
   print('done')
   return parser.parse_args()
 
 
 def plot_mesh(directory=os.getcwd(),
-              view=(-2.0, -2.0, 2.0, 2.0), 
+              view=(-2.0, -2.0, 2.0, 2.0),
               width=800):
   print('Paraview: \n{}\n'.format(paraview.__path__))
-  openfoam_file_name = '{}.OpenFOAM'.format(os.path.basename(os.path.normpath(directory)))
+  name = os.path.basename(os.path.normpath(directory))
+  openfoam_file_name = '{}.OpenFOAM'.format(name)
   reader = PV4FoamReader(FileName=os.path.join(directory, openfoam_file_name))
   print('[info] plotting the mesh ...')
   reader.MeshParts = ['front - patch']
   # set view
-  render_view = create_render_view(view=view, width=width)
+  create_render_view(view=view, width=width)
   view_str = '{:.2f}_{:.2f}_{:.2f}_{:.2f}'.format(*view)
   # create images directory
   images_directory = os.path.join(directory, 'images')
@@ -70,12 +75,12 @@ def plot_mesh(directory=os.getcwd(),
 
 
 def create_render_view(view=(-2.0, -2.0, 2.0, 2.0), width=800):
-  center = [0.5*(view[0]+view[2]), 0.5*(view[1]+view[3])]
-  h = 1.0 + 0.5*abs(view[3]-view[1])
-  height = int(width*abs(view[3]-view[1])/abs(view[2]-view[0]))
+  center = [0.5 * (view[0] + view[2]), 0.5 * (view[1] + view[3])]
+  h = 1.0 + 0.5 * abs(view[3] - view[1])
+  height = int(width * abs(view[3] - view[1]) / abs(view[2] - view[0]))
   render_view = GetRenderView()
   render_view.ViewSize = [width, height]
-  Render() # needed
+  Render()  # needed
   render_view.CenterAxesVisibility = 0
   render_view.OrientationAxesVisibility = 0
   render_view.CameraPosition = [center[0], center[1], h]
@@ -90,7 +95,7 @@ def create_render_view(view=(-2.0, -2.0, 2.0, 2.0), width=800):
 
 def main(args):
   plot_mesh(directory=args.directory,
-            view=args.view, 
+            view=args.view,
             width=args.width)
 
 

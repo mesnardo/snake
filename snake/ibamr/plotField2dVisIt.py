@@ -1,9 +1,7 @@
-# file: plotField2dVisIt.py
-# author: Olivier Mesnard (mesnardo@gwu.edu)
-# description: Calls VisIt in batch mode to generate .png files
-#              of the 2D field contour.
-# cli: visit -nowin -cli -s plotField2dVisIt.py <arguments>
-
+"""
+Calls VisIt in batch mode to generate .png files of the 2D field contour.
+cli: visit -nowin -cli -s plotField2dVisIt.py <arguments>
+"""
 
 import os
 import sys
@@ -15,81 +13,100 @@ from snake import miscellaneous
 
 
 def parse_command_line():
-  """Parses the command-line."""
+  """
+  Parses the command-line.
+  """
   print('[info] parsing the command-line ...'),
   # create the parser
-  parser = argparse.ArgumentParser(description='Plots the vorticity field with VisIt',
-                                   formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+  formatter_class = argparse.ArgumentDefaultsHelpFormatter
+  parser = argparse.ArgumentParser(description='Plots the vorticity field '
+                                               'with VisIt',
+                                   formatter_class=formatter_class)
   # fill the parser with arguments
-  parser.add_argument('--directory', dest='directory', 
-                      type=str, 
+  parser.add_argument('--directory',
+                      dest='directory',
+                      type=str,
                       default=os.getcwd(),
                       help='directory of the IBAMR simulation')
-  parser.add_argument('--solution-folder', dest='solution_folder',
-                      type=str, 
+  parser.add_argument('--solution-folder',
+                      dest='solution_folder',
+                      type=str,
                       default='numericalSolution',
                       help='name of folder containing the solution in time')
-  parser.add_argument('--body', dest='body',
+  parser.add_argument('--body',
+                      dest='body',
                       type=str,
                       default=None,
-                      help='name of the body file (without the .vertex extension)')
-  parser.add_argument('--field', dest='field_name',
+                      help='name of the body file (without the .vertex '
+                           'extension)')
+  parser.add_argument('--field',
+                      dest='field_name',
                       type=str,
-                      choices=['vorticity', 'pressure', 
-                               'x-velocity', 'x-velocity', 
+                      choices=['vorticity', 'pressure',
+                               'x-velocity', 'x-velocity',
                                'velocity-magnitude'],
                       help='name of the field to plot')
-  parser.add_argument('--range', dest='field_range',
-                      type=float, nargs=2, 
+  parser.add_argument('--range',
+                      dest='field_range',
+                      type=float, nargs=2,
                       default=(-1.0, 1.0),
                       metavar=('min', 'max'),
                       help='Range of the field to plot')
-  parser.add_argument('--states', dest='states',
-                      type=int, nargs=3, 
+  parser.add_argument('--states',
+                      dest='states',
+                      type=int, nargs=3,
                       default=(0, 2**10000, 1),
                       metavar=('min', 'max', 'increment'),
                       help='steps to plot')
-  parser.add_argument('--view', dest='view',
-                      type=float, nargs=4,
+  parser.add_argument('--view',
+                      dest='view',
+                      type=float,
+                      nargs=4,
                       default=(-2.0, -2.0, 2.0, 2.0),
                       metavar=('x-bl', 'y-bl', 'x-tr', 'y-tr'),
                       help='bottom-left coordinates followed by top-right '
                            'coordinates of the view to display')
-  parser.add_argument('--width', dest='width',
-                      type=int, 
+  parser.add_argument('--width',
+                      dest='width',
+                      type=int,
                       default=800,
                       help='figure width in pixels')
   # parse given options file
-  parser.add_argument('--options', 
-                      type=open, action=miscellaneous.ReadOptionsFromFile,
+  parser.add_argument('--options',
+                      type=open,
+                      action=miscellaneous.ReadOptionsFromFile,
                       help='path of the file with options to parse')
   print('done')
   return parser.parse_args()
 
 
 def check_version():
-  """Check the VisIt version and prints warning 
-  if the version has not been tested.
+  """
+  Check the VisIt version and prints warning if the version has not been
+  tested.
   """
   script_version = '2.8.2'
-  tested_versions = ['2.8.2', '2.10.2']
+  tested_versions = ['2.8.2', '2.10.2', '2.12.1']
   current_version = Version()
   print('VisIt version: {}\n'.format(Version()))
   if current_version not in tested_versions:
     print('[warning] You are using VisIt-{}'.format(current_version))
-    print('[warning] This script was created with VisIt-{}.'.format(script_version))
-    print('[warning] This script was tested with versions: {}.'.format(tested_versions))
+    print('[warning] This script was created with '
+          'VisIt-{}.'.format(script_version))
+    print('[warning] This script was tested with versions: '
+          '{}.'.format(tested_versions))
     print('[warning] It may not work as expected')
 
 
-def plot_field_contours(field_name, field_range, 
+def plot_field_contours(field_name, field_range,
                         body=None,
                         directory=os.getcwd(),
                         solution_folder='numericalSolution',
                         states=(0, 2**10000, 1),
-                        view=(-2.0, -2.0, 2.0, 2.0), 
+                        view=(-2.0, -2.0, 2.0, 2.0),
                         width=800):
-  """Plots the contour of a given field using VisIt.
+  """
+  Plots the contour of a given field using VisIt.
 
   Parameters
   ----------
@@ -115,7 +132,7 @@ def plot_field_contours(field_name, field_range,
     default: (-2.0, -2.0, 2.0, 2.0).
   width: integer, optional
     Width (in pixels) of the figure;
-    default: 800. 
+    default: 800.
   """
   info = {}
   info['vorticity'] = {'variable': 'Omega',
@@ -134,10 +151,11 @@ def plot_field_contours(field_name, field_range,
                         'color-table': 'RdBu',
                         'invert-color-table': 1}
   # define dimensions of domain to plot
-  height = int(math.floor(width*(view[3]-view[1])/(view[2]-view[0])))
+  height = int(math.floor(width * (view[3] - view[1]) / (view[2] - view[0])))
   # create images directory
   view_string = '{:.2f}_{:.2f}_{:.2f}_{:.2f}'.format(*view)
-  images_directory = os.path.join(directory, 'images', 
+  images_directory = os.path.join(directory,
+                                  'images',
                                   '_'.join([field_name, view_string]))
   if not os.path.isdir(images_directory):
     print('[info] creating images directory {} ...'.format(images_directory))
@@ -177,7 +195,7 @@ def plot_field_contours(field_name, field_range,
     SetPlotOptions(MeshAtts)
 
   # display vorticity field
-  OpenDatabase(GetLocalHostName() + ':' + os.path.join(directory, 
+  OpenDatabase(GetLocalHostName() + ':' + os.path.join(directory,
                                                        solution_folder,
                                                        'dumps.visit'), 0)
   HideActivePlots()
@@ -209,16 +227,34 @@ def plot_field_contours(field_name, field_range,
   PseudocolorAtts.lineType = PseudocolorAtts.Line  # Line, Tube, Ribbon
   PseudocolorAtts.lineStyle = PseudocolorAtts.SOLID  # SOLID, DASH, DOT, DOTDASH
   PseudocolorAtts.lineWidth = 0
-  PseudocolorAtts.tubeDisplayDensity = 10
+  if Version() in ['2.8.2', '2.10.2']:
+    PseudocolorAtts.tubeDisplayDensity = 10
+  elif Version() in ['2.12.1']:
+    PseudocolorAtts.tubeResolution = 10
+  else:
+    PseudocolorAtts.tubeDisplayDensity = 10
   PseudocolorAtts.tubeRadiusSizeType = PseudocolorAtts.FractionOfBBox  # Absolute, FractionOfBBox
   PseudocolorAtts.tubeRadiusAbsolute = 0.125
   PseudocolorAtts.tubeRadiusBBox = 0.005
-  PseudocolorAtts.varyTubeRadius = 0
-  PseudocolorAtts.varyTubeRadiusVariable = ''
-  PseudocolorAtts.varyTubeRadiusFactor = 10
-  PseudocolorAtts.endPointType = PseudocolorAtts.None  # None, Tails, Heads, Both
-  PseudocolorAtts.endPointStyle = PseudocolorAtts.Spheres  # Spheres, Cones
-  PseudocolorAtts.endPointRadiusSizeType = PseudocolorAtts.FractionOfBBox  # Absolute, FractionOfBBox
+  if Version() in ['2.8.2', '2.10.2']:
+    PseudocolorAtts.varyTubeRadius = 0
+    PseudocolorAtts.varyTubeRadiusVariable = ''
+    PseudocolorAtts.varyTubeRadiusFactor = 10
+    PseudocolorAtts.endPointType = PseudocolorAtts.None
+    PseudocolorAtts.endPointStyle = PseudocolorAtts.Spheres
+  elif Version() in ['2.12.1']:
+    PseudocolorAtts.tubeRadiusVarEnabled = 0
+    PseudocolorAtts.tubeRadiusVar = ''
+    PseudocolorAtts.tubeRadiusVarRatio = 10
+    PseudocolorAtts.tailStyle = PseudocolorAtts.None
+    PseudocolorAtts.headStyle = PseudocolorAtts.None
+  else:
+    PseudocolorAtts.varyTubeRadius = 0
+    PseudocolorAtts.varyTubeRadiusVariable = ''
+    PseudocolorAtts.varyTubeRadiusFactor = 10
+    PseudocolorAtts.endPointType = PseudocolorAtts.None
+    PseudocolorAtts.endPointStyle = PseudocolorAtts.Spheres
+  PseudocolorAtts.endPointRadiusSizeType = PseudocolorAtts.FractionOfBBox
   PseudocolorAtts.endPointRadiusAbsolute = 1
   PseudocolorAtts.endPointRadiusBBox = 0.005
   PseudocolorAtts.endPointRatio = 2
@@ -307,7 +343,8 @@ def plot_field_contours(field_name, field_range,
 
   # check number of states available
   if states[1] > TimeSliderGetNStates():
-    print('[warning] maximum number of states available is {}'.format(TimeSliderGetNStates()))
+    print('[warning] maximum number of states available is '
+          '{}'.format(TimeSliderGetNStates()))
     print('[warning] setting new final state ...')
     states[1] = TimeSliderGetNStates()
 
@@ -315,7 +352,8 @@ def plot_field_contours(field_name, field_range,
   for state in xrange(args.states[0], args.states[1], args.states[2]):
     SetTimeSliderState(state)
     time = float(Query('Time')[:-1].split()[-1])
-    print('\n[state {}] time: {} - creating and saving the field ...'.format(state, time))
+    print('\n[state {}] time: {} - creating and saving the field ...'
+          ''.format(state, time))
     time_annotation.text = 'Time: {0:.3f}'.format(time)
 
     RenderingAtts = RenderingAttributes()
@@ -364,19 +402,21 @@ def plot_field_contours(field_name, field_range,
     SaveWindowAtts.resConstraint = SaveWindowAtts.NoConstraint  # NoConstraint, EqualWidthHeight, ScreenProportions
     SaveWindowAtts.advancedMultiWindowSave = 0
     SetSaveWindowAttributes(SaveWindowAtts)
-    
+
     SaveWindow()
+
 
 def main(args):
   check_version()
-  plot_field_contours(args.field_name, args.field_range, 
+  plot_field_contours(args.field_name, args.field_range,
                       directory=args.directory,
                       body=args.body,
                       solution_folder=args.solution_folder,
                       states=args.states,
-                      view=args.view, 
+                      view=args.view,
                       width=args.width)
   os.remove('visitlog.py')
+
 
 if __name__ == '__main__':
   args = parse_command_line()

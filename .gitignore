@@ -1,3 +1,6 @@
+# ignore testcases folder
+testcases
+
 # ingore compiled Python files
 *.pyc
 
