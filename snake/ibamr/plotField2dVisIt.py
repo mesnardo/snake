@@ -86,7 +86,7 @@ def check_version():
   tested.
   """
   script_version = '2.8.2'
-  tested_versions = ['2.8.2', '2.10.2']
+  tested_versions = ['2.8.2', '2.10.2', '2.12.1']
   current_version = Version()
   print('VisIt version: {}\n'.format(Version()))
   if current_version not in tested_versions:
@@ -227,16 +227,34 @@ def plot_field_contours(field_name, field_range,
   PseudocolorAtts.lineType = PseudocolorAtts.Line  # Line, Tube, Ribbon
   PseudocolorAtts.lineStyle = PseudocolorAtts.SOLID  # SOLID, DASH, DOT, DOTDASH
   PseudocolorAtts.lineWidth = 0
-  PseudocolorAtts.tubeDisplayDensity = 10
+  if Version() in ['2.8.2', '2.10.2']:
+    PseudocolorAtts.tubeDisplayDensity = 10
+  elif Version() in ['2.12.1']:
+    PseudocolorAtts.tubeResolution = 10
+  else:
+    PseudocolorAtts.tubeDisplayDensity = 10
   PseudocolorAtts.tubeRadiusSizeType = PseudocolorAtts.FractionOfBBox  # Absolute, FractionOfBBox
   PseudocolorAtts.tubeRadiusAbsolute = 0.125
   PseudocolorAtts.tubeRadiusBBox = 0.005
-  PseudocolorAtts.varyTubeRadius = 0
-  PseudocolorAtts.varyTubeRadiusVariable = ''
-  PseudocolorAtts.varyTubeRadiusFactor = 10
-  PseudocolorAtts.endPointType = PseudocolorAtts.None  # None, Tails, Heads, Both
-  PseudocolorAtts.endPointStyle = PseudocolorAtts.Spheres  # Spheres, Cones
-  PseudocolorAtts.endPointRadiusSizeType = PseudocolorAtts.FractionOfBBox  # Absolute, FractionOfBBox
+  if Version() in ['2.8.2', '2.10.2']:
+    PseudocolorAtts.varyTubeRadius = 0
+    PseudocolorAtts.varyTubeRadiusVariable = ''
+    PseudocolorAtts.varyTubeRadiusFactor = 10
+    PseudocolorAtts.endPointType = PseudocolorAtts.None
+    PseudocolorAtts.endPointStyle = PseudocolorAtts.Spheres
+  elif Version() in ['2.12.1']:
+    PseudocolorAtts.tubeRadiusVarEnabled = 0
+    PseudocolorAtts.tubeRadiusVar = ''
+    PseudocolorAtts.tubeRadiusVarRatio = 10
+    PseudocolorAtts.tailStyle = PseudocolorAtts.None
+    PseudocolorAtts.headStyle = PseudocolorAtts.None
+  else:
+    PseudocolorAtts.varyTubeRadius = 0
+    PseudocolorAtts.varyTubeRadiusVariable = ''
+    PseudocolorAtts.varyTubeRadiusFactor = 10
+    PseudocolorAtts.endPointType = PseudocolorAtts.None
+    PseudocolorAtts.endPointStyle = PseudocolorAtts.Spheres
+  PseudocolorAtts.endPointRadiusSizeType = PseudocolorAtts.FractionOfBBox
   PseudocolorAtts.endPointRadiusAbsolute = 1
   PseudocolorAtts.endPointRadiusBBox = 0.005
   PseudocolorAtts.endPointRatio = 2
