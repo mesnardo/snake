@@ -18,7 +18,9 @@ simulation.get_strouhal(limits=time_limits, order=200)
 simulation.plot_forces(display_coefficients=True,
                        display_extrema=True, order=200,
                        limits=(0.0, 80.0, 0.0, 3.0),
-                       save_name='forceCoefficients')
+                       save_name='forceCoefficients',
+                       style='mesnardo',
+                       show=True)
 
 dataframe = simulation.create_dataframe_forces(display_strouhal=True,
                                                display_coefficients=True)

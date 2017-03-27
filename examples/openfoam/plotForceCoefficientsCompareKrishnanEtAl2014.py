@@ -35,7 +35,9 @@ simulation.plot_forces(display_coefficients=True,
                        limits=(0.0, 80.0, 0.0, 3.0),
                        other_simulations=krishnan,
                        other_coefficients=2.0,
-                       save_name='forceCoefficientsCompareKrishnanEtAl2014')
+                       save_name='forceCoefficientsCompareKrishnanEtAl2014',
+                       style='mesnardo',
+                       show=True)
 
 dataframe = simulation.create_dataframe_forces(display_strouhal=True,
                                                display_coefficients=True)

@@ -29,7 +29,9 @@ simulation.plot_forces(display_coefficients=True,
                        limits=(0.0, 80.0, 0.0, 3.0),
                        other_simulations=other,
                        other_coefficients=1.0,
-                       save_name='forceCoefficientsCompareOther')
+                       save_name='forceCoefficientsCompareOther',
+                       style='mesnardo',
+                       show=True)
 
 dataframe = simulation.create_dataframe_forces(display_strouhal=True,
                                                display_coefficients=True)
