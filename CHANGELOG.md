@@ -6,6 +6,12 @@
 
 ---
 
+---
+
+## 0.2
+
+---
+
 ### Added
 
 * Compatibility with Python-3.5. (Note that PETSc Python scripts are not compatible with Python-3.5.)
