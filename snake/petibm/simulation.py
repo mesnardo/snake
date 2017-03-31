@@ -82,7 +82,7 @@ class PetIBMSimulation(BarbaGroupSimulation):
       self.grid = numpy.array(numpy.split(coords,
                                           numpy.cumsum(n_cells[:-1] + 1)))
     print('\tgrid-size: {}x{}'.format(self.grid[0].size - 1,
-                                      self.grid[0].size - 1))
+                                      self.grid[1].size - 1))
 
   def read_forces(self, file_path=None, labels=None):
     """
