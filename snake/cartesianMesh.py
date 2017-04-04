@@ -472,6 +472,7 @@ class CartesianStructuredMesh(object):
       if direction == 'all':
         _, nb_cells_directions = self.get_number_cells()
         outfile.write('\t'.join(str(nb) for nb in nb_cells_directions) + '\n')
+    with open(file_path, 'ab') as outfile:
       if direction in ['x', 'all']:
         numpy.savetxt(outfile,
                       self.gridlines[0].get_vertices(precision=precision))
