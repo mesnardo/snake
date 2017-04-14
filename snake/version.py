@@ -7,7 +7,7 @@ import os
 
 _version_major = 0
 _version_minor = 2
-_version_micro = '0'
+_version_micro = '1'
 _version_extra = ''
 
 # construct full version string
