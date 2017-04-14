@@ -5,7 +5,6 @@ Implementation of the class `CartesianStructuredMesh` and its sub-classes.
 import os
 import sys
 import math
-from operator import mul
 from decimal import Decimal
 
 import numpy
@@ -419,7 +418,10 @@ class CartesianStructuredMesh(object):
     nb_divisions = []
     for gridline in self.gridlines:
       nb_divisions.append(gridline.nb_divisions)
-    return reduce(mul, nb_divisions, 1), nb_divisions
+    total = 1
+    for nb_division in nb_divisions:
+      total *= nb_division
+    return total, nb_divisions
 
   def create(self, data):
     """
@@ -470,6 +472,7 @@ class CartesianStructuredMesh(object):
       if direction == 'all':
         _, nb_cells_directions = self.get_number_cells()
         outfile.write('\t'.join(str(nb) for nb in nb_cells_directions) + '\n')
+    with open(file_path, 'ab') as outfile:
       if direction in ['x', 'all']:
         numpy.savetxt(outfile,
                       self.gridlines[0].get_vertices(precision=precision))

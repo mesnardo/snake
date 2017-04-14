@@ -368,6 +368,7 @@ class Geometry(object):
       file_path = os.path.join(os.getcwd(), 'new_body')
     with open(file_path, 'w') as outfile:
       outfile.write('{}\n'.format(x.size))
+    with open(file_path, 'ab') as outfile:
       numpy.savetxt(outfile, coords, fmt='%.6f', delimiter='\t')
 
 
@@ -480,7 +481,7 @@ class Geometry2d(Geometry):
     # compute new points
     next = 1
     tolerance = 1.0E-06
-    for i in xrange(1, n):
+    for i in range(1, n):
       start = self.points[-1]
       end = points_old[next]
       distance = start.distance(end)
@@ -608,7 +609,7 @@ class Line(Geometry2d):
       self.n = int(math.ceil(self.length / self.ds))
     x = self.start.x + numpy.linspace(0.0, self.length, self.n + 1)
     y = self.start.y * numpy.ones(self.n + 1)
-    self.points = [Point(x[i], y[i]) for i in xrange(self.n + 1)]
+    self.points = [Point(x[i], y[i]) for i in range(self.n + 1)]
     self.points_initial = copy.deepcopy(self.points)
 
 
@@ -655,7 +656,7 @@ class Circle(Geometry2d):
     theta = numpy.linspace(0.0, 2.0 * math.pi, self.n + 1)
     x = self.center.x + self.radius * numpy.cos(theta)[:-1]
     y = self.center.y + self.radius * numpy.sin(theta)[:-1]
-    self.points = [Point(x[i], y[i]) for i in xrange(x.size)]
+    self.points = [Point(x[i], y[i]) for i in range(x.size)]
     self.points_initial = copy.deepcopy(self.points)
 
 
@@ -842,5 +843,5 @@ class Sphere(Geometry3d):
     y = numpy.append(y, self.center.y)
     z = numpy.append(z, self.center.z - self.radius)
     # create points
-    self.points = [Point(x[i], y[i], z[i]) for i in xrange(x.size)]
+    self.points = [Point(x[i], y[i], z[i]) for i in range(x.size)]
     self.points_initial = copy.deepcopy(self.points)
