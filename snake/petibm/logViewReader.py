@@ -165,7 +165,7 @@ class Log(object):
 
 
 def plot_breakdown_percents(runs, event_labels=[],
-                            title=None, colors=None, savepath=None):
+                            title=None, colors=None):
     """
     Plots a bar chart with the percent of the total wall-time of all events for
     multiple runs.
@@ -183,9 +183,13 @@ def plot_breakdown_percents(runs, event_labels=[],
     colors: iterator, optional
       Colors to use;
       default: None.
-    savepath: string, optional
-      Path of the file to save with the figure;
-      default: None (does not save).
+
+    Returns
+    -------
+    fig: Matplotlib Figure object
+      The figure.
+    ax: Matplotlib Axes object
+      Single or array of axes.
     """
     if not isinstance(runs, (list, tuple)):
       runs = [runs]
@@ -216,7 +220,7 @@ def plot_breakdown_percents(runs, event_labels=[],
              zorder=0)
       bar_offsets += percents
     ax.legend(bbox_to_anchor=(1.0, 1.0), frameon=False)
-    ax.set_xticks(indices + 0.5 * bar_width)
+    ax.set_xticks(indices + 0.25 * bar_width)
     ax.set_xticklabels([run.label for run in runs], rotation=0, fontsize=16)
     ax.set_yticks([0.0, 25.0, 50.0, 75.0, 100.0],
                   ('0', '25', '50', '75', '100'))
@@ -224,12 +228,11 @@ def plot_breakdown_percents(runs, event_labels=[],
     ax.set_ylim(0.0, 100.0)
     if title:
       fig.set_title(title)
-    if savepath:
-      fig.savefig(savepath, bbox_inches='tight')
+    return fig, ax
 
 
 def plot_breakdown_walltimes(runs, event_labels=[],
-                             title=None, colors=None, savepath=None):
+                             title=None, colors=None):
     """
     Plots a bar chart with the wall-time of all events for
     multiple runs.
@@ -247,9 +250,13 @@ def plot_breakdown_walltimes(runs, event_labels=[],
     colors: iterator, optional
       Colors to use;
       default: None.
-    savepath: string, optional
-      Path of the file to save with the figure;
-      default: None (does not save).
+
+    Returns
+    -------
+    fig: Matplotlib Figure object
+      The figure.
+    ax: Matplotlib Axes object
+      Single or array of axes.
     """
     if not isinstance(runs, (list, tuple)):
       runs = [runs]
@@ -280,10 +287,9 @@ def plot_breakdown_walltimes(runs, event_labels=[],
              zorder=0)
       bar_offsets += walltimes
     ax.legend(bbox_to_anchor=(1.0, 1.0), frameon=False)
-    ax.set_xticks(indices + 0.5 * bar_width)
+    ax.set_xticks(indices + 0.25 * bar_width)
     ax.set_xticklabels([run.label for run in runs], rotation=0, fontsize=16)
     ax.set_xlim(indices[0] - 0.5, indices[-1] + 1.0)
     if title:
       fig.set_title(title)
-    if savepath:
-      fig.savefig(savepath, bbox_inches='tight')
+    return fig, ax
