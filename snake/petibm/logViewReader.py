@@ -104,7 +104,7 @@ class Log(object):
     walltime: float
       The wall-time.
     """
-    look_for = 'Time'
+    look_for = 'Time '
     with open(self.path, 'r') as infile:
       for line in infile.readlines():
         if re.search(look_for, line):
