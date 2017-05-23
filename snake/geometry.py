@@ -454,7 +454,7 @@ class Geometry2d(Geometry):
                    for point in self.points] for z in z), [])
     return Geometry3d(points)
 
-  def discretization(self, n=None, ds=None):
+  def discretization(self, n=None, ds=None, tolerance=1.0E-06):
     """
     Discretizes the geometry.
 
@@ -466,6 +466,9 @@ class Geometry2d(Geometry):
     ds: float, optional
       Desired segment-length;
       default: None.
+    tolerance: float, optional
+      Desired tolerance for discretization;
+      default: 1.0E-06.
     """
     if not (n or ds):
       return
@@ -480,7 +483,6 @@ class Geometry2d(Geometry):
     self.points = [points_old[0]]
     # compute new points
     next = 1
-    tolerance = 1.0E-06
     for i in range(1, n):
       start = self.points[-1]
       end = points_old[next]
