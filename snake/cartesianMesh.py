@@ -96,7 +96,7 @@ class Segment(object):
         print('[error] uniform discretization: '
               'length of the segment should be a multiple of the width '
               'provided')
-        sys.exit(0)
+        sys.exit(-1)
       return numpy.arange(self.start, self.end + width / 2.0, width)
     # stretched discretization
     n = int(round(math.log(1.0 - length / width * (1.0 - ratio))
@@ -186,43 +186,6 @@ class Segment(object):
             current_precision += 1
         else:
             ratio -= (0.1)**current_precision
-    return ratio
-
-  def compute_optimal_stretch_ratio_old(self, width, ratio,
-                                        precision=6):
-    """
-    ***DEPRECATED***
-    Computes the optimal stretching ratio provided a targeted one.
-
-    Parameters
-    ----------
-    width: float
-      Width of the first division of the segment.
-    ratio: float
-      Targeted stretching ratio.
-    precision: integer, optional
-      Precision of the stretching ratio to compute;
-      default: 6.
-
-    Returns
-    -------
-    ratio: float
-      The optimal stretching ratio.
-    """
-    length = abs(self.end - self.start)
-    precision_ratio = abs(Decimal(str(ratio)).as_tuple().exponent)
-    while precision_ratio < precision:
-      try:
-        n = int(round(math.log(1.0 - (1.0 - ratio) * length / width)
-                      / math.log(ratio)))
-        candidate_length = width * (1.0 - ratio**n) / (1.0 - ratio)
-      except:
-        candidate_length = 0.0
-      if candidate_length < length:
-        ratio += (0.1)**precision_ratio
-        precision_ratio += 1
-      else:
-        ratio -= (0.1)**precision_ratio
     return ratio
 
   def compute_optimal_stretch_ratio(self, width, ratio,
