@@ -217,27 +217,27 @@ class BarbaGroupSimulation(Simulation):
       dz = z[1:] - z[:-1]
     if dim3:
       ux = numpy.empty_like(fluxes[0].values, dtype=numpy.float64)
-      for k in xrange(fluxes[0].shape[0]):
-        for j in xrange(fluxes[0].shape[1]):
-          for i in xrange(fluxes[0].shape[2]):
+      for k in range(fluxes[0].shape[0]):
+        for j in range(fluxes[0].shape[1]):
+          for i in range(fluxes[0].shape[2]):
             ux[k, j, i] = fluxes[0].values[k, j, i] / dy[j] / dz[k]
       ux = Field(label='x-velocity',
                  time_step=time_step,
                  x=fluxes[0].x, y=fluxes[0].y, z=fluxes[0].z,
                  values=ux)
       uy = numpy.empty_like(fluxes[1].values, dtype=numpy.float64)
-      for k in xrange(fluxes[1].shape[0]):
-        for j in xrange(fluxes[1].shape[1]):
-          for i in xrange(fluxes[1].shape[2]):
+      for k in range(fluxes[1].shape[0]):
+        for j in range(fluxes[1].shape[1]):
+          for i in range(fluxes[1].shape[2]):
             uy[k, j, i] = fluxes[1].values[k, j, i] / dx[i] / dz[k]
       uy = Field(label='y-velocity',
                  time_step=time_step,
                  x=fluxes[1].x, y=fluxes[1].y, z=fluxes[1].z,
                  values=uy)
       uz = numpy.empty_like(fluxes[2].values, dtype=numpy.float64)
-      for k in xrange(fluxes[2].shape[0]):
-        for j in xrange(fluxes[2].shape[1]):
-          for i in xrange(fluxes[2].shape[2]):
+      for k in range(fluxes[2].shape[0]):
+        for j in range(fluxes[2].shape[1]):
+          for i in range(fluxes[2].shape[2]):
             uz[k, j, i] = fluxes[2].values[k, j, i] / dx[i] / dy[j]
       uz = Field(label='z-velocity',
                  time_step=time_step,
@@ -246,14 +246,14 @@ class BarbaGroupSimulation(Simulation):
       return ux, uy, uz
     else:
       ux = numpy.empty_like(fluxes[0].values, dtype=numpy.float64)
-      for i in xrange(fluxes[0].values.shape[1]):
+      for i in range(fluxes[0].values.shape[1]):
         ux[:, i] = fluxes[0].values[:, i] / dy[:]
       ux = Field(label='x-velocity',
                  time_step=time_step,
                  x=fluxes[0].x, y=fluxes[0].y,
                  values=ux)
       uy = numpy.empty_like(fluxes[1].values, dtype=numpy.float64)
-      for j in xrange(fluxes[1].values.shape[0]):
+      for j in range(fluxes[1].values.shape[0]):
         uy[j, :] = fluxes[1].values[j, :] / dx[:]
       uy = Field(label='y-velocity',
                  time_step=time_step,
@@ -352,6 +352,7 @@ class BarbaGroupSimulation(Simulation):
                    save_directory=None, save_name=None, fmt='png',
                    colorbar=True,
                    cmap=None,
+                   colors=None,
                    style=None,
                    width=8.0,
                    dpi=100):
@@ -394,7 +395,10 @@ class BarbaGroupSimulation(Simulation):
       default: True.
     cmap: string, optional
       The Matplotlib colormap to use;
-      default: None
+      default: None.
+    colors: string, optional
+      The Matplotlib colors to use;
+      default: None.
     style: string, optional
       Path of the Matplotlib style-sheet to use;
       default: None.
@@ -444,6 +448,7 @@ class BarbaGroupSimulation(Simulation):
                                          fmt=fmt,
                                          colorbar=colorbar,
                                          cmap=cmap,
+                                         colors=colors,
                                          width=width,
                                          dpi=dpi)
 
