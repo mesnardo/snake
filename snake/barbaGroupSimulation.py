@@ -125,10 +125,7 @@ class BarbaGroupSimulation(Simulation):
       default: None (will use <simulation-directory>/<time-step>).
     """
     # convert field_names in list if single string provided
-    try:
-      assert isinstance(field_names, (list, tuple))
-      assert not isinstance(field_names, basestring)
-    except:
+    if not isinstance(field_names, (list, tuple)):
       field_names = [field_names]
     if not directory:
       directory = os.path.join(self.directory, '{:0>7}'.format(time_step))
