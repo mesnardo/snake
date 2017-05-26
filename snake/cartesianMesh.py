@@ -16,7 +16,7 @@ class Segment(object):
   Contains information about a segment.
   """
 
-  def __init__(self, data=None, vertices=None):
+  def __init__(self, data=None, vertices=None, mode=None):
     """
     Creates the segment vertices.
 
@@ -28,9 +28,13 @@ class Segment(object):
     vertices: 1D array of floats, optional
       vertices along the segment;
       default: None.
+    mode: string, optional
+      Mode to use to create the segment;
+      choices: ['cuibm'];
+      default: None.
     """
     if data:
-      self.create_from_yaml_data(data)
+      self.create_from_yaml_data(data, mode=mode)
     elif numpy.all(vertices):
       self.create_from_vertices(vertices)
     self.nb_divisions = self.vertices.size - 1
@@ -41,7 +45,7 @@ class Segment(object):
     """
     self.vertices = vertices
 
-  def create_from_yaml_data(self, data):
+  def create_from_yaml_data(self, data, mode=None):
     """
     Creates vertices from provided YAML data.
 
@@ -49,15 +53,22 @@ class Segment(object):
     ----------
     data: dictionary
       YAML data.
+    mode: string, optional
+      Mode to use to create the gridline;
+      choices: ['cuibm'];
+      default: None.
     """
     self.start, self.end = data['start'], data['end']
     self.width = data['width']
-    ratio = self.get_stretch_ratio(self.width,
-                                   stretch_ratio=data['stretchRatio'],
-                                   aspect_ratio=data['aspectRatio'],
-                                   precision=data['precision'])
-    self.stretch_ratio = ratio
-    self.vertices = self.get_vertices(reverse=data['reverse'])
+    if mode == 'cuibm':
+      self.stretch_ratio = data['stretchRatio']
+    else:
+      ratio = self.get_stretch_ratio(self.width,
+                                     stretch_ratio=data['stretchRatio'],
+                                     aspect_ratio=data['aspectRatio'],
+                                     precision=data['precision'])
+      self.stretch_ratio = ratio
+    self.vertices = self.get_vertices(reverse=data['reverse'], mode=mode)
 
   def print_parameters(self):
     """
@@ -71,7 +82,7 @@ class Segment(object):
     print('\taspect ratio: {}'.format(self.aspect_ratio))
     print('\tnumber of divisions: {}\n'.format(self.nb_divisions))
 
-  def get_vertices(self, reverse=False):
+  def get_vertices(self, reverse=False, mode=None):
     """
     Computes the vertices of the segment.
 
@@ -80,6 +91,10 @@ class Segment(object):
     reverse: boolean, optional
       Set 'True' if you want to reverse the stretching order;
       default: False.
+    mode: string, optional
+      Mode to use to create the gridline;
+      choices: ['cuibm'];
+      default: None.
 
     Returns
     -------
@@ -98,6 +113,24 @@ class Segment(object):
               'provided')
         sys.exit(-1)
       return numpy.arange(self.start, self.end + width / 2.0, width)
+    # stretched discretization a la cuibm
+    if mode == 'cuibm':
+      n = 2
+      h1 = length * (ratio - 1.0) / (ratio**n - 1.0)
+      while h1 > width:
+        n += 1
+        h1 = length * (ratio - 1.0) / (ratio**n - 1.0)
+      n -= 1
+      h1 = length * (ratio - 1.0) / (ratio**n - 1.0)
+      h2 = h1 * ratio**(n - 1)
+      width0 = (h2 if reverse else h1)
+      self.stretch_ratio = (1.0 / ratio if reverse else ratio)
+      widths = numpy.empty(n, dtype=numpy.float64)
+      widths[0], widths[1:] = width0, self.stretch_ratio
+      widths = numpy.cumprod(widths)
+      self.aspect_ratio = (widths[0] / widths[-1] if reverse
+                           else widths[-1] / widths[0])
+      return numpy.insert(self.start + numpy.cumsum(widths), 0, self.start)
     # stretched discretization
     n = int(round(math.log(1.0 - length / width * (1.0 - ratio))
                   / math.log(ratio)))
@@ -246,7 +279,7 @@ class GridLine(object):
   Contains information about a gridline.
   """
 
-  def __init__(self, data=None, vertices=None, label=None):
+  def __init__(self, data=None, vertices=None, label=None, mode=None):
     """
     Creates a gridline from provided YAML data or vertices.
 
@@ -261,11 +294,15 @@ class GridLine(object):
     label: string, optional
       Label of the direction;
       default: None.
+    mode: string, optional
+      Mode to use to create the gridline;
+      choices: ['cuibm'];
+      default: None.
     """
     self.label = label
     self.segments = []
     if data:
-      self.create_from_yaml_data(data)
+      self.create_from_yaml_data(data, mode=mode)
     elif numpy.all(vertices):
       self.create_from_vertices(vertices)
     self.nb_divisions = sum(segment.nb_divisions for segment in self.segments)
@@ -282,7 +319,7 @@ class GridLine(object):
     self.start, self.end = vertices[0], vertices[-1]
     self.segments.append(Segment(vertices=vertices))
 
-  def create_from_yaml_data(self, data):
+  def create_from_yaml_data(self, data, mode=None):
     """
     Initializes the gridline parameters and computes its vertices.
 
@@ -292,6 +329,10 @@ class GridLine(object):
     ----------
     data: dictionary
       Parameters of the gridline in a YAML format.
+    mode: string, optional
+      Mode to use to create the gridline;
+      choices: ['cuibm'];
+      default: None.
     """
     self.label = data['direction']
     self.start = data['start']
@@ -311,7 +352,7 @@ class GridLine(object):
       if 'stretchRatio' not in node.keys():
         data['subDomains'][index]['stretchRatio'] = 1.0
       # create a segment
-      self.segments.append(Segment(data=node))
+      self.segments.append(Segment(data=node, mode=mode))
 
   def get_vertices(self, precision=6):
     """
@@ -386,7 +427,7 @@ class CartesianStructuredMesh(object):
       total *= nb_division
     return total, nb_divisions
 
-  def create(self, data):
+  def create(self, data, mode=None):
     """
     Creates the gridlines.
 
@@ -394,10 +435,14 @@ class CartesianStructuredMesh(object):
     ----------
     data: list of dictionaries
       Contains YAML information about the gridlines.
+    mode: string, optional
+      Mode to use to generate the grid;
+      choices: ['cuibm'];
+      default: None.
     """
     print('[info] generating Cartesian grid ...')
     for node in data:
-      self.gridlines.append(GridLine(data=node))
+      self.gridlines.append(GridLine(data=node, mode=mode))
 
   def print_parameters(self):
     """Prints parameters of the Cartesian structured mesh."""
