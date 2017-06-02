@@ -135,7 +135,7 @@ class Field(object):
     return Field(x=self.x[mask_x],
                  y=self.y[mask_y],
                  values=numpy.array([self.values[j][mask_x]
-                                     for j in xrange(self.y.size)
+                                     for j in range(self.y.size)
                                      if mask_y[j]]),
                  time_step=self.time_step,
                  label=label)
