@@ -62,7 +62,9 @@ class PetIBMSimulation(BarbaGroupSimulation):
     textchars = bytearray({7, 8, 9, 10, 12, 13, 27}
                           | set(range(0x20, 0x100)) - {0x7f})
     is_binary_string = lambda bytes: bool(bytes.translate(None, textchars))
-    binary_format = is_binary_string(open(file_path, 'rb').read(1024))
+    infile = open(file_path, 'rb')
+    binary_format = is_binary_string(infile.read(1024))
+    infile.close()
     if binary_format:
       with open(file_path, 'rb') as infile:
         # x-direction
@@ -73,7 +75,7 @@ class PetIBMSimulation(BarbaGroupSimulation):
         ny = struct.unpack('i', infile.read(4))[0]
         y = numpy.array(struct.unpack('d' * (ny + 1),
                                       infile.read(8 * (ny + 1))))
-        self.grid = x, y
+        self.grid = numpy.array([x, y])
     else:
       with open(file_path, 'r') as infile:
         n_cells = numpy.array([int(n)
@@ -107,8 +109,8 @@ class PetIBMSimulation(BarbaGroupSimulation):
                                             self.grid[1].size - 1,
                                             self.grid[2].size - 1))
       else:
-        outfile.write('{}\t{}\t{}\n'.format(self.grid[0].size - 1,
-                                            self.grid[1].size - 1))
+        outfile.write('{}\t{}\n'.format(self.grid[0].size - 1,
+                                        self.grid[1].size - 1))
     with open(file_path, 'ab') as outfile:
         numpy.savetxt(outfile, numpy.c_[self.grid[0]], fmt=fmt)
         numpy.savetxt(outfile, numpy.c_[self.grid[1]], fmt=fmt)
