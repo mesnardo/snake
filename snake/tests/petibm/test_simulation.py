@@ -2,102 +2,113 @@
 Tests for the class `PetIBMSimulation`.
 """
 
-import sys
 import os
-
+import sys
+import shutil
+import unittest
 import numpy
 
-sys.path.append(os.environ['SCRIPTS'])
-from library.PetIBM.simulation import PetIBMSimulation
+if sys.version_info < (2, 8):
+  sys.path.append(os.path.join(os.environ['PETSC_DIR'], 'bin'))
+  import PetscBinaryIO
+
+from snake.petibm.simulation import PetIBMSimulation
 
 
-class PetIBMSimulationTest(object):
-  def __init__(self):
-    self.simulation = PetIBMSimulation()
-    self.simulation.directory = os.getcwd()
-    self.read_grid()
-    self.read_velocity()
-    self.read_pressure()
+atol = 1.0E-12
 
-  def read_grid(self):
-    print('\nPetIBMSimulation.read_grid() ...')
-    x, y = numpy.linspace(0.0, 10.0, 11), numpy.linspace(-1.0, 1.0, 101)
-    with open('grid_test.txt', 'w') as outfile:
+
+class PetIBMSimulationTest(unittest.TestCase, PetIBMSimulation):
+  def __init__(self, *args, **kwargs):
+    super(PetIBMSimulationTest, self).__init__(*args, **kwargs)
+    self.generate_stubs()
+
+  def generate_stubs(self):
+    self.directory = 'data'
+    self.grid = numpy.array([numpy.linspace(0.0, 10.0, 11),
+                             numpy.linspace(-1.0, 1.0, 101)])
+
+  def test_read_grid(self):
+    x, y = self.grid
+    file_name = 'grid_test.txt'
+    with open(file_name, 'w') as outfile:
       # write number of cells
       outfile.write('{}\t{}\n'.format(x.size - 1, y.size - 1))
+    with open(file_name, 'ab') as outfile:
       # write cell-boundaries in x-direction
-      numpy.savetxt(outfile, x, fmt='%.6f')
+      numpy.savetxt(outfile, x, fmt='%.18f')
       # write cell-boundaries in y-direction
-      numpy.savetxt(outfile, y, fmt='%.6f')
-    # call method to test
-    self.simulation.read_grid(file_name='grid_test.txt')
-    os.system('rm -f grid_test.txt')
-    assert numpy.allclose(x, self.simulation.grid[0], atol=1.0E-06)
-    assert numpy.allclose(y, self.simulation.grid[1], atol=1.0E-06)
-    print('ok')
+      numpy.savetxt(outfile, y, fmt='%.18f')
+    self.read_grid(file_path=file_name)
+    assert numpy.allclose(x, self.grid[0], atol=atol)
+    assert numpy.allclose(y, self.grid[1], atol=atol)
+    os.remove(file_name)
 
-  def read_velocity(self):
-    print('\nPetIBMSimulation.read_velocity() ...')
-    x, y = numpy.linspace(0.0, 10.0, 11), numpy.linspace(-1.0, 1.0, 101)
+  def test_write_grid(self):
+    x, y = self.grid
+    file_name = 'grid_test.txt'
+    self.write_grid(file_name, fmt='%0.18f')
+    self.read_grid(file_path=file_name)
+    assert numpy.allclose(x, self.grid[0], atol=atol)
+    assert numpy.allclose(y, self.grid[1], atol=atol)
+    os.remove(file_name)
+
+  def test_read_forces(self):
+    self.read_forces()
+    assert len(self.forces) == 2
+    assert numpy.allclose(self.forces[0].times, self.forces[1].times,
+                          atol=atol)
+
+  @unittest.skipIf(sys.version_info >= (3, 0), 'Not supported with Python 3')
+  def test_read_fluxes(self):
+    x, y = self.grid
     # create flux fields on staggered grid
     xu, yu = x[1: -1], 0.5 * (y[:-1] + y[1:])
-    u = numpy.random.rand(yu.size, xu.size)
-    qx = u * numpy.outer(y[1:] - y[:-1], numpy.ones(xu.size))
+    qx_ref = numpy.random.rand(yu.size, xu.size)
     xv, yv = 0.5 * (x[:-1] + x[1:]), y[1: -1]
-    v = numpy.random.rand(yv.size, xv.size)
-    qy = v * numpy.outer(numpy.ones(yv.size), x[1:] - x[:-1])
-    # create directory where to save files
-    directory = '{}/{:0>7}'.format(os.getcwd(), 0)
+    qy_ref = numpy.random.rand(yv.size, xv.size)
+    # create solution folder
+    directory = os.path.join(self.directory, '0000000')
     if not os.path.isdir(directory):
       os.makedirs(directory)
-    sys.path.append(os.path.join(os.environ['PETSC_DIR'],
-                                 'bin',
-                                 'pythonscripts'))
-    import PetscBinaryIO
     # write fluxes
-    vec = qx.flatten().view(PetscBinaryIO.Vec)
-    file_path = '{}/qx.dat'.format(directory)
+    vec = qx_ref.flatten().view(PetscBinaryIO.Vec)
+    file_path = os.path.join(directory, 'qx.dat')
     PetscBinaryIO.PetscBinaryIO().writeBinaryFile(file_path, [vec, ])
-    vec = qy.flatten().view(PetscBinaryIO.Vec)
-    file_path = '{}/qy.dat'.format(directory)
+    vec = qy_ref.flatten().view(PetscBinaryIO.Vec)
+    file_path = os.path.join(directory, 'qy.dat')
     PetscBinaryIO.PetscBinaryIO().writeBinaryFile(file_path, [vec, ])
-    # call method to test
-    self.simulation.read_velocity(0)
-    os.system('rm -rf 0000000')
-    assert numpy.allclose(u, self.simulation.x_velocity.values, atol=1.0E-06)
-    assert numpy.allclose(xu, self.simulation.x_velocity.x, atol=1.0E-06)
-    assert numpy.allclose(yu, self.simulation.x_velocity.y, atol=1.0E-06)
-    assert numpy.allclose(v, self.simulation.y_velocity.values, atol=1.0E-06)
-    assert numpy.allclose(xv, self.simulation.y_velocity.x, atol=1.0E-06)
-    assert numpy.allclose(yv, self.simulation.y_velocity.y, atol=1.0E-06)
-    print('ok')
+    # read fluxes
+    qx, qy = self.read_fluxes(0)
+    assert numpy.allclose(qx_ref, qx.values, atol=atol)
+    assert numpy.allclose(xu, qx.x, atol=atol)
+    assert numpy.allclose(yu, qx.y, atol=atol)
+    assert numpy.allclose(qy_ref, qy.values, atol=atol)
+    assert numpy.allclose(xv, qy.x, atol=atol)
+    assert numpy.allclose(yv, qy.y, atol=atol)
+    shutil.rmtree(directory)
 
-  def read_pressure(self):
-    print('\nPetIBMSimulation.read_pressure() ...')
-    x, y = numpy.linspace(0.0, 10.0, 11), numpy.linspace(-1.0, 1.0, 101)
+  @unittest.skipIf(sys.version_info >= (3, 0), 'Not supported with Python 3')
+  def test_read_pressure(self):
+    x, y = self.grid
     # create pressure field
     xp, yp = 0.5 * (x[:-1] + x[1:]), 0.5 * (y[:-1] + y[1:])
-    p = numpy.random.rand(yp.size, xp.size)
-    # create directory where to save files
-    directory = '{}/{:0>7}'.format(os.getcwd(), 0)
+    p_ref = numpy.random.rand(yp.size, xp.size)
+    # create solution folder
+    directory = os.path.join(self.directory, '0000000')
     if not os.path.isdir(directory):
       os.makedirs(directory)
-    sys.path.append(os.path.join(os.environ['PETSC_DIR'],
-                                 'bin',
-                                 'pythonscripts'))
-    import PetscBinaryIO
-    # write fluxes
-    vec = p.flatten().view(PetscBinaryIO.Vec)
-    file_path = '{}/phi.dat'.format(directory)
+    # write pressure
+    vec = p_ref.flatten().view(PetscBinaryIO.Vec)
+    file_path = os.path.join(directory, 'phi.dat')
     PetscBinaryIO.PetscBinaryIO().writeBinaryFile(file_path, [vec, ])
-    # call method to test
-    self.simulation.read_pressure(0)
-    os.system('rm -rf 0000000')
-    assert numpy.allclose(p, self.simulation.pressure.values, atol=1.0E-06)
-    assert numpy.allclose(xp, self.simulation.pressure.x, atol=1.0E-06)
-    assert numpy.allclose(yp, self.simulation.pressure.y, atol=1.0E-06)
-    print('ok')
+    # read pressure
+    p = self.read_pressure(0)
+    assert numpy.allclose(p_ref, p.values, atol=atol)
+    assert numpy.allclose(xp, p.x, atol=atol)
+    assert numpy.allclose(yp, p.y, atol=atol)
+    shutil.rmtree(directory)
 
 
 if __name__ == '__main__':
-  test = PetIBMSimulationTest()
+  unittest.main()
