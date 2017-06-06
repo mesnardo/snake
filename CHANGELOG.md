@@ -6,6 +6,16 @@
 
 ---
 
+### Added
+
+### Changed
+
+### Fixed
+
+### Removed
+
+---
+
 ## 0.3
 
 ---
