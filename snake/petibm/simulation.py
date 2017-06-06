@@ -62,7 +62,9 @@ class PetIBMSimulation(BarbaGroupSimulation):
     textchars = bytearray({7, 8, 9, 10, 12, 13, 27}
                           | set(range(0x20, 0x100)) - {0x7f})
     is_binary_string = lambda bytes: bool(bytes.translate(None, textchars))
-    binary_format = is_binary_string(open(file_path, 'rb').read(1024))
+    infile = open(file_path, 'rb')
+    binary_format = is_binary_string(infile.read(1024))
+    infile.close()
     if binary_format:
       with open(file_path, 'rb') as infile:
         # x-direction
@@ -73,7 +75,7 @@ class PetIBMSimulation(BarbaGroupSimulation):
         ny = struct.unpack('i', infile.read(4))[0]
         y = numpy.array(struct.unpack('d' * (ny + 1),
                                       infile.read(8 * (ny + 1))))
-        self.grid = x, y
+        self.grid = numpy.array([x, y])
     else:
       with open(file_path, 'r') as infile:
         n_cells = numpy.array([int(n)
@@ -81,8 +83,39 @@ class PetIBMSimulation(BarbaGroupSimulation):
         coords = numpy.loadtxt(infile, dtype=numpy.float64)
       self.grid = numpy.array(numpy.split(coords,
                                           numpy.cumsum(n_cells[:-1] + 1)))
-    print('\tgrid-size: {}x{}'.format(self.grid[0].size - 1,
-                                      self.grid[1].size - 1))
+    if self.grid.size == 2:
+      print('\tgrid-size: {}x{}'.format(self.grid[0].size - 1,
+                                        self.grid[1].size - 1))
+    elif self.grid.size == 3:
+      print('\tgrid-size: {}x{}x{}'.format(self.grid[0].size - 1,
+                                           self.grid[1].size - 1,
+                                           self.grid[2].size - 1))
+
+  def write_grid(self, file_path, fmt='%0.16g'):
+    """
+    Writes the stations along a gridline in each direction into a file.
+
+    Parameters
+    ----------
+    file_path: string
+      Path of the file to write into.
+    fmt: string, optional
+      Format to use for the stations;
+      default: '%0.16g'.
+    """
+    with open(file_path, 'w') as outfile:
+      if self.grid.size == 3:
+        outfile.write('{}\t{}\t{}\n'.format(self.grid[0].size - 1,
+                                            self.grid[1].size - 1,
+                                            self.grid[2].size - 1))
+      else:
+        outfile.write('{}\t{}\n'.format(self.grid[0].size - 1,
+                                        self.grid[1].size - 1))
+    with open(file_path, 'ab') as outfile:
+        numpy.savetxt(outfile, numpy.c_[self.grid[0]], fmt=fmt)
+        numpy.savetxt(outfile, numpy.c_[self.grid[1]], fmt=fmt)
+        if self.grid.size == 3:
+          numpy.savetxt(outfile, numpy.c_[self.grid[2]], fmt=fmt)
 
   def read_forces(self, file_path=None, labels=None):
     """

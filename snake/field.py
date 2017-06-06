@@ -41,7 +41,7 @@ class Field(object):
     self.x, self.y = None, None
     self.values = None
     self.time_step = None
-    if numpy.any(x) and numpy.any(y) and numpy.any(values):
+    if numpy.any(x) and numpy.any(y) and values.shape == (y.size, x.size):
       self.set(x, y, values, time_step=time_step, label=label)
 
   def set(self, x, y, values, time_step=None, label=None):
@@ -135,7 +135,7 @@ class Field(object):
     return Field(x=self.x[mask_x],
                  y=self.y[mask_y],
                  values=numpy.array([self.values[j][mask_x]
-                                     for j in xrange(self.y.size)
+                                     for j in range(self.y.size)
                                      if mask_y[j]]),
                  time_step=self.time_step,
                  label=label)
@@ -168,8 +168,8 @@ class Field(object):
     norms = {'L2': None, 'Linf': numpy.inf}
     field = self.restrict(x, y)
     other = other.restrict(x, y)
-    difference = field.subtract(other)
-    return numpy.linalg.norm(difference.values, ord=norms[norm])
+    subtracted = field.subtract(other)
+    return numpy.linalg.norm(subtracted.values, ord=norms[norm])
 
   def get_gridline_values(self, x=None, y=None):
     """
@@ -252,7 +252,7 @@ class Field(object):
     # if no station matches the given value, we interpolate
     if indices.size == 0:
       j = numpy.where(self.y > y)[0][0]
-      return (self.y, (abs(self.y[j] - y) * self.values[j - 1, :]
+      return (self.x, (abs(self.y[j] - y) * self.values[j - 1, :]
                        + abs(self.y[j - 1] - y) * self.values[j, :])
               / abs(self.y[j] - self.y[j - 1]))
     else:
@@ -428,6 +428,7 @@ class Field(object):
                    fmt='png',
                    colorbar=True,
                    cmap=None,
+                   colors=None,
                    width=8.0,
                    dpi=100):
     """
@@ -466,6 +467,9 @@ class Field(object):
     cmap: string, optional
       The Matplotlib colormap to use;
       default: None.
+    colors: string, optional
+      The Matplotlib colors to use;
+      default: None.
     width: float, optional
       Width of the figure (in inches);
       default: 8.
@@ -477,9 +481,7 @@ class Field(object):
       print('[warning] uniform field; plot contour skipped!')
       return
     # convert bodies in list if single body provided
-    try:
-      assert isinstance(bodies, (list, tuple))
-    except:
+    if not isinstance(bodies, (list, tuple)):
       bodies = [bodies]
     print('[time-step {}] plotting the {} contour ...'.format(self.time_step,
                                                               self.label))
@@ -504,11 +506,13 @@ class Field(object):
                  'x-velocity': cm.RdBu_r, 'y-velocity': cm.RdBu_r}
     X, Y = numpy.meshgrid(self.x, self.y)
     contour_type = ax.contourf if filled_contour else ax.contour
-    if not cmap:
-      cmap = (cm.RdBu_r if self.label not in color_map.keys()
-              else color_map[self.label])
+    if not colors:
+      if not cmap:
+        cmap = (cm.RdBu_r if self.label not in color_map.keys()
+                else color_map[self.label])
     cont = contour_type(X, Y, self.values,
                         levels=levels, extend='both',
+                        colors=colors,
                         cmap=cmap)
     if colorbar:
       ains = inset_axes(pyplot.gca(), width='30%', height='2%', loc=3)

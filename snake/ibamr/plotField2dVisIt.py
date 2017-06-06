@@ -185,7 +185,7 @@ def plot_field_contours(field_name, field_range,
     MeshAtts.opaqueMode = MeshAtts.Auto  # Auto, On, Off
     MeshAtts.pointSize = 0.05
     MeshAtts.opaqueColor = (255, 255, 255, 255)
-    MeshAtts.smoothingLevel = MeshAtts.None  # None, Fast, High
+    # MeshAtts.smoothingLevel = MeshAtts.None  # None, Fast, High
     MeshAtts.pointSizeVarEnabled = 0
     MeshAtts.pointSizeVar = 'default'
     MeshAtts.pointType = MeshAtts.Point  # Box, Axis, Icosahedron, Octahedron, Tetrahedron, SphereGeometry, Point, Sphere
@@ -240,19 +240,19 @@ def plot_field_contours(field_name, field_range,
     PseudocolorAtts.varyTubeRadius = 0
     PseudocolorAtts.varyTubeRadiusVariable = ''
     PseudocolorAtts.varyTubeRadiusFactor = 10
-    PseudocolorAtts.endPointType = PseudocolorAtts.None
+    # PseudocolorAtts.endPointType = PseudocolorAtts.None
     PseudocolorAtts.endPointStyle = PseudocolorAtts.Spheres
   elif Version() in ['2.12.1']:
     PseudocolorAtts.tubeRadiusVarEnabled = 0
     PseudocolorAtts.tubeRadiusVar = ''
     PseudocolorAtts.tubeRadiusVarRatio = 10
-    PseudocolorAtts.tailStyle = PseudocolorAtts.None
-    PseudocolorAtts.headStyle = PseudocolorAtts.None
+    # PseudocolorAtts.tailStyle = PseudocolorAtts.None
+    # PseudocolorAtts.headStyle = PseudocolorAtts.None
   else:
     PseudocolorAtts.varyTubeRadius = 0
     PseudocolorAtts.varyTubeRadiusVariable = ''
     PseudocolorAtts.varyTubeRadiusFactor = 10
-    PseudocolorAtts.endPointType = PseudocolorAtts.None
+    # PseudocolorAtts.endPointType = PseudocolorAtts.None
     PseudocolorAtts.endPointStyle = PseudocolorAtts.Spheres
   PseudocolorAtts.endPointRadiusSizeType = PseudocolorAtts.FractionOfBBox
   PseudocolorAtts.endPointRadiusAbsolute = 1

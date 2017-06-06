@@ -6,9 +6,9 @@ import os
 
 
 _version_major = 0
-_version_minor = 2
-_version_micro = '1'
-_version_extra = ''
+_version_minor = 3
+_version_micro = '0'
+_version_extra = 'dev'
 
 # construct full version string
 _ver = [_version_major, _version_minor]
@@ -75,4 +75,4 @@ PACKAGES = ['snake',
             'snake.solutions',
             'snake.tests']
 PACKAGE_DATA = {'snake': [os.path.join('styles', '*')]}
-REQUIRES = ['numpy', 'matplotlib', 'scipy']
+REQUIRES = ['numpy', 'matplotlib', 'scipy', 'pandas']

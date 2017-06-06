@@ -7,7 +7,7 @@ import os
 import numpy
 from matplotlib import pyplot
 
-from field import Field
+from .field import Field
 
 
 def plot_grid_convergence(simulations, exact,
