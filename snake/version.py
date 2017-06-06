@@ -75,4 +75,4 @@ PACKAGES = ['snake',
             'snake.solutions',
             'snake.tests']
 PACKAGE_DATA = {'snake': [os.path.join('styles', '*')]}
-REQUIRES = ['numpy', 'matplotlib', 'scipy']
+REQUIRES = ['numpy', 'matplotlib', 'scipy', 'pandas']
