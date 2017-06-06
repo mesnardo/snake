@@ -342,8 +342,7 @@ class BarbaGroupSimulation(Simulation):
   def plot_contour(self, field_name,
                    field_range=None,
                    filled_contour=True,
-                   view=[float('-inf'), float('-inf'),
-                         float('inf'), float('inf')],
+                   view=(None, None, None, None),
                    bodies=[],
                    time_increment=None,
                    save_directory=None, save_name=None, fmt='png',
@@ -366,9 +365,9 @@ class BarbaGroupSimulation(Simulation):
     filled_contour: boolean, optional
       Set 'True' to create a filled contour;
       default: True.
-    view: list of floats, optional
+    view: tuple or list of 4 floats, optional
       Bottom-left and top-right coordinates of the rectangular view to plot;
-      default: the whole domain.
+      default: (None, None, None, None), the whole domain.
     bodies: list of Body objects, optional
       The immersed bodies to add to the figure;
       default: [] (no immersed body).
@@ -407,10 +406,12 @@ class BarbaGroupSimulation(Simulation):
       default: 100
     """
     # set view
-    view[0] = (self.grid[0].min() if view[0] == float('-inf') else view[0])
-    view[1] = (self.grid[1].min() if view[1] == float('-inf') else view[1])
-    view[2] = (self.grid[0].max() if view[2] == float('inf') else view[2])
-    view[3] = (self.grid[1].max() if view[3] == float('inf') else view[3])
+    if isinstance(view, tuple):
+      view = list(view)
+    view[0] = (self.grid[0].min() if view[0] is None else view[0])
+    view[1] = (self.grid[1].min() if view[1] is None else view[1])
+    view[2] = (self.grid[0].max() if view[2] is None else view[2])
+    view[3] = (self.grid[1].max() if view[3] is None else view[3])
     # create save directory if necessary
     if not save_directory:
       save_directory = os.path.join(self.directory, 'images')
