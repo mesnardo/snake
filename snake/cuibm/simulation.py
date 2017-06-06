@@ -210,5 +210,5 @@ class CuIBMSimulation(BarbaGroupSimulation):
               time_step=time_step,
               x=0.5 * (x[:-1] + x[1:]),
               y=0.5 * (y[:-1] + y[1:]),
-              values=p.reshape(nx, ny))
+              values=p.reshape(ny, nx))
     return p
