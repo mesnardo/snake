@@ -55,7 +55,9 @@ class CuIBMSimulation(BarbaGroupSimulation):
     textchars = (bytearray({7, 8, 9, 10, 12, 13, 27}
                            | set(range(0x20, 0x100)) - {0x7f}))
     is_binary_string = lambda bytes: bool(bytes.translate(None, textchars))
-    binary_format = is_binary_string(open(file_path, 'rb').read(1024))
+    infile = open(file_path, 'rb')
+    binary_format = is_binary_string(infile.read(1024))
+    infile.close()
     if binary_format:
       with open(file_path, 'rb') as infile:
         # x-direction
@@ -141,7 +143,9 @@ class CuIBMSimulation(BarbaGroupSimulation):
     textchars = bytearray({7, 8, 9, 10, 12, 13, 27}
                           | set(range(0x20, 0x100)) - {0x7f})
     is_binary_string = lambda bytes: bool(bytes.translate(None, textchars))
-    binary_format = is_binary_string(open(file_path, 'rb').read(1024))
+    infile = open(file_path, 'rb')
+    binary_format = is_binary_string(infile.read(1024))
+    infile.close()
     if binary_format:
       with open(file_path, 'rb') as infile:
         nq = struct.unpack('i', infile.read(4))[0]
@@ -195,7 +199,9 @@ class CuIBMSimulation(BarbaGroupSimulation):
     textchars = bytearray({7, 8, 9, 10, 12, 13, 27}
                           | set(range(0x20, 0x100)) - {0x7f})
     is_binary_string = lambda bytes: bool(bytes.translate(None, textchars))
-    binary_format = is_binary_string(open(file_path, 'rb').read(1024))
+    infile = open(file_path, 'rb')
+    binary_format = is_binary_string(infile.read(1024))
+    infile.close()
     if binary_format:
       with open(file_path, 'rb') as infile:
         nlambda = struct.unpack('i', infile.read(4))[0]
