@@ -12,3 +12,6 @@ testcases
 *.egg-info
 dist
 build
+
+# ignore cuIBM forces obtained by Anush
+resources/flyingSnake2d_cuibm_anush
