@@ -6,6 +6,10 @@
 
 ---
 
+## 0.3
+
+---
+
 ### Added
 * Experimental and computational results for flapping wing at Re=75.
 * Tests for class `CuIBMSimulation`.

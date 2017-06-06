@@ -7,8 +7,8 @@ import os
 
 _version_major = 0
 _version_minor = 3
-_version_micro = '0'
-_version_extra = 'dev'
+_version_micro = ''
+_version_extra = ''
 
 # construct full version string
 _ver = [_version_major, _version_minor]
